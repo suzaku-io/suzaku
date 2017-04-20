@@ -1,3 +1,6 @@
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/suzaku-io/suzaku)
+[![Scala.js](https://www.scala-js.org/assets/badges/scalajs-0.6.15.svg)](https://www.scala-js.org)
+
 # Suzaku UI framework
 
 ## Motto
