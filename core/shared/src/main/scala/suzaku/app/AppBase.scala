@@ -23,7 +23,7 @@ abstract class AppBase(transport: Transport,
     override def warn(message: String): Unit  = if (logLevel <= LogLevelWarn) loggerChannel.send(LogWarn(message))
     override def error(message: String): Unit = if (logLevel <= LogLevelError) loggerChannel.send(LogError(message))
   }
-  protected val viewManager = new UIManager(logger, channelEstablished, flushMessages)
+  protected val viewManager = new UIManager(logger, channelEstablished, flushMessages _)
   protected val router      = new MessageRouter[RouterMessage](createHandler(viewManager), false)
 
   // constructor
