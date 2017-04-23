@@ -13,7 +13,8 @@ val commonSettings = Seq(
   libraryDependencies ++= Seq(
     scalaTest.value,
     scalaMock.value
-  )
+  ),
+  resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 )
 
 val publishSettings = Seq(
