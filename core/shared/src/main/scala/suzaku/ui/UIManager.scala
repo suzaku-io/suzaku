@@ -6,7 +6,8 @@ import suzaku.ui.UIProtocol._
 
 import scala.collection.mutable
 
-class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMessages: () => Unit) extends MessageChannelHandler[UIProtocol.type] {
+class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMessages: () => Unit)
+    extends MessageChannelHandler[UIProtocol.type] {
   import UIManager._
 
   private var lastFrame                                    = 0L

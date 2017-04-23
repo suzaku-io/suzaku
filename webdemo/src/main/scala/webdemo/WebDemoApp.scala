@@ -22,7 +22,7 @@ object TestComp {
       else
         for (i <- 0 until state.count) yield Seq(Button(s"A $i"), Button(s"B $i")): Blueprint,
       Button("Click me too", () => add()).withKey(2),
-      s"Just some <script>${"text"*state.count} </script>",
+      s"Just some <script>${"text" * state.count} </script>",
       Button(s"${blueprint.label} ${state.time}").withKey(3)
     )
 
