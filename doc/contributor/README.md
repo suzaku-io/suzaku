@@ -44,7 +44,7 @@ To make contributions in the project you need to _fork_ your own copy of it firs
 
 ![fork](image/fork.png)
 
-This will create a copy of the current repo state under your own account (for example `ochrons/suzaku`, where you can play
+This will create a copy of the current repo state under your own account (for example `ochrons/suzaku`), where you can play
 around freely. Next step is to create a local _branch_ where you'll make your changes. In this example we'll be adding
 Android support.
 
@@ -102,8 +102,8 @@ Developing applications with graphical user interfaces is hard. Making them pret
 Having all that in a cross-platform environment is close to impossible. Until Suzaku :smile:
 
 The current frameworks for cross-platform (or even plain web) app development tend to be either based on JavaScript, or not
-support all the three major mobile platforms. This is fine for simple applications but as your requirements and complexity
-grow, you'll want a more solid language and a flexible framework to get the job done.
+support all the three major mobile platforms (web, Android and iOS). This is fine for simple applications but as your
+requirements and complexity grow, you'll want a more solid language and a flexible framework to get the job done.
 
 Suzaku was born out of the frustration of using JavaScript web frameworks in Scala.js. Even though Scala.js takes a lot of
 the web development pain away, it still suffers from the use of JavaScript libraries underneath as they are not designed to
@@ -176,16 +176,17 @@ real UI.
 
 ## Workflow
 
-This the general workflow for contributing to Suzaku.
+This is the general workflow for contributing to Suzaku.
 
 1. You should always perform your work in its own Git branch (a "topic branch"). The branch should be given a descriptive
    name that explains its intent.
 
 2. When the feature or fix is completed you should [squash](https://help.github.com/articles/about-pull-request-merges/) your
-   commits into a one (per useful change) and open a [Pull Request](https://help.github.com/articles/about-pull-requests/) on
-   GitHub. Squashing commits keeps the version history clean and clutter free. Typically your PR should target the `master`
-   branch, but there may be other work-in-progress branches that you can also target in your PR. This is especially true if
-   you have originally branched from such a WIP branch.
+   commits into a one (per useful change), [rebase](https://help.github.com/articles/about-git-rebase/) it against the
+   original branch and open a [Pull Request](https://help.github.com/articles/about-pull-requests/) on GitHub. Squashing
+   commits keeps the version history clean and clutter free. Typically your PR should target the `master` branch, but there
+   may be other work-in-progress branches that you can also target in your PR. This is especially true if you have originally
+   branched from such a WIP branch.
 
 3. The Pull Request should be reviewed by the maintainers. Independent contributors can also participate in the review
    process, and are encouraged to do so. There is also an automated CI build that checks that your PR is compiling ok and
@@ -223,6 +224,10 @@ work in a branch for long time doing merges/rebases etc.) then please do not com
 squashing the commits into **one commit per useful unit of change**, each accompanied by a detailed commit message. For more
 info, see the article: [Git Workflow](http://sandofsky.com/blog/git-workflow.html). Additionally, every commit should be able
 to be used in isolation - that is, each commit must build and pass all tests.
+
+#### Use `scalafmt`
+
+Run `scalafmt` before making a commit to keep source code in style.
 
 #### First line of the commit message
 
