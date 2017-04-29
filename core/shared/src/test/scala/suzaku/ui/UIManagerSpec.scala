@@ -72,6 +72,14 @@ object AnotherView {
 }
 
 class UIManagerSpec extends UnitSpec with MockFactory {
+  class MockUIHandler extends MessageChannelHandler[UIProtocol.type]
+
+  class MockUIChannel extends MessageChannel(UIProtocol)(0, 0, null, new MockUIHandler, null) {}
+
+  class MockWidgetHandler extends MessageChannelHandler[TestProtocol.type]
+
+  class MockWidgetChannel extends MessageChannel(TestProtocol)(0, 0, null, new MockWidgetHandler, ()) {}
+
   class TestUIManager extends UIManager(TestLogger, _ => (), () => ()) {
     uiChannel = mock[MockUIChannel]
 
@@ -89,14 +97,6 @@ class UIManagerSpec extends UnitSpec with MockFactory {
 
     def uic = uiChannel
   }
-
-  class MockUIHandler extends MessageChannelHandler[UIProtocol.type]
-
-  class MockUIChannel extends MessageChannel(UIProtocol)(0, 0, null, new MockUIHandler, null) {}
-
-  class MockWidgetHandler extends MessageChannelHandler[TestProtocol.type]
-
-  class MockWidgetChannel extends MessageChannel(TestProtocol)(0, 0, null, new MockWidgetHandler, ()) {}
 
   "View manager child update" should {
     "update nothing" in {
