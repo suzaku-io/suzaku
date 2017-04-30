@@ -9,7 +9,7 @@ import suzaku.ui.UIProtocol.NextFrame
 import suzaku.ui._
 import suzaku.util.LoggerHandler
 
-abstract class UiBase(transport: Transport,
+abstract class UIBase(transport: Transport,
                       handler: (LoggerHandler) => UIRouterHandler = loggerHandler => new UIRouterHandler(loggerHandler))(
     implicit routerPickler: Pickler[RouterMessage] = RouterMessage.defaultRouterPickler) {
 

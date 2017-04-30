@@ -1,9 +1,9 @@
-package suzaku.platform
+package suzaku.platform.web
 
-import suzaku.platform.web.{DOMLogger, DOMScheduler, DOMWidgetRenderer}
+import suzaku.platform.{Logger, Platform, Scheduler}
 import suzaku.ui.WidgetRenderer
 
-object PlatformImpl extends Platform {
+object WebPlatform extends Platform {
   def logger: Logger = new DOMLogger
 
   def scheduler: Scheduler = new DOMScheduler

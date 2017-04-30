@@ -27,6 +27,7 @@ object WebDemoAppEntry {
     msg.data match {
       case buffer: ArrayBuffer =>
         transport.receive(buffer)
+      case _ => // ignore other messages
     }
   }
 }

@@ -164,7 +164,334 @@ widgets with platform specific implementations.
 
 ## Design and Architecture
 
-Coming soon!
+This section covers the architecture and design of Suzaku by going through the codebase in a (hopefully) meaningful order. We
+walk through the various classes, traits and objects that make up Suzaku to give you an overview how things work together and
+how applications are built using Suzaku.
+
+### Project structure
+
+Suzaku is a monorepo consisting of several interdependent projects. Here is a list of projects and what they are for:
+
+| Project                     | Description                                            |
+|:----------------------------|:-------------------------------------------------------|
+| `core`                      | Platform independent core of Suzaku.                   |
+| `base-widgets`              | Platform independent definitions of base widgets.      |
+| `platform/web/core`         | Web specific implementation of the core.               |
+| `platform/web/base-widgets` | Web specific implementation of the base widgets.       |
+| `webdemo`                   | A simple application demonstrating the user of Suzaku. |
+
+### UI and Application separation
+
+In Suzaku the user interface implementation and your application code are running on different threads to benefit from
+multi-core CPUs commonly used in all modern devices.
+
+![multicore](image/multicore.png)
+
+What this means in practice is that your application actually starts in the UI (main) thread and needs to instantiate the
+application thread separately. To simplify the required application startup code, Suzaku provides
+[`UIBase`](../../core/shared/src/main/scala/suzaku/app/UIBase.scala) and
+[`AppBase`](../../core/shared/src/main/scala/suzaku/app/AppBase.scala) helper classes.
+
+The UI and the App communicate via a [`Transport`](../../core/shared/src/main/scala/suzaku/platform/Transport.scala) that
+sends messages between the two threads using a platform specific implementation.
+
+![transport](image/transport.png)
+
+The application developer must provide the transport and pass it to the constructors of `UiBase` and `AppBase`. For example
+in a web application UI thread you would create an instance of
+[`WebWorkerTransport`](../../platform/web/core/src/main/scala/suzaku/platform/web/WebWorkerTransport.scala)
+(`WorkerClientTransport` to be exact) to utilize Web Worker message passing mechanism as the transport.
+
+```scala
+var transport: WebWorkerTransport = _
+
+@JSExport
+def entry(): Unit = {
+  // create the worker to run our application in
+  val worker = new Worker("worker.js")
+  // create the transport
+  transport = new WorkerClientTransport(worker)
+  // listen to messages from worker
+  worker.onmessage = onMessage _
+  val ui = new WebDemoUI(transport)
+}
+
+def onMessage(msg: dom.MessageEvent) = {
+  msg.data match {
+    case buffer: ArrayBuffer =>
+      transport.receive(buffer)
+    case _ => // ignore other messages
+  }
+}
+```
+
+Similarly in the application thread you would create a `WorkerTransport` and pass it to your application base class.
+
+```scala
+var transport: WebWorkerTransport = _
+
+@JSExport
+def entry(): Unit = {
+  // create transport
+  transport = new WorkerTransport(self)
+  // receive WebWorker messages
+  self.onmessage = onMessage _
+  // create the actual application
+  val app = new WebDemoApp(transport)
+}
+
+def onMessage(msg: dom.MessageEvent) = {
+  msg.data match {
+    case buffer: ArrayBuffer =>
+      transport.receive(buffer)
+    case _ => // ignore other messages
+  }
+}
+```
+
+On both sides the setup is very similar, creating a transport on top of Web Worker messages and attaching listeners to pass
+those messages to the transport implementation. This is all you need to do in the application entry point to get Suzaku
+running.
+
+Your application specific `WebDemoUI` and `WebDemoApp` are also rather trivial:
+
+```scala
+class WebDemoUI(transport: Transport) extends UIBase(transport) {
+  override val platform = WebPlatform
+
+  override protected def main(): Unit = {
+    suzaku.platform.web.widget.registerWidgets(widgetRenderer)
+  }
+}
+
+class WebDemoApp(transport: Transport) extends AppBase(transport) {
+  override protected def main(): Unit = {
+    val comp = TestComp("Testing")
+    uiManager.render(comp)
+  }
+}
+```
+
+On the UI side you need to define what [`Platform`](../../core/shared/src/main/scala/suzaku/platform/Platform.scala) you are
+using and register all the widgets you intend to use. On the application side you just need to render the root component of
+your user interface to get things started. This is much like in React where you'd call `ReactDOM.render`.
+
+### Declarative User Interface
+
+The user interface in Suzaku is defined _declaratively_ by calling the
+[`UIManager`](../../core/shared/src/main/scala/suzaku/ui/UIManager.scala)`.render` method. You provide a _root_ component,
+which in turn contains a _tree_ of other components and widgets. But these components and widgets are not real instances, but
+_blueprints_ that declare what kind of component/widget should be instantiated. For example a simple login view component
+might contain a `render` method that returns a tree of blueprints (simplified for the example):
+
+```scala
+def render(state: State) = {
+  Layout.Vertical()(
+    Label("Email"),
+    Input.Text(state.email),
+    Label("Password"),
+    Input.Password(state.password),
+    Button("Cancel"),
+    Button("Login")
+  )
+}
+```
+
+We can illustrate this blueprint tree like this:
+
+![blueprint](image/blueprint.png)
+
+The call to, for example, `Button("Login")` will return an instance of `ButtonBlueprint` which extends
+[`WidgetBlueprint`](../../core/shared/src/main/scala/suzaku/ui/WidgetBlueprint.scala) and is defined as:
+
+```scala
+case class ButtonBlueprint private[Button] (label: String, onClick: Option[() => Unit] = None) extends WidgetBlueprint {
+  type P     = ButtonProtocol.type
+  type Proxy = ButtonProxy
+  type This  = ButtonBlueprint
+
+  override def createProxy(viewId: Int, uiChannel: UIChannel) = new ButtonProxy(this)(viewId, uiChannel)
+}
+```
+
+This blueprint is not the actual widget, it just declares how to create the widget. The blueprint contains _all_ the
+information necessary to create an instance of the actual `Button` widget. If you are familiar with React, the blueprint is
+quite similar to what component _props_ are in React, except in Suzaku the blueprint applies to both higher order
+_components_ and _widgets_ alike.
+
+### Widgets, blueprints, proxies and protocols
+
+So what exactly is a _widget_ in Suzaku? The concrete widget resides safely in the UI thread whereas it's represented by a
+[`WidgetProxy`](../../core/shared/src/main/scala/suzaku/ui/WidgetProxy.scala) on the App thread, which communicates with the
+widget using a `Protocol`. The _proxy_ and the _widget_ are instantiated by Suzaku according to the data given in the
+[`Blueprint`](../../core/shared/src/main/scala/suzaku/ui/Blueprint.scala). Sounds rather complicated (and it is!), but for
+the user of Suzaku it's all hidden behind the blueprint.
+
+![button-widget](image/button-widget.png)
+
+But for someone wanting to create their own widgets, it's crucial to understand how these things work under the hood. Let's
+walk through the creation of a `Button` widget and see what happens behind the scenes.
+
+When a user calls `Button("Login")` they actually call `Button.apply(label: String)` method in the `Button` object. This
+method constructs an instance of `ButtonBlueprint` which is passed into the blueprint tree maintained by Suzaku. If this is
+the first time Suzaku sees the blueprint in that location of the tree, it will create a proxy by calling `createProxy` in the
+blueprint, passing an internal `viewId` and the Arteria channel used for UI communication. The `ButtonProxy` extends
+[`WidgetProxy`](../../core/shared/src/main/scala/suzaku/ui/WidgetProxy.scala) which provides the basic implementation for
+proxies.
+
+```scala
+class ButtonProxy private[Button] (bd: ButtonBlueprint)(viewId: Int, uiChannel: UIChannel)
+    extends WidgetProxy(ButtonProtocol, bd, viewId, uiChannel)
+```
+
+When the `WidgetProxy` is constructed, it create a unique channel for communicating with the actual widget in the UI thread.
+The widget is identified by the class name of the blueprint. The `initView` method returns the initial state for the widget,
+which in the case of `Button` contains just the `label` from the blueprint.
+
+```scala
+protected val channel =
+  uiChannel.createChannel(protocol)(this, initView, CreateWidget(blueprint.getClass.getName, viewId))
+```
+
+At this point things are pretty much done for the App thread, so let's take a look what happens on the UI thread. The
+[`WidgetRenderer`](../../core/shared/src/main/scala/suzaku/ui/WidgetRenderer.scala) gets a callback to _materialize_ a new
+channel for the widget. Suzaku will look up an appropriate _builder_ for the widget (`DOMButtonBuilder` in this case) and
+calls it to create the actual widget
+([`DOMButton`](../../platform/web/base-widgets/src/main/scala/suzaku/platform/web/widget/DOMButton.scala)) passing the
+initial state (containing the label).
+
+Within `DOMButton` an _artifact_ is created by instantiating a suitable DOM element:
+
+```scala
+val artifact = {
+  import scalatags.JsDom.all._
+  DOMWidgetArtifact(button(context.label, onclick := onClick _).render)
+}
+```
+
+The artifact is not attached to the DOM document at this point, it happens as part of updating the _children_ of the parent
+widget (`Layout`). Once the `button` element is in the document, it becomes visible to the user and allows interaction.
+
+### Widget messaging
+
+So what happens when a user _clicks_ the button?
+
+As we saw above, the `DOMButton` registers an event handler on the `button` element, listening to click events. When the user
+clicks the button it will call this handler, which sends a `Click` message on the channel.
+
+```scala
+def onClick(e: dom.MouseEvent): Unit = {
+  channel.send(Click)
+}
+```
+
+The `Click` message is defined in `ButtonProtocol` and is simply a case object. At this point it might be good to take a look
+at the implementation of `ButtonProtocol`:
+
+```scala
+object ButtonProtocol extends Protocol {
+
+  sealed trait ButtonMessage extends Message
+
+  case class SetLabel(label: String) extends ButtonMessage
+
+  case object Click extends ButtonMessage
+
+  val bmPickler = compositePickler[ButtonMessage]
+    .addConcreteType[SetLabel]
+    .addConcreteType[Click.type]
+
+  implicit val (messagePickler, witnessMsg) = defineProtocol(bmPickler)
+
+  case class ChannelContext(label: String)
+
+  override val contextPickler = implicitly[Pickler[ChannelContext]]
+}
+```
+
+A widget protocol is required to define three things:
+
+1. Valid messages for this protocol (and an implicit witness(es) to provide evidence)
+2. Initial channel context to be passed when the channel is created
+3. Picklers (serializers) for messages and the context
+
+In the case of button the only valid messages are `SetLabel`, which is used to update the button and `Click`, which is used
+to indicate that the button was clicked. Note that the channel is always bidirectional, so any message can be sent in either
+direction but typically most of the messages travel only in one direction.
+
+When a message is sent on the channel using the `send` method, Suzaku (and Arteria underneath) pass it through the transport
+to the other side, where it's routed to the appropriate message handler. This handler is the `process` method in the
+`ButtonProxy` class:
+
+```scala
+override def process = {
+  case Click =>
+    blueprint.onClick.foreach(f => f())
+  case message =>
+    super.process(message)
+}
+```
+
+In `process` we handle only the `Click` message and call the click handler defined in the blueprint, if any.
+
+### UI changes
+
+Previously we covered what happens on the first `render` call when the `Button` widget gets created, but how are changes in
+the UI handled, for example if we change the button text from "Login" to "Logout"? Let's find out!
+
+Because Suzaku is based on declarative UI, we need to render the UI again with the changed button component. Everything else
+stays the same, but the last button is now defined as `Button("Logout")`. When the call to `uiManager.render` completes,
+Suzaku will inspect the cached blueprint tree to the new tree returned by `render`. It will walk the tree and check if
+
+1. Widget type has changed
+2. Widget type is the same, but blueprint has changed
+
+In this case it will call `ButtonBlueprint`'s `sameAs` method, which by default calls `equals` and therefore will notice the
+change in the label. Next it will pass the new `ButtonBlueprint` to the current `ButtonProxy` instance using its `update`
+method, which will check if the label has changed and then send an appropriate message to the widget to update the label.
+
+```scala
+override def update(newBlueprint: ButtonBlueprint) = {
+  if (newBlueprint.label != blueprint.label)
+    send(SetLabel(newBlueprint.label))
+  super.update(newBlueprint)
+}
+```
+
+This allows widgets to have very fine grained control over how to make updates in the UI. There's no need to perform
+expensive virtual DOM comparisons, as the widget knows directly what needs to be updated.
+
+The `DOMButton` receives the `SetLabel` message, and updates the DOM accordingly.
+
+```scala
+override def process = {
+  case SetLabel(label) =>
+    modifyDOM(node => node.replaceChild(textNode(label), node.firstChild))
+}
+```
+
+Note how the widget is performing a direct DOM manipulation, as it has full control over its own DOM tree. This makes updates
+very efficient as the widget can decide the best update strategy.
+
+### Components
+
+If Suzaku provided only widgets, the application would have to render the whole static widget blueprint tree from the root on
+every little change. To get more dynamic updates, you need to use _components_. Like widgets, components are also represented
+by blueprints extending [`ComponentBlueprint`](../../core/shared/src/main/scala/suzaku/ui/ComponentBlueprint.scala). The
+`ComponentBlueprint` is even simpler than `WidgetBlueprint`, having only two methods:
+
+```scala
+trait ComponentBlueprint extends Blueprint {
+  def create(proxy: StateProxy): Component[_, _]
+
+  def sameAs(that: this.type): Boolean = equals(that)
+}
+```
+
+The `sameAs` method is used to check if the blueprint has changed from the previously rendered, and the `create` method is
+used to instantiate the actual component.
+
+... to be continued ...
 
 ### UI testing
 
@@ -174,9 +501,13 @@ user interaction scenarios is typically very tedious and hard work, but now it's
 sequence. Of course you still have to test the actual UI, too, but application interaction logic can be tested without the
 real UI.
 
+... More coming soon! ...
+
+
 ## Workflow
 
-This is the general workflow for contributing to Suzaku.
+This is the general workflow for contributing to Suzaku (adapted from
+[Scala.js](https://github.com/scala-js/scala-js/blob/master/CONTRIBUTING.md))
 
 1. You should always perform your work in its own Git branch (a "topic branch"). The branch should be given a descriptive
    name that explains its intent.

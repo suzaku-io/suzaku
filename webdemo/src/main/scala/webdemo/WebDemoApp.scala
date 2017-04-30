@@ -65,10 +65,6 @@ object StatelessTestComp {
 class WebDemoApp(transport: Transport) extends AppBase(transport) {
   override protected def main(): Unit = {
     val comp = TestComp("Testing")
-    viewManager.render(comp)
-  }
-
-  def clicked(): Unit = {
-    println("Clicked!")
+    uiManager.render(comp)
   }
 }

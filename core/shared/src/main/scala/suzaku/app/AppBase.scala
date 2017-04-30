@@ -23,14 +23,14 @@ abstract class AppBase(transport: Transport,
     override def warn(message: String): Unit  = if (logLevel <= LogLevelWarn) loggerChannel.send(LogWarn(message))
     override def error(message: String): Unit = if (logLevel <= LogLevelError) loggerChannel.send(LogError(message))
   }
-  protected val viewManager = new UIManager(logger, channelEstablished, flushMessages _)
-  protected val router      = new MessageRouter[RouterMessage](createHandler(viewManager), false)
+  protected val uiManager = new UIManager(logger, channelEstablished, flushMessages _)
+  protected val router    = new MessageRouter[RouterMessage](createHandler(uiManager), false)
 
   // constructor
   // subscribe to messages from transport
   transport.subscribe(receive)
   // create channel for logger
-  protected val loggerChannel = router.createChannel(LoggerProtocol)(new MessageChannelHandler[LoggerProtocol.type] {},
+  protected val loggerChannel = router.createChannel(LoggerProtocol)(MessageChannelHandler.empty[LoggerProtocol.type],
                                                                      LoggerProtocol.LoggerProtocolContext(),
                                                                      CreateLoggerChannel)
 
@@ -59,5 +59,5 @@ abstract class AppBase(transport: Transport,
     main()
   }
 
-  def render(root: Blueprint): Unit = viewManager.render(root)
+  def render(root: Blueprint): Unit = uiManager.render(root)
 }

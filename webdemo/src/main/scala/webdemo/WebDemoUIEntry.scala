@@ -16,7 +16,7 @@ object WebDemoUIEntry {
     // create the worker to run our application in
     val worker = new Worker("worker.js")
 
-    // create transport
+    // create the transport
     transport = new WorkerClientTransport(worker)
 
     // listen to messages from worker
@@ -29,6 +29,7 @@ object WebDemoUIEntry {
     msg.data match {
       case buffer: ArrayBuffer =>
         transport.receive(buffer)
+      case _ => // ignore other messages
     }
   }
 }
