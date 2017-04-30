@@ -98,291 +98,294 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     def uic = uiChannel
   }
 
-  "View manager child update" should {
-    "update nothing" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+  // skip these tests under JS, because mocking doesn't work correctly
+  if(suzaku.CurrentPlatform.isJVM) {
+    "View manager child update" should {
+      "update nothing" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(0)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
-
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes.head.blueprint shouldBe TestBlueprint(0)
-      nodes.head.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      ops shouldBe Seq()
-    }
-
-    "update one child with same type" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
-
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes.head.blueprint shouldBe TestBlueprint(1)
-      nodes.head.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
-      ops shouldBe Seq()
-    }
-
-    "replace with empty" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
-      )
-      val next = Seq(
-        EmptyBlueprint
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
-
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 1
-      ops shouldBe Seq(ReplaceOp(-1))
-    }
-
-    "add one child" in {
-      val vm = new TestUIManager
-      val current = Seq(
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
         )
-      val next = Seq(
-        TestBlueprint(1)
-      )
-      vm.viewId = 1
-
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes.head.blueprint shouldBe TestBlueprint(1)
-      ops shouldBe Seq(InsertOp(nodes.head.getId))
-    }
-
-    "remove only child" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
-
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
-      )
-      val next = Seq(
+        val next = List(
+          TestBlueprint(0)
         )
-      vm.viewId = current.map(_.widgetId).max + 1
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 0
-      ops shouldBe Seq(RemoveOp())
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes.head.blueprint shouldBe TestBlueprint(0)
+        nodes.head.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        ops shouldBe Seq()
+      }
 
-    "remove first child" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "update one child with same type" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1), 2, None, uiChannel),
-        new ShadowWidget(TestBlueprint(2), 3, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(1),
-        TestBlueprint(2)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes.head.blueprint shouldBe TestBlueprint(1)
+        nodes.head.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
+        ops shouldBe Seq()
+      }
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 2
-      nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
-      nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
-      ops shouldBe Seq(NoOp(2), RemoveOp())
-    }
+      "replace with empty" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
+        )
+        val next = List(
+          EmptyBlueprint
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-    "remove last child" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 1
+        ops shouldBe Seq(ReplaceOp(-1))
+      }
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1), 2, None, uiChannel),
-        new ShadowWidget(TestBlueprint(2), 3, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(0),
-        TestBlueprint(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+      "add one child" in {
+        val vm = new TestUIManager
+        val current = List(
+        )
+        val next = List(
+          TestBlueprint(1)
+        )
+        vm.viewId = 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 2
-      ops shouldBe Seq(NoOp(2), RemoveOp())
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes.head.blueprint shouldBe TestBlueprint(1)
+        ops shouldBe Seq(InsertOp(nodes.head.getId))
+      }
 
-    "insert child to front" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "remove only child" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1), 2, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(5),
-        TestBlueprint(0),
-        TestBlueprint(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
+        )
+        val next = List(
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 3
-      ops shouldBe Seq(NoOp(2), InsertOp(nodes.last.getId))
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 0
+        ops shouldBe Seq(RemoveOp())
+      }
 
-    "replace with another view" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "remove first child" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
-      )
-      val next = Seq(
-        AnotherBlueprint("Kala")
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1), 2, None, uiChannel),
+          new ShadowWidget(TestBlueprint(2), 3, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(1),
+          TestBlueprint(2)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 1
-      ops shouldBe Seq(ReplaceOp(nodes.last.getId))
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 2
+        nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
+        nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
+        ops shouldBe Seq(NoOp(2), RemoveOp())
+      }
 
-    "insert child to front using keys" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "remove last child" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(5).withKey(5),
-        TestBlueprint(0).withKey(0),
-        TestBlueprint(1).withKey(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1), 2, None, uiChannel),
+          new ShadowWidget(TestBlueprint(2), 3, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(0),
+          TestBlueprint(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 3
-      nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      ops shouldBe Seq(InsertOp(nodes.head.getId))
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 2
+        ops shouldBe Seq(NoOp(2), RemoveOp())
+      }
 
-    "insert child to middle using keys" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "insert child to front" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(0).withKey(0),
-        TestBlueprint(5).withKey(5),
-        TestBlueprint(1).withKey(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1), 2, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(5),
+          TestBlueprint(0),
+          TestBlueprint(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 3
-      nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      ops shouldBe Seq(NoOp(), InsertOp(nodes(1).getId))
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 3
+        ops shouldBe Seq(NoOp(2), InsertOp(nodes.last.getId))
+      }
 
-    "reorder using keys" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "replace with another view" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel),
-        new ShadowWidget(TestBlueprint(2).withKey(2), 3, None, uiChannel),
-        new ShadowWidget(TestBlueprint(3).withKey(3), 4, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(2).withKey(2),
-        TestBlueprint(0).withKey(0),
-        TestBlueprint(3).withKey(3),
-        TestBlueprint(1).withKey(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val current = List(
+          new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
+        )
+        val next = List(
+          AnotherBlueprint("Kala")
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 4
-      nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(3).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      ops shouldBe Seq(MoveOp(2), NoOp(), MoveOp(3))
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 1
+        ops shouldBe Seq(ReplaceOp(nodes.last.getId))
+      }
 
-    "manage invalid duplicate keys" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
+      "insert child to front using keys" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val current = Seq(
-        new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
-        new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel),
-        new ShadowWidget(TestBlueprint(2).withKey(1), 3, None, uiChannel),
-        new ShadowWidget(TestBlueprint(3).withKey(0), 4, None, uiChannel)
-      )
-      val next = Seq(
-        TestBlueprint(2).withKey(0),
-        TestBlueprint(0).withKey(0),
-        TestBlueprint(3).withKey(3),
-        TestBlueprint(1).withKey(1)
-      )
-      vm.viewId = current.map(_.widgetId).max + 1
+        val current = List(
+          new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(5).withKey(5),
+          TestBlueprint(0).withKey(0),
+          TestBlueprint(1).withKey(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 4
-      nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
-      nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      nodes(3).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
-      ops shouldBe Seq(NoOp(), InsertOp(nodes(1).getId), InsertOp(nodes(2).getId), NoOp(), RemoveOp(2))
-    }
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 3
+        nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        ops shouldBe Seq(InsertOp(nodes.head.getId))
+      }
 
-    "reorder reversed" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
-      val current   = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
-      val next      = 99.to(0, -1).map(i => TestBlueprint(i).withKey(i))
-      vm.viewId = current.map(_.widgetId).max + 1
+      "insert child to middle using keys" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 100
-      assert(nodes.forall(_.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates == 0))
-      ops shouldBe (0 until 99).map(_ => MoveOp(99))
-    }
+        val current = List(
+          new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(0).withKey(0),
+          TestBlueprint(5).withKey(5),
+          TestBlueprint(1).withKey(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
 
-    "reorder reversed with different view" in {
-      val vm        = new TestUIManager
-      val uiChannel = vm.uic
-      val current   = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
-      val next      = 99.to(0, -1).map(i => AnotherBlueprint(s"$i").withKey(i))
-      vm.viewId = current.map(_.widgetId).max + 1
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 3
+        nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        ops shouldBe Seq(NoOp(), InsertOp(nodes(1).getId))
+      }
 
-      val (nodes, ops) = vm.updateChildren(null, current, next)
-      nodes should have size 100
-      assert(nodes.forall(_.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates == 0))
-      ops shouldBe (0 until 99).map(_ => MoveOp(99))
+      "reorder using keys" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
+
+        val current = List(
+          new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel),
+          new ShadowWidget(TestBlueprint(2).withKey(2), 3, None, uiChannel),
+          new ShadowWidget(TestBlueprint(3).withKey(3), 4, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(2).withKey(2),
+          TestBlueprint(0).withKey(0),
+          TestBlueprint(3).withKey(3),
+          TestBlueprint(1).withKey(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
+
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 4
+        nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(3).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        ops shouldBe Seq(MoveOp(2), NoOp(), MoveOp(3))
+      }
+
+      "manage invalid duplicate keys" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
+
+        val current = List(
+          new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
+          new ShadowWidget(TestBlueprint(1).withKey(1), 2, None, uiChannel),
+          new ShadowWidget(TestBlueprint(2).withKey(1), 3, None, uiChannel),
+          new ShadowWidget(TestBlueprint(3).withKey(0), 4, None, uiChannel)
+        )
+        val next = List(
+          TestBlueprint(2).withKey(0),
+          TestBlueprint(0).withKey(0),
+          TestBlueprint(3).withKey(3),
+          TestBlueprint(1).withKey(1)
+        )
+        vm.viewId = current.map(_.widgetId).max + 1
+
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 4
+        nodes(0).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 1
+        nodes(1).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(2).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        nodes(3).asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates shouldBe 0
+        ops shouldBe Seq(NoOp(), InsertOp(nodes(1).getId), InsertOp(nodes(2).getId), NoOp(), RemoveOp(2))
+      }
+
+      "reorder reversed" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
+        val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
+        val next = 99.to(0, -1).map(i => TestBlueprint(i).withKey(i)).toList
+        vm.viewId = current.map(_.widgetId).max + 1
+
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 100
+        assert(nodes.forall(_.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates == 0))
+        ops shouldBe (0 until 99).map(_ => MoveOp(99))
+      }
+
+      "reorder reversed with different view" in {
+        val vm = new TestUIManager
+        val uiChannel = vm.uic
+        val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
+        val next = 99.to(0, -1).map(i => AnotherBlueprint(s"$i").withKey(i)).toList
+        vm.viewId = current.map(_.widgetId).max + 1
+
+        val (nodes, ops) = vm.updateChildren(null, current, next)
+        nodes should have size 100
+        assert(nodes.forall(_.asInstanceOf[ShadowWidget].proxy.asInstanceOf[BaseProxy].updates == 0))
+        ops shouldBe (0 until 99).map(_ => MoveOp(99))
+      }
     }
   }
 }
