@@ -13,4 +13,4 @@ trait Blueprint {
 
 object EmptyBlueprint extends Blueprint
 
-case class BlueprintSeq(blueprints: Seq[Blueprint]) extends Blueprint
+case class BlueprintSeq(blueprints: List[Blueprint]) extends Blueprint

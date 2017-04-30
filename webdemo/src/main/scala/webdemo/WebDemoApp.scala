@@ -20,7 +20,7 @@ object TestComp {
       if (state.count == 0)
         EmptyBlueprint
       else
-        for (i <- 0 until state.count) yield Seq(Button(s"A $i"), Button(s"B $i")): Blueprint,
+        for (i <- 0 until state.count) yield List(Button(s"A $i"), Button(s"B $i")): Blueprint,
       Button("Click me too", () => add()).withKey(2),
       s"Just some <script>${"text" * state.count} </script>",
       Button(s"${blueprint.label} ${state.time}").withKey(3)

@@ -5,17 +5,18 @@ import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
 
 import scala.collection.mutable
+import scala.collection.immutable
 
 class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMessages: () => Unit)
     extends MessageChannelHandler[UIProtocol.type] {
   import UIManager._
 
-  private var lastFrame                                    = 0L
-  protected var uiChannel: MessageChannel[ChannelProtocol] = _
-  private var currentRoot                                  = Option.empty[ShadowNode]
-  private[suzaku] var viewId                               = 1
-  private var dirtyRoots                                   = List.empty[ShadowComponent]
-  private var frameRequested                               = false
+  private var lastFrame      = 0L
+  protected var uiChannel    = null: MessageChannel[ChannelProtocol]
+  private var currentRoot    = Option.empty[ShadowNode]
+  private[suzaku] var viewId = 1
+  private var dirtyRoots     = List.empty[ShadowComponent]
+  private var frameRequested = false
 
   private def allocateId: Int = {
     val id = viewId
@@ -75,14 +76,14 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     currentRoot = Some(newRoot)
   }
 
-  private def expand(node: ShadowNode): Seq[ShadowNode] = node match {
+  private def expand(node: ShadowNode): immutable.Seq[ShadowNode] = node match {
     case seq: ShadowNodeSeq =>
       seq.children.flatMap(expand)
     case _ =>
       List(node)
   }
 
-  private def expandBP(bp: Blueprint): Seq[Blueprint] = bp match {
+  private def expandBP(bp: Blueprint): immutable.Seq[Blueprint] = bp match {
     case BlueprintSeq(blueprints) =>
       blueprints.flatMap(expandBP)
     case _ =>
@@ -188,7 +189,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   def updateChildren(currentNode: ShadowNode,
                      previous: Seq[ShadowNode],
-                     next: Seq[Blueprint]): (Seq[ShadowNode], Seq[ChildOp]) = {
+                     next: List[Blueprint]): (Seq[ShadowNode], Seq[ChildOp]) = {
     // extract all keys only if needed
     lazy val prevKeys: mutable.Set[Any] = previous.flatMap(_.key)(collection.breakOut)
     lazy val nextKeys: mutable.Set[Any] = next.flatMap(_.key)(collection.breakOut)
@@ -295,14 +296,14 @@ object UIManager {
     override def destroy(): Unit       = {}
   }
 
-  private[suzaku] final class ShadowNodeSeq(blueprints: Seq[Blueprint], parent: Option[ShadowNode])
+  private[suzaku] final class ShadowNodeSeq(blueprints: List[Blueprint], parent: Option[ShadowNode])
       extends ShadowNode(parent) {
     type BP = EmptyBlueprint.type
 
     override var blueprint = EmptyBlueprint
-    var children           = Seq.empty[ShadowNode]
+    var children           = List.empty[ShadowNode]
 
-    def withChildren(c: Seq[ShadowNode]): ShadowNodeSeq = {
+    def withChildren(c: List[ShadowNode]): ShadowNodeSeq = {
       children = c
       this
     }
@@ -313,9 +314,8 @@ object UIManager {
 
     override def key: Iterable[Any] = blueprints.flatMap(_.key)
 
-    override def destroy(): Unit = {
+    override def destroy(): Unit =
       children.foreach(_.destroy())
-    }
 
     override def toString: String = s"ShadowNodeSeq($blueprints)"
   }
@@ -337,7 +337,7 @@ object UIManager {
       proxy.destroyView()
     }
 
-    def withChildren(c: Seq[ShadowNode]): ShadowWidget = {
+    def withChildren(c: List[ShadowNode]): ShadowWidget = {
       children = c
       this
     }

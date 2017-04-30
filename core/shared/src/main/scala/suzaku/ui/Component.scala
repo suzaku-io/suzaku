@@ -3,6 +3,7 @@ package suzaku.ui
 import suzaku.widget.Text.TextBlueprint
 
 import scala.language.implicitConversions
+import scala.collection.immutable
 
 trait StateProxy {
   def modState[S <: AnyRef](f: S => S): Unit
@@ -34,7 +35,7 @@ abstract class Component[BP <: ComponentBlueprint, State <: AnyRef](initialBluep
 
   def didUnmount(): Unit = {}
 
-  implicit def seqToBlueprint(seq: Seq[Blueprint]): BlueprintSeq = BlueprintSeq(seq)
+  implicit def seqToBlueprint(seq: immutable.Seq[Blueprint]): BlueprintSeq = BlueprintSeq(seq.toList)
 
   implicit def stringToText(str: String): TextBlueprint = TextBlueprint(str)
 }

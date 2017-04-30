@@ -1,6 +1,6 @@
 package suzaku.ui
 
-import arteria.core.{MessageChannel, Protocol}
+import arteria.core.Protocol
 import suzaku.ui.UIProtocol.UIChannel
 
 trait WidgetBlueprint extends Blueprint {
@@ -10,7 +10,7 @@ trait WidgetBlueprint extends Blueprint {
 
   def createProxy(viewId: Int, uiChannel: UIChannel): Proxy
 
-  def children: Seq[Blueprint] = Nil
+  def children: List[Blueprint] = Nil
 
   def sameAs(that: This): Boolean = equals(that)
 }

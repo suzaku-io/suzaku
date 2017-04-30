@@ -39,19 +39,19 @@ object ListView {
     }
   }
 
-  case class ListViewBlueprint private[ListView] (direction: String)(content: Seq[Blueprint]) extends WidgetBlueprint {
+  case class ListViewBlueprint private[ListView] (direction: String)(content: List[Blueprint]) extends WidgetBlueprint {
     type P     = ListViewProtocol.type
     type Proxy = ListViewProxy
     type This  = ListViewBlueprint
 
-    override val children: Seq[Blueprint] = content
+    override val children = content
 
     override def createProxy(viewId: Int, uiChannel: UIChannel) = new ListViewProxy(this)(viewId, uiChannel)
 
     def apply(children: Blueprint*): ListViewBlueprint = {
-      ListViewBlueprint(direction)(children)
+      ListViewBlueprint(direction)(children.toList)
     }
   }
 
-  def apply(direction: String = "horz")(content: Blueprint*) = ListViewBlueprint(direction)(content)
+  def apply(direction: String = "horz")(content: Blueprint*) = ListViewBlueprint(direction)(content.toList)
 }
