@@ -90,7 +90,7 @@ $ sbt
 > webDemo/fastOptJS
 ```
 
-You can now try out the demo app in your browser at URL [http://localhost:12345/webdemo/index.html](), served by the
+You can now try out the demo app in your browser at URL [http://localhost:12345/webdemo/index.html](http://localhost:12345/webdemo/index.html), served by the
 wonderful [Workbench plugin](https://github.com/lihaoyi/workbench).
 
 Now you're all set to play with the source code, make your modifications and test them locally. Before submitting your
