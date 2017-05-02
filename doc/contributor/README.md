@@ -22,7 +22,7 @@ improving the overall design. All contributions from all contributors are welcom
 This guide is divided into following sections to help you get around quickly.
 
 * [Getting started](#getting-started) - taking those first baby steps
-* [Background and motivation](#Background-and-motivation) - tells you why Suzaku was created
+* [Background and motivation](#background-and-motivation) - tells you why Suzaku was created
 * [Design and Architecture](#design-and-architecture) - the core principles and ideas behind Suzaku
 * [Workflow](#workflow) - the actual workflow for contributing
 * [Style guide](#style-guide) - keeping up with the latest style
