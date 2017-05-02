@@ -71,15 +71,15 @@ object AnotherView {
   }
 }
 
+class MockUIHandler extends MessageChannelHandler[UIProtocol.type]
+
+class MockUIChannel extends MessageChannel(UIProtocol)(0, 0, null, new MockUIHandler, null) {}
+
+class MockWidgetHandler extends MessageChannelHandler[TestProtocol.type]
+
+class MockWidgetChannel extends MessageChannel(TestProtocol)(0, 0, null, new MockWidgetHandler, ()) {}
+
 class UIManagerSpec extends UnitSpec with MockFactory {
-  class MockUIHandler extends MessageChannelHandler[UIProtocol.type]
-
-  class MockUIChannel extends MessageChannel(UIProtocol)(0, 0, null, new MockUIHandler, null) {}
-
-  class MockWidgetHandler extends MessageChannelHandler[TestProtocol.type]
-
-  class MockWidgetChannel extends MessageChannel(TestProtocol)(0, 0, null, new MockWidgetHandler, ()) {}
-
   class TestUIManager extends UIManager(TestLogger, _ => (), () => ()) {
     uiChannel = mock[MockUIChannel]
 
@@ -99,10 +99,10 @@ class UIManagerSpec extends UnitSpec with MockFactory {
   }
 
   // skip these tests under JS, because mocking doesn't work correctly
-  if(suzaku.CurrentPlatform.isJVM) {
+  if (suzaku.CurrentPlatform.isJVM) {
     "View manager child update" should {
       "update nothing" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -120,7 +120,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "update one child with same type" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
         val current = List(
           new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
@@ -137,7 +137,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "replace with empty" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
         val current = List(
           new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
@@ -155,7 +155,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       "add one child" in {
         val vm = new TestUIManager
         val current = List(
-        )
+          )
         val next = List(
           TestBlueprint(1)
         )
@@ -167,14 +167,14 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "remove only child" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
           new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
         )
         val next = List(
-        )
+          )
         vm.viewId = current.map(_.widgetId).max + 1
 
         val (nodes, ops) = vm.updateChildren(null, current, next)
@@ -183,7 +183,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "remove first child" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -205,7 +205,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "remove last child" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -225,7 +225,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "insert child to front" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -245,7 +245,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "replace with another view" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -262,7 +262,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "insert child to front using keys" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -285,7 +285,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "insert child to middle using keys" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -308,7 +308,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "reorder using keys" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -335,7 +335,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "manage invalid duplicate keys" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
 
         val current = List(
@@ -362,10 +362,10 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "reorder reversed" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
-        val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
-        val next = 99.to(0, -1).map(i => TestBlueprint(i).withKey(i)).toList
+        val current   = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
+        val next      = 99.to(0, -1).map(i => TestBlueprint(i).withKey(i)).toList
         vm.viewId = current.map(_.widgetId).max + 1
 
         val (nodes, ops) = vm.updateChildren(null, current, next)
@@ -375,10 +375,10 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       }
 
       "reorder reversed with different view" in {
-        val vm = new TestUIManager
+        val vm        = new TestUIManager
         val uiChannel = vm.uic
-        val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
-        val next = 99.to(0, -1).map(i => AnotherBlueprint(s"$i").withKey(i)).toList
+        val current   = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
+        val next      = 99.to(0, -1).map(i => AnotherBlueprint(s"$i").withKey(i)).toList
         vm.viewId = current.map(_.widgetId).max + 1
 
         val (nodes, ops) = vm.updateChildren(null, current, next)
