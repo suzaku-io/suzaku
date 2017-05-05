@@ -353,7 +353,7 @@ object UIManager {
       with StateProxy {
     type BP = ComponentBlueprint
 
-    val component = blueprint.create(this).asInstanceOf[Component[ComponentBlueprint, AnyRef]]
+    val component = blueprint.create(this).asInstanceOf[Component[ComponentBlueprint, Any]]
     var state     = component.initialState
     var rendered  = component.render(state)
     var inner     = innerBuilder(rendered)
@@ -364,7 +364,7 @@ object UIManager {
 
     override def getView: ShadowWidget = inner.getView
 
-    override def modState[S <: AnyRef](f: (S) => S): Unit = {
+    override def modState[S](f: (S) => S): Unit = {
       nextState = f(nextState.asInstanceOf[S])
       if (!isDirty) {
         addDirtyRoot(this)

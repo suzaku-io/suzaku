@@ -6,15 +6,15 @@ import scala.language.implicitConversions
 import scala.collection.immutable
 
 trait StateProxy {
-  def modState[S <: AnyRef](f: S => S): Unit
+  def modState[S](f: S => S): Unit
 }
 
 object StatelessProxy extends StateProxy {
-  override def modState[S <: AnyRef](f: S => S): Unit =
+  override def modState[S](f: S => S): Unit =
     throw new IllegalStateException("Cannot modify state of a stateless component")
 }
 
-abstract class Component[BP <: ComponentBlueprint, State <: AnyRef](initialBlueprint: BP, proxy: StateProxy) {
+abstract class Component[BP <: ComponentBlueprint, State](initialBlueprint: BP, proxy: StateProxy) {
   private[suzaku] var _blueprint: BP = initialBlueprint
 
   def blueprint: BP = _blueprint

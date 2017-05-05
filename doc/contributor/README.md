@@ -90,8 +90,9 @@ $ sbt
 > webDemo/fastOptJS
 ```
 
-You can now try out the demo app in your browser at URL [http://localhost:12345/webdemo/index.html](http://localhost:12345/webdemo/index.html), served by the
-wonderful [Workbench plugin](https://github.com/lihaoyi/workbench).
+You can now try out the demo app in your browser at URL
+[http://localhost:12345/webdemo/index.html](http://localhost:12345/webdemo/index.html), served by the wonderful
+[Workbench plugin](https://github.com/lihaoyi/workbench).
 
 Now you're all set to play with the source code, make your modifications and test them locally. Before submitting your
 contribution, please read the [Workflow](#workflow) and [Style guide](#style-guide) for more information on how.
@@ -441,14 +442,15 @@ the UI handled, for example if we change the button text from "Login" to "Logout
 
 Because Suzaku is based on declarative UI, we need to render the UI again with the changed button component. Everything else
 stays the same, but the last button is now defined as `Button("Logout")`. When the call to `uiManager.render` completes,
-Suzaku will inspect the cached blueprint tree to the new tree returned by `render`. It will walk the tree and check if
+Suzaku will compare the cached blueprint tree to the new tree returned by `render`. It will walk the tree and check if
 
-1. Widget type has changed
-2. Widget type is the same, but blueprint has changed
+1. widget type has changed
+2. widget type is the same, but blueprint has changed
 
-In this case it will call `ButtonBlueprint`'s `sameAs` method, which by default calls `equals` and therefore will notice the
-change in the label. Next it will pass the new `ButtonBlueprint` to the current `ButtonProxy` instance using its `update`
-method, which will check if the label has changed and then send an appropriate message to the widget to update the label.
+In the latter case it will call `ButtonBlueprint`'s `sameAs` method, which by default calls `equals` and therefore will
+notice the change in the label. Next it will pass the new `ButtonBlueprint` to the current `ButtonProxy` instance using its
+`update` method, which will check if the label has changed and then send an appropriate message to the widget to update the
+label.
 
 ```scala
 override def update(newBlueprint: ButtonBlueprint) = {
@@ -477,7 +479,7 @@ very efficient as the widget can decide the best update strategy.
 
 If Suzaku provided only widgets, the application would have to render the whole static widget blueprint tree from the root on
 every little change. To get more dynamic updates, you need to use _components_. Like widgets, components are also represented
-by blueprints extending [`ComponentBlueprint`](../../core/shared/src/main/scala/suzaku/ui/ComponentBlueprint.scala). The
+by blueprints, but extending [`ComponentBlueprint`](../../core/shared/src/main/scala/suzaku/ui/ComponentBlueprint.scala). The
 `ComponentBlueprint` is even simpler than `WidgetBlueprint`, having only two methods:
 
 ```scala
@@ -488,8 +490,65 @@ trait ComponentBlueprint extends Blueprint {
 }
 ```
 
-The `sameAs` method is used to check if the blueprint has changed from the previously rendered, and the `create` method is
-used to instantiate the actual component.
+The `sameAs` method is used to check if the blueprint has changed from the previously rendered just like in widgets, and the
+`create` method is used to instantiate the actual [`Component`](../../core/shared/src/main/scala/suzaku/ui/Component.scala).
+
+#### Component lifecycle
+
+A component has a well defined _lifecycle_ that begins by calling the **constructor** of your component class when it's first
+mounted. This is followed by a call to `initialState` to get the, you know, initial state of your component. Next up is a
+call to `render` to retrieve the contents of the component. Finally `didMount` is called to indicate that your component is
+ready.
+
+![lifecycle-construction](image/lifecycle-construction.png)
+
+After the component has been constructed, there are only three things that can happen to it:
+
+1. a blueprint change
+2. a state change
+3. destruction
+
+A blueprint change means that the component was rendered again by some other component higher in the hieararchy, but with
+different parameters, for example the label on a `Button` might have changed. Instead of building a new component, Suzaku
+informs the mounted component about the change through `willReceiveBlueprint` providing access to the upcoming blueprint so
+that the component can modify its internal state if necessary. This is followed by a call to `shouldUpdate` which is Suzaku's
+way of asking "has something really changed or should we just skip render"? If it returns `true` (as it does by default), the
+component `render` is called, followed by a call to `didUpdate`.
+
+![lifecycle-blueprint](image/lifecycle-blueprint.png)
+
+For a _state_ change the call sequence is the same, except the `willReceiveBlueprint` is naturally skipped.
+
+![lifecycle-state](image/lifecycle-state.png)
+
+Finally after the component is removed from UI and destroyed, its `didUnmount` method is called. This is a good place to remove
+any handlers or callbacks you might have registered in `didMount`.
+
+![lifecycle-unmount](image/lifecycle-unmount.png)
+
+#### Component state
+
+What makes components useful is that they can have internal mutable _state_. This allows components to react to incoming
+events like user interaction and modify their state, which leads to re-rendering of the component. But the state of component
+is held tight inside Suzaku and the component is only given read-only (not strongly enforced, though) access to it. The
+different callback methods liked `render` and `shouldUpdate` are given a reference to the current state, so that component
+code may use it. Otherwise it's hidden. Note that this _state_ should only be used to store data that is needed in the render
+and all other internal "state" should be kept as variables in the component class. This would include things like handles for
+registered listeners that need to be unregistered at unmount time. Suzaku never recreates the component instance, so your
+data is safe inside the class.
+
+To make changes in the state, you have to go through `modState(f: State => State)` giving as parameter a function that
+performs the desired change in the state. This change may happen asynchronously at a later time, when the Suzaku frameworks
+sees fit to actually perform the change (or a list of pending changes). In any case, before any callback method is called,
+the state will have been modified. In a typical scenario the state is reprented as a `case class` and modifications to it use
+the `copy` method to only partially update the class. For example:
+
+```scala
+case class MyState(user: String, password: String)
+...
+modState(s => s.copy(user = newUser))
+```
+
 
 ... to be continued ...
 
