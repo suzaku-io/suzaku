@@ -63,7 +63,7 @@ HTTPS.
 Next you'll need to perform the actual cloning of the repo using your `git` client, for example on the command line with
 
 ```
-$ git clone git@github.com:ochrons/suzaku.git
+$ git clone git@github.com:suzaku-io/suzaku.git
 ```
 
 This will create a `suzaku` directory under your current working directory and copy the contents of the repo (with all the
