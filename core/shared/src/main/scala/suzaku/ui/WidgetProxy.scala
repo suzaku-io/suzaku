@@ -10,7 +10,11 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
                                                                  uiChannel: UIChannel)
     extends MessageChannelHandler[P] {
   protected val channel =
-    uiChannel.createChannel(protocol)(this, initView, CreateWidget(blueprint.getClass.getName, viewId))
+    uiChannel.createChannel(protocol)(
+      this,
+      initView,
+      CreateWidget(blueprint.getClass.getName, viewId)
+    )
   var isClosed = false
 
   def send[A <: Message](message: A)(implicit ev: MessageWitness[A, P]): Unit = {

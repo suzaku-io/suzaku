@@ -15,4 +15,5 @@ object Dependencies {
   val arteria    = Def.setting("io.suzaku"     %%% "arteria-core"                % versions.arteria)
   val scalaJSDOM = Def.setting("org.scala-js"  %%% "scalajs-dom"                 % versions.scalaJSDOM)
   val scalaTags  = Def.setting("com.lihaoyi"   %%% "scalatags"                   % versions.scalaTags)
+
 }
