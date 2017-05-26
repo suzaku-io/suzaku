@@ -13,11 +13,11 @@ object ButtonProtocol extends Protocol {
 
   case object Click extends ButtonMessage
 
-  val bmPickler = compositePickler[ButtonMessage]
+  val mPickler = compositePickler[ButtonMessage]
     .addConcreteType[SetLabel]
     .addConcreteType[Click.type]
 
-  implicit val (messagePickler, witnessMsg) = defineProtocol(bmPickler)
+  implicit val (messagePickler, witnessMsg) = defineProtocol(mPickler)
 
   case class ChannelContext(label: String)
 
@@ -25,7 +25,7 @@ object ButtonProtocol extends Protocol {
 }
 
 object Button {
-  class ButtonProxy private[Button] (bd: ButtonBlueprint)(viewId: Int, uiChannel: UIChannel)
+  class WProxy private[Button] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
       extends WidgetProxy(ButtonProtocol, bd, viewId, uiChannel) {
     import ButtonProtocol._
 
@@ -38,22 +38,22 @@ object Button {
 
     override def initView = ChannelContext(bd.label)
 
-    override def update(newBlueprint: ButtonBlueprint) = {
+    override def update(newBlueprint: WBlueprint) = {
       if (newBlueprint.label != blueprint.label)
         send(SetLabel(newBlueprint.label))
       super.update(newBlueprint)
     }
   }
 
-  case class ButtonBlueprint private[Button] (label: String, onClick: Option[() => Unit] = None) extends WidgetBlueprint {
+  case class WBlueprint private[Button] (label: String, onClick: Option[() => Unit] = None) extends WidgetBlueprint {
     type P     = ButtonProtocol.type
-    type Proxy = ButtonProxy
-    type This  = ButtonBlueprint
+    type Proxy = WProxy
+    type This  = WBlueprint
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new ButtonProxy(this)(viewId, uiChannel)
+    override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
   }
 
-  def apply(label: String) = ButtonBlueprint(label, None)
+  def apply(label: String) = WBlueprint(label, None)
 
-  def apply(label: String, onClick: () => Unit) = ButtonBlueprint(label, Some(onClick))
+  def apply(label: String, onClick: () => Unit) = WBlueprint(label, Some(onClick))
 }

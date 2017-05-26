@@ -4,10 +4,10 @@ import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
-import suzaku.widget.{Button, ListView}
+import suzaku.widget.{Button, ListView, TextInput}
 
 object TestComp {
-  case class State(count: Int, time: Long)
+  case class State(count: Int, time: Long, text: String)
 
   case class CBP private (label: String) extends ComponentBlueprint {
     override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
@@ -15,13 +15,14 @@ object TestComp {
 
   class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy) extends Component[CBP, State](initialBlueprint, proxy) {
     def render(state: State) = ListView()(
+      TextInput(state.text, value => modState(s => s.copy(text = value))),
       Button(s"Add button ${state.count}", () => add()).withKey(0),
       Button(s"Remove button ${state.count}", () => dec()).withKey(1),
       if (state.count == 0)
         EmptyBlueprint
       else
         for (i <- 0 until state.count) yield List(Button(s"A $i"), Button(s"B $i")): Blueprint,
-      Button("Click me too", () => add()).withKey(2),
+      Button(s"Click ${state.text}", () => add()).withKey(2),
       s"Just some <script>${"text" * state.count} </script>",
       Button(s"${blueprint.label} ${state.time}").withKey(3)
     )
@@ -30,7 +31,7 @@ object TestComp {
       println(s"Will receive $nextBlueprint")
     }
 
-    def initialState = State(0, 0)
+    def initialState = State(0, 0, "init")
 
     def add(): Unit = {
       modState(state => state.copy(count = state.count + 1))

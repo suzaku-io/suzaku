@@ -25,6 +25,6 @@ class DOMButton(context: ButtonProtocol.ChannelContext) extends DOMWidget[Button
 
 object DOMButtonBuilder extends WidgetBuilder(ButtonProtocol) {
   import ButtonProtocol._
-  override protected def create(context: ChannelContext) =
-    new DOMButton(context)
+
+  override protected def create(context: ChannelContext) = new DOMButton(context)
 }

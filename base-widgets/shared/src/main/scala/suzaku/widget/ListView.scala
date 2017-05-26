@@ -11,10 +11,10 @@ object ListViewProtocol extends Protocol {
 
   case class SetDirection(direction: String) extends ListViewMessage
 
-  private val lvPickler = compositePickler[ListViewMessage]
+  private val mPickler = compositePickler[ListViewMessage]
     .addConcreteType[SetDirection]
 
-  implicit val (messagePickler, witnessMsg) = defineProtocol(lvPickler)
+  implicit val (messagePickler, witnessMsg) = defineProtocol(mPickler)
 
   case class ChannelContext(direction: String)
 
@@ -22,7 +22,7 @@ object ListViewProtocol extends Protocol {
 }
 
 object ListView {
-  class ListViewProxy private[ListView] (bd: ListViewBlueprint)(viewId: Int, uiChannel: UIChannel)
+  class WProxy private[ListView] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
       extends WidgetProxy(ListViewProtocol, bd, viewId, uiChannel) {
     import ListViewProtocol._
     override def process = {
@@ -32,26 +32,22 @@ object ListView {
 
     override def initView = ChannelContext(bd.direction)
 
-    override def update(newDesc: ListViewBlueprint) = {
+    override def update(newDesc: WBlueprint) = {
       if (newDesc.direction != blueprint.direction)
         send(SetDirection(newDesc.direction))
       super.update(newDesc)
     }
   }
 
-  case class ListViewBlueprint private[ListView] (direction: String)(content: List[Blueprint]) extends WidgetBlueprint {
+  case class WBlueprint private[ListView] (direction: String)(content: List[Blueprint]) extends WidgetBlueprint {
     type P     = ListViewProtocol.type
-    type Proxy = ListViewProxy
-    type This  = ListViewBlueprint
+    type Proxy = WProxy
+    type This  = WBlueprint
 
     override val children = content
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new ListViewProxy(this)(viewId, uiChannel)
-
-    def apply(children: Blueprint*): ListViewBlueprint = {
-      ListViewBlueprint(direction)(children.toList)
-    }
+    override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
   }
 
-  def apply(direction: String = "horz")(content: Blueprint*) = ListViewBlueprint(direction)(content.toList)
+  def apply(direction: String = "horz")(content: Blueprint*) = WBlueprint(direction)(content.toList)
 }
