@@ -3,19 +3,23 @@ package webdemo
 import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
-import suzaku.ui.LinearLayoutProtocol.Direction
+import suzaku.ui.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui._
-import suzaku.widget.{Button, ListView, TextInput}
+import suzaku.widget.{Button, TextInput}
 
 object TestComp {
-  case class State(count: Int, time: Long, text: String, direction: Direction = LinearLayout.Horizontal)
+  case class State(count: Int,
+                   time: Long,
+                   text: String,
+                   direction: Direction = Direction.Horizontal,
+                   justify: Justify = Justify.Start)
 
   case class CBP private (label: String) extends ComponentBlueprint {
     override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
   }
 
   class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy) extends Component[CBP, State](initialBlueprint, proxy) {
-    def render(state: State) = LinearLayout(state.direction)(
+    def render(state: State) = LinearLayout(state.direction, state.justify)(
       TextInput(state.text, value => modState(s => s.copy(text = value))),
       Button(s"Add button ${state.count}", () => add()).withKey(0),
       Button(s"Remove button ${state.count}", () => dec()).withKey(1),
@@ -24,16 +28,37 @@ object TestComp {
       else
         for (i <- 0 until state.count) yield List(Button(s"A $i"), Button(s"B $i")): Blueprint,
       Button(
-        s"Click ${state.text}",
-        () =>
-          modState(
-            state =>
-              state.copy(direction =
-                if (state.direction == LinearLayout.Horizontal) LinearLayout.Vertical else LinearLayout.Horizontal))
+        s"Direction",
+        () => modState(state => state.copy(direction = flipDirection(state.direction)))
+      ).withKey(2),
+      Button(
+        s"Justify",
+        () => modState(state => state.copy(justify = flipJustify(state.justify)))
       ).withKey(2),
       s"Just some <script>${"text" * state.count} </script>",
       Button(s"${blueprint.label} ${state.time}").withKey(3)
     )
+
+    def flipDirection(direction: Direction): Direction = {
+      import Direction._
+      direction match {
+        case Horizontal    => HorizontalRev
+        case HorizontalRev => Vertical
+        case Vertical      => VerticalRev
+        case VerticalRev   => Horizontal
+      }
+    }
+
+    def flipJustify(justify: Justify): Justify = {
+      import Justify._
+      justify match {
+        case Start        => End
+        case End          => Center
+        case Center       => SpaceBetween
+        case SpaceBetween => SpaceAround
+        case SpaceAround  => Start
+      }
+    }
 
     override def willReceiveBlueprint(nextBlueprint: CBP): Unit = {
       println(s"Will receive $nextBlueprint")

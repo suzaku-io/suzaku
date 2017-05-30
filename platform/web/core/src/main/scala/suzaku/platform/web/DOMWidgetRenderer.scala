@@ -13,12 +13,7 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
   override type Artifact = DOMWidgetArtifact[E]
   override type V        = DOMWidget[P, E]
 
-  protected def modifyDOM(f: E => Unit): Unit = {
-    f(artifact.el)
-  }
-
-  // helpers
-  def textNode(text: String): dom.Text = dom.document.createTextNode(text)
+  @inline protected def modifyDOM(f: E => Unit): Unit = f(artifact.el)
 
   def updateChildren(ops: Seq[ChildOp], widget: Int => V): Unit = {
     val el    = artifact.el
@@ -41,6 +36,14 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
         el.replaceChild(widget(widgetId).artifact.el, child)
         child = next
     }
+  }
+
+  // helpers
+  protected def textNode(text: String): dom.Text = dom.document.createTextNode(text)
+
+  protected def updateStyle[A](el: dom.html.Element, property: String, f: (A, String => Unit, () => Unit) => Unit)(
+      value: A) = {
+    f(value, el.style.setProperty(property, _), () => el.style.removeProperty(property))
   }
 }
 

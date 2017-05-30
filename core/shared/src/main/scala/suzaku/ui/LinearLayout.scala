@@ -8,29 +8,42 @@ object LinearLayoutProtocol extends Protocol {
 
   sealed trait Direction
 
-  final case object Horizontal extends Direction
+  object Direction {
+    final case object Horizontal    extends Direction
+    final case object HorizontalRev extends Direction
+    final case object Vertical      extends Direction
+    final case object VerticalRev   extends Direction
+  }
 
-  final case object Vertical extends Direction
+  sealed trait Justify
+
+  object Justify {
+    final case object Start        extends Justify
+    final case object End          extends Justify
+    final case object Center       extends Justify
+    final case object SpaceBetween extends Justify
+    final case object SpaceAround  extends Justify
+  }
 
   sealed trait LayoutMessage extends Message
 
   final case class SetDirection(direction: Direction) extends LayoutMessage
 
+  final case class SetJustify(justify: Justify) extends LayoutMessage
+
   private val mPickler = compositePickler[LayoutMessage]
     .addConcreteType[SetDirection]
+    .addConcreteType[SetJustify]
 
   implicit val (messagePickler, witnessMsg) = defineProtocol(mPickler)
 
-  final case class ChannelContext(direction: Direction)
+  final case class ChannelContext(direction: Direction, justify: Justify)
 
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
 object LinearLayout {
   import LinearLayoutProtocol._
-
-  val Horizontal = LinearLayoutProtocol.Horizontal
-  val Vertical   = LinearLayoutProtocol.Vertical
 
   class WProxy private[LinearLayout] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
       extends WidgetProxy(LinearLayoutProtocol, bd, viewId, uiChannel) {
@@ -40,16 +53,18 @@ object LinearLayout {
         super.process(message)
     }
 
-    override def initView = ChannelContext(bd.direction)
+    override def initView = ChannelContext(bd.direction, bd.justify)
 
     override def update(newDesc: WBlueprint) = {
       if (newDesc.direction != blueprint.direction)
         send(SetDirection(newDesc.direction))
+      if (newDesc.justify != blueprint.justify)
+        send(SetJustify(newDesc.justify))
       super.update(newDesc)
     }
   }
 
-  case class WBlueprint private[LinearLayout] (direction: Direction)(content: List[Blueprint]) extends WidgetBlueprint {
+  case class WBlueprint private[LinearLayout] (direction: Direction, justify: Justify)(content: List[Blueprint]) extends WidgetBlueprint {
     type P     = LinearLayoutProtocol.type
     type Proxy = WProxy
     type This  = WBlueprint
@@ -59,5 +74,6 @@ object LinearLayout {
     override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
   }
 
-  def apply(direction: Direction = Horizontal)(content: Blueprint*) = WBlueprint(direction)(content.toList)
+  def apply(direction: Direction = Direction.Horizontal, justify: Justify = Justify.Start)(content: Blueprint*) =
+    WBlueprint(direction, justify)(content.toList)
 }
