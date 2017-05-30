@@ -74,13 +74,19 @@ abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIPr
     val CreateWidget(widgetType, widgetId) = channelReader.read[CreateWidget]
 
     logger.debug(f"Building widget $widgetType on channel [$channelId, $globalId%08x]")
-    buildWidget(widgetType, channelId, globalId, channelReader) match {
-      case Some(widget) =>
-        // add a node for the component
-        nodes += widgetId -> WidgetNode(widgetId, widget, Vector.empty, channelId)
-        widget.channel
-      case None =>
-        throw new IllegalAccessException(s"Unable to materialize a widget '$widgetType'")
+    try {
+      buildWidget(widgetType, channelId, globalId, channelReader) match {
+        case Some(widget) =>
+          // add a node for the component
+          nodes += widgetId -> WidgetNode(widgetId, widget, Vector.empty, channelId)
+          widget.channel
+        case None =>
+          throw new IllegalAccessException(s"Unable to materialize a widget '$widgetType'")
+      }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Unhandled exception while building widget $widgetType: $e")
+        throw e
     }
   }
 
