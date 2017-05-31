@@ -20,6 +20,8 @@ class DOMButton(context: ButtonProtocol.ChannelContext) extends DOMWidget[Button
   override def process = {
     case SetLabel(label) =>
       modifyDOM(node => node.replaceChild(textNode(label), node.firstChild))
+    case msg =>
+      super.process(msg)
   }
 }
 

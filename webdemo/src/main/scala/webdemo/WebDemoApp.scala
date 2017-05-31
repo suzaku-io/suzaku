@@ -21,7 +21,7 @@ object TestComp {
   class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy) extends Component[CBP, State](initialBlueprint, proxy) {
     def render(state: State) = LinearLayout(state.direction, state.justify)(
       TextInput(state.text, value => modState(s => s.copy(text = value))),
-      Button(s"Add button ${state.count}", () => add()).withKey(0),
+      Button(s"Add button ${state.count}", () => add()).withKey(0) << (if(state.time % 2 == 0) LayoutParameter.Order(2) else LayoutParameter.NoLayout),
       Button(s"Remove button ${state.count}", () => dec()).withKey(1),
       if (state.count == 0)
         EmptyBlueprint
