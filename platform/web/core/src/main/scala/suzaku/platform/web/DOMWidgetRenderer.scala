@@ -4,10 +4,10 @@ import arteria.core._
 import boopickle.Default._
 import org.scalajs.dom
 import suzaku.platform.Logger
-import suzaku.ui.LayoutParameter.{NoLayout, Order}
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
-import suzaku.ui.WidgetProtocol.UpdateLayout
-import suzaku.ui.{WidgetArtifact, WidgetRenderer, WidgetWithProtocol}
+import suzaku.ui.WidgetProtocol.UpdateStyle
+import suzaku.ui._
+import suzaku.ui.style.StyleProperty
 
 case class DOMWidgetArtifact[E <: dom.Node](el: E) extends WidgetArtifact {}
 
@@ -41,28 +41,43 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
   }
 
   override def process = {
-    case UpdateLayout(params) =>
-      params.foreach {
-        case (Order(n), remove) =>
-          updateStyle("order", remove, n.toString)
-        case (NoLayout, _) =>
-          // no-op
-      }
+    case UpdateStyle(props) =>
+      props.foreach(p => updateStyle(p._1, p._2))
   }
 
+  protected def updateStyle(prop: StyleProperty, remove: Boolean): Unit = {
+    import suzaku.ui.style._
+    prop match {
+      case Color(c) =>
+        updateStyleProperty("color", remove, s"rgb(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF})")
+      case ColorAlpha(c, alpha) =>
+        updateStyleProperty("color", remove, s"rgba(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF},$alpha)")
+      case BackgroundColor(c) =>
+        updateStyleProperty("background-color", remove, s"rgb(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF})")
+      case BackgroundColorAlpha(c, alpha) =>
+        updateStyleProperty("background-color", remove, s"rgba(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF},$alpha)")
+      case Order(n) =>
+        updateStyleProperty("order", remove, n.toString)
+      case EmptyStyle => // no-op
+    }
+  }
   // helpers
   protected def textNode(text: String): dom.Text = dom.document.createTextNode(text)
 
-  protected def updateStyle[A](el: dom.html.Element, property: String, f: (A, String => Unit, () => Unit) => Unit)(
+  protected def updateStyleProperty[A](el: dom.html.Element, property: String, f: (A, String => Unit, () => Unit) => Unit)(
       value: A) = {
     f(value, el.style.setProperty(property, _), () => el.style.removeProperty(property))
   }
 
-  protected def updateStyle(property: String, remove: Boolean, value: String) =
+  protected def updateStyleProperty(property: String, remove: Boolean, value: String) =
     if (remove)
       artifact.el.asInstanceOf[dom.html.Element].style.removeProperty(property)
     else
       artifact.el.asInstanceOf[dom.html.Element].style.setProperty(property, value)
+}
+
+object DOMWidget {
+  val hex = Array.tabulate(256)(c => f"$c%02x")
 }
 
 object DOMEmptyWidget extends DOMWidget[Protocol, dom.Comment] {

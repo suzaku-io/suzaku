@@ -3,13 +3,14 @@ package suzaku.ui
 import arteria.core._
 import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
+import suzaku.ui.style.StyleProperty
 
 trait WidgetBlueprint extends Blueprint {
   type P <: Protocol
   type This <: WidgetBlueprint
   type Proxy <: WidgetProxy[P, This]
 
-  var _layout = Map.empty[Class[_], LayoutParameter]
+  private[suzaku] var _style = Map.empty[Class[_], StyleProperty]
 
   def createProxy(viewId: Int, uiChannel: UIChannel): Proxy
 
@@ -17,19 +18,25 @@ trait WidgetBlueprint extends Blueprint {
 
   def sameAs(that: This): Boolean = equals(that)
 
-  def <<(layoutParameter: LayoutParameter*): this.type = {
-    _layout ++= layoutParameter.map(p => (p.getClass, p))
+  @inline final def <<(styleProperty: StyleProperty*): this.type = {
+    _style ++= styleProperty.map(p => (p.getClass, p))
     this
   }
+
+  /**
+    * Alias for `<<`
+    * @param styleProperty
+    */
+  @inline final def withStyle(styleProperty: StyleProperty*): this.type = <<(styleProperty: _*)
 }
 
 object WidgetProtocol extends Protocol {
   sealed trait WidgetMessage extends Message
 
-  case class UpdateLayout(params: List[(LayoutParameter, Boolean)]) extends WidgetMessage
+  case class UpdateStyle(params: List[(StyleProperty, Boolean)]) extends WidgetMessage
 
   val wmPickler = compositePickler[WidgetMessage]
-    .addConcreteType[UpdateLayout]
+    .addConcreteType[UpdateStyle]
 
   override type ChannelContext = Unit
 

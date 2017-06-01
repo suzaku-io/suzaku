@@ -17,14 +17,14 @@ class DOMLinearLayout(context: LinearLayoutProtocol.ChannelContext)
     DOMWidgetArtifact(el)
   }
 
-  val updateDirection = updateStyle[Direction](artifact.el, "flex-direction", (value, set, remove) => value match {
+  val updateDirection = updateStyleProperty[Direction](artifact.el, "flex-direction", (value, set, remove) => value match {
     case Horizontal    => remove()
     case HorizontalRev => set("row-reverse")
     case Vertical      => set("column")
     case VerticalRev   => set("column-reverse")
   }) _
 
-  val updateJustify = updateStyle[Justify](artifact.el, "justify-content", (value, set, remove) => value match {
+  val updateJustify = updateStyleProperty[Justify](artifact.el, "justify-content", (value, set, remove) => value match {
     case Start        => remove()
     case End          => set("flex-end")
     case Center       => set("center")
