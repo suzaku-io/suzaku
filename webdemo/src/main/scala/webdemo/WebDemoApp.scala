@@ -24,10 +24,14 @@ object TestComp {
       LinearLayout(state.direction, state.justify)(
         TextInput(state.text, value => modState(s => s.copy(text = value))),
         Button(s"Add button ${state.count}", () => add())
-          .withKey(0) << (if (state.time % 2 == 0) Order(2) else EmptyStyle, color := 0xFFFF20),
+          .withKey(0) << (
+          if (state.time % 2 == 0) Order(2) else EmptyStyle,
+          color := 0xFFFF20
+        ),
         Button(s"Remove button ${state.count}", () => dec()).withKey(1) << (
-          backgroundColor := 0x800000 + (state.time.toInt * 16 & 0xFF),
-          color := 0xFF80FF
+          backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
+          color := 0xFF80FF,
+          width := 40.em
         ),
         if (state.count == 0)
           EmptyBlueprint

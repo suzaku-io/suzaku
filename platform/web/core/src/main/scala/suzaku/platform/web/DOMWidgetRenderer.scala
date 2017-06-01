@@ -48,17 +48,22 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
   protected def updateStyle(prop: StyleProperty, remove: Boolean): Unit = {
     import suzaku.ui.style._
     prop match {
-      case Color(c) =>
-        updateStyleProperty("color", remove, s"rgb(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF})")
-      case ColorAlpha(c, alpha) =>
-        updateStyleProperty("color", remove, s"rgba(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF},$alpha)")
-      case BackgroundColor(c) =>
-        updateStyleProperty("background-color", remove, s"rgb(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF})")
-      case BackgroundColorAlpha(c, alpha) =>
-        updateStyleProperty("background-color", remove, s"rgba(${(c >> 16) & 0xFF},${(c >> 8) & 0xFF},${c & 0xFF},$alpha)")
+      case EmptyStyle => // no-op
+      case Color(RGB(c)) =>
+        updateStyleProperty("color", remove, s"rgb(${c.r},${c.g},${c.b})")
+      case Color(RGBA(c, a)) =>
+        updateStyleProperty("color", remove, s"rgba(${c.r},${c.g},${c.b},$a)")
+      case BackgroundColor(RGB(c)) =>
+        updateStyleProperty("background-color", remove, s"rgb(${c.r},${c.g},${c.b})")
+      case BackgroundColor(RGBA(c, a)) =>
+        updateStyleProperty("background-color", remove, s"rgba(${c.r},${c.g},${c.b},$a)")
+
       case Order(n) =>
         updateStyleProperty("order", remove, n.toString)
-      case EmptyStyle => // no-op
+      case Width(l) =>
+        updateStyleProperty("width", remove, l.toString)
+      case Height(l) =>
+        updateStyleProperty("height", remove, l.toString)
     }
   }
   // helpers

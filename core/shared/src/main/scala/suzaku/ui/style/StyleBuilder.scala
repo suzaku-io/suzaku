@@ -5,7 +5,8 @@ class StyleBuilder[S <: StyleProperty, V](build: V => S) {
 }
 
 trait StyleBuilders {
-  val color = new StyleBuilder(Color)
-
+  val color           = new StyleBuilder(Color)
   val backgroundColor = new StyleBuilder(BackgroundColor)
+  val width           = new StyleBuilder(Width)
+  val height          = new StyleBuilder(Height)
 }

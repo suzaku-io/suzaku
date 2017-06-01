@@ -4,13 +4,14 @@ sealed trait StyleProperty
 
 case object EmptyStyle extends StyleProperty
 
-case class Color(rgb: Int) extends StyleProperty
+case class Color(color: RGBColor) extends StyleProperty
 
-case class BackgroundColor(rgb: Int) extends StyleProperty
+case class BackgroundColor(color: RGBColor) extends StyleProperty
 
-case class ColorAlpha(rgb: Int, alpha: Float) extends StyleProperty
-
-case class BackgroundColorAlpha(rgb: Int, alpha: Float) extends StyleProperty
-
+// Layout related styles
 case class Order(order: Int) extends StyleProperty
+
+case class Width(value: LengthUnit) extends StyleProperty
+
+case class Height(value: LengthUnit) extends StyleProperty
 
