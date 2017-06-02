@@ -3,6 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
+import suzaku.ui.style.StyleRegistry.StyleRegistration
 
 import scala.collection.immutable.IntMap
 
@@ -63,6 +64,10 @@ abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIPr
       nodes.get(widgetId).foreach { node =>
         node.widget.updateChildren(ops, widgetId => nodes(widgetId).widget.asInstanceOf[node.widget.V])
       }
+
+    case AddStyles(styles) =>
+      addStyles(styles)
+
   }
 
   override def materializeChildChannel(channelId: Int,
@@ -96,6 +101,8 @@ abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIPr
   }
 
   def mountRoot(node: WidgetArtifact): Unit
+
+  def addStyles(styles: List[StyleRegistration]): Unit
 }
 
 object WidgetRenderer {
@@ -124,6 +131,8 @@ abstract class Widget {
     throw new NotImplementedError("This widget cannot have children")
 
   def updateChildren(ops: Seq[ChildOp], widget: Int => V): Unit
+
+  def mapStyle(id: Int): Int = id
 }
 
 abstract class WidgetWithProtocol[P <: Protocol] extends Widget with MessageChannelHandler[P] {

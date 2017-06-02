@@ -5,6 +5,7 @@ import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui._
+import suzaku.ui.style.{StyleId, StyleProperty}
 import suzaku.widget.{Button, TextInput}
 
 object TestComp {
@@ -23,12 +24,10 @@ object TestComp {
       import suzaku.ui.style._
       LinearLayout(state.direction, state.justify)(
         TextInput(state.text, value => modState(s => s.copy(text = value))),
-        Button(s"Add button ${state.count}", () => add())
-          .withKey(0) << (
-          if (state.time % 2 == 0) Order(2) else EmptyStyle,
-          color := 0xFFFF20
-        ),
-        Button(s"Remove button ${state.count}", () => dec()).withKey(1) << (
+        Button(s"Add button ${state.count}", () => add()).withKey(0) <<< (
+          if (state.time % 2 == 0) Order(2) else EmptyStyle
+        ) << GreenButton,
+        Button(s"Remove button ${state.count}", () => dec()).withKey(1) <<< (
           backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
           color := 0xFF80FF,
           width := 40.em
@@ -93,6 +92,14 @@ object TestComp {
   }
 
   def apply(label: String = ""): CBP = CBP(label)
+}
+
+object GreenButton extends StyleId {
+  import suzaku.ui.style._
+  def style = List(
+    color := 0x00FF00,
+    backgroundColor := 0x006000
+  )
 }
 
 object StatelessTestComp {

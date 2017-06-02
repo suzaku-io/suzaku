@@ -7,7 +7,8 @@ import suzaku.platform.Logger
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
 import suzaku.ui.WidgetProtocol.UpdateStyle
 import suzaku.ui._
-import suzaku.ui.style.StyleProperty
+import suzaku.ui.style.{StyleIds, StyleProperty}
+import suzaku.ui.style.StyleRegistry.StyleRegistration
 
 case class DOMWidgetArtifact[E <: dom.Node](el: E) extends WidgetArtifact {}
 
@@ -42,30 +43,27 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
 
   override def process = {
     case UpdateStyle(props) =>
-      props.foreach(p => updateStyle(p._1, p._2))
+      props.foreach {
+        case (StyleIds(styles), remove) =>
+          val el = artifact.el.asInstanceOf[dom.html.Element]
+          el.className = if (remove) {
+            ""
+          } else {
+            if (styles.size == 1) {
+              DOMWidget.mapStyleClass(mapStyle(styles.head.id))
+            } else {
+              styles.map(s => DOMWidget.mapStyleClass(mapStyle(s.id))).mkString(" ")
+            }
+          }
+        case (prop, remove) =>
+          DOMWidget.extractStyle(prop) match {
+            case ("", "") => // ignore
+            case (name, value) =>
+              updateStyleProperty(name, remove, value)
+          }
+      }
   }
 
-  protected def updateStyle(prop: StyleProperty, remove: Boolean): Unit = {
-    import suzaku.ui.style._
-    prop match {
-      case EmptyStyle => // no-op
-      case Color(RGB(c)) =>
-        updateStyleProperty("color", remove, s"rgb(${c.r},${c.g},${c.b})")
-      case Color(RGBA(c, a)) =>
-        updateStyleProperty("color", remove, s"rgba(${c.r},${c.g},${c.b},$a)")
-      case BackgroundColor(RGB(c)) =>
-        updateStyleProperty("background-color", remove, s"rgb(${c.r},${c.g},${c.b})")
-      case BackgroundColor(RGBA(c, a)) =>
-        updateStyleProperty("background-color", remove, s"rgba(${c.r},${c.g},${c.b},$a)")
-
-      case Order(n) =>
-        updateStyleProperty("order", remove, n.toString)
-      case Width(l) =>
-        updateStyleProperty("width", remove, l.toString)
-      case Height(l) =>
-        updateStyleProperty("height", remove, l.toString)
-    }
-  }
   // helpers
   protected def textNode(text: String): dom.Text = dom.document.createTextNode(text)
 
@@ -83,6 +81,35 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
 
 object DOMWidget {
   val hex = Array.tabulate(256)(c => f"$c%02x")
+
+  def mapStyleClass(id: Int): String = {
+    s"__s$id"
+  }
+
+  def extractStyle(prop: StyleProperty): (String, String) = {
+    import suzaku.ui.style._
+    prop match {
+      case EmptyStyle => ("", "")
+
+      case StyleIds(_) => ("", "")
+
+      case Color(RGB(c)) =>
+        ("color", s"rgb(${c.r},${c.g},${c.b})")
+      case Color(RGBA(c, a)) =>
+        ("color", s"rgba(${c.r},${c.g},${c.b},$a)")
+      case BackgroundColor(RGB(c)) =>
+        ("background-color", s"rgb(${c.r},${c.g},${c.b})")
+      case BackgroundColor(RGBA(c, a)) =>
+        ("background-color", s"rgba(${c.r},${c.g},${c.b},$a)")
+
+      case Order(n) =>
+        ("order", n.toString)
+      case Width(l) =>
+        ("width", l.toString)
+      case Height(l) =>
+        ("height", l.toString)
+    }
+  }
 }
 
 object DOMEmptyWidget extends DOMWidget[Protocol, dom.Comment] {
@@ -101,5 +128,24 @@ class DOMWidgetRenderer(logger: Logger) extends WidgetRenderer(logger) {
     root.el.childNodes.foreach(root.el.removeChild)
     // add new root element
     root.el.appendChild(domElement)
+  }
+
+  override def addStyles(styles: List[(Int, List[StyleProperty])]): Unit = {
+    // create CSS block for all styles
+    val styleDef = styles.map {
+      case (id, styleProps) =>
+        val className = DOMWidget.mapStyleClass(id)
+        val css = styleProps.map { prop =>
+          val (name, value) = DOMWidget.extractStyle(prop)
+          s"$name:$value;"
+        }
+
+        s".$className { ${css.mkString("")} }"
+    }.mkString("\n")
+
+    val style = dom.document.createElement("style").asInstanceOf[dom.html.Style]
+    style.`type` = "text/css"
+    style.appendChild(dom.document.createTextNode(styleDef))
+    dom.document.head.appendChild(style)
   }
 }

@@ -3,6 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
+import suzaku.ui.style.StyleRegistry
 
 import scala.collection.mutable
 import scala.collection.immutable
@@ -30,11 +31,14 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   override def process = {
     case NextFrame(time) =>
-      if ((time - lastFrame) > 10e9) {
-        // logger.debug(s"Sync after ${(time - lastFrame) / 1e6}ms")
-      }
       lastFrame = time
       frameRequested = false
+      // check if styles have updated
+      if (StyleRegistry.hasRegistrations) {
+        val styles = StyleRegistry.dequeueRegistrations
+        logger.debug(s"Adding ${styles.size} styles")
+        send(AddStyles(styles))
+      }
       // update dirty component trees
       if (dirtyRoots.nonEmpty)
         logger.debug(s"Updating ${dirtyRoots.size} dirty components")

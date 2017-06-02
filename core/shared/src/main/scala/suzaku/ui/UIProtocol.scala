@@ -2,6 +2,8 @@ package suzaku.ui
 
 import arteria.core._
 import boopickle.Default._
+import suzaku.ui.style.StyleProperty
+import suzaku.ui.style.StyleRegistry.StyleRegistration
 
 object UIProtocol extends Protocol {
 
@@ -44,12 +46,17 @@ object UIProtocol extends Protocol {
 
   case class UpdateChildren(widgetId: Int, ops: Seq[ChildOp]) extends UIMessage
 
+  case class AddStyles(styles: List[StyleRegistration]) extends UIMessage
+
+  implicit val stylePickler = StyleProperty.pickler
+
   private val uiPickler = compositePickler[UIMessage]
     .addConcreteType[NextFrame]
     .addConcreteType[RequestFrame.type]
     .addConcreteType[MountRoot]
     .addConcreteType[SetChildren]
     .addConcreteType[UpdateChildren]
+    .addConcreteType[AddStyles]
 
   implicit val (messagePickler, uiMsgWitness) = defineProtocol(uiPickler)
 
