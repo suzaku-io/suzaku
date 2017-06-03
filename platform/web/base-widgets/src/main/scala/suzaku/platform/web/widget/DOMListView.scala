@@ -13,12 +13,12 @@ class DOMListView(context: ListViewProtocol.ChannelContext) extends DOMWidget[Li
     DOMWidgetArtifact(div.render)
   }
 
-  override def setChildren(children: Seq[Artifact]) = {
+  override def setChildren(children: Seq[W]) = {
     import org.scalajs.dom.ext._
     modifyDOM { el =>
       el.childNodes.foreach(el.removeChild)
       children.foreach { c =>
-        el.appendChild(c.el)
+        el.appendChild(c.artifact.el)
       }
     }
   }
@@ -26,6 +26,8 @@ class DOMListView(context: ListViewProtocol.ChannelContext) extends DOMWidget[Li
   override def process = {
     case SetDirection(direction) =>
     // ignore for now
+    case msg =>
+      super.process(msg)
   }
 }
 

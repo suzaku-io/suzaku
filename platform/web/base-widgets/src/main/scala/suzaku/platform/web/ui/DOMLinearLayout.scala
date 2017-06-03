@@ -36,12 +36,12 @@ class DOMLinearLayout(context: LinearLayoutProtocol.ChannelContext)
   updateDirection(context.direction)
   updateJustify(context.justify)
 
-  override def setChildren(children: Seq[Artifact]) = {
+  override def setChildren(children: Seq[W]) = {
     import org.scalajs.dom.ext._
     modifyDOM { el =>
       el.childNodes.foreach(el.removeChild)
       children.foreach { c =>
-        el.appendChild(c.el)
+        el.appendChild(c.artifact.el)
       }
     }
   }
@@ -51,6 +51,8 @@ class DOMLinearLayout(context: LinearLayoutProtocol.ChannelContext)
       updateDirection(direction)
     case SetJustify(justify) =>
       updateJustify(justify)
+    case msg =>
+      super.process(msg)
   }
 }
 

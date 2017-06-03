@@ -15,6 +15,8 @@ class DOMText(context: TextProtocol.ChannelContext) extends DOMWidget[TextProtoc
   override def process = {
     case SetText(text) =>
       modifyDOM(e => e.data = text)
+    case msg =>
+      super.process(msg)
   }
 }
 

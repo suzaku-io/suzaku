@@ -1,46 +1,28 @@
 package suzaku.ui.style
 
 import boopickle.Default._
-import boopickle.{PickleState, Pickler, UnpickleState}
 
 sealed trait StyleProperty
 
-case object EmptyStyle extends StyleProperty
+sealed trait StyleBaseProperty extends StyleProperty
 
-case class Color(color: RGBColor) extends StyleProperty
+case object EmptyStyle extends StyleBaseProperty
 
-case class BackgroundColor(color: RGBColor) extends StyleProperty
+case class Color(color: RGBColor) extends StyleBaseProperty
+
+case class BackgroundColor(color: RGBColor) extends StyleBaseProperty
 
 // Layout related styles
-case class Order(order: Int) extends StyleProperty
+case class Order(order: Int) extends StyleBaseProperty
 
-case class Width(value: LengthUnit) extends StyleProperty
+case class Width(value: LengthUnit) extends StyleBaseProperty
 
-case class Height(value: LengthUnit) extends StyleProperty
+case class Height(value: LengthUnit) extends StyleBaseProperty
 
-// Style identifiers
-abstract class StyleId {
-  def style: List[StyleProperty]
+// style identifiers
+case class StyleClasses(styles: List[StyleClass]) extends StyleProperty
 
-  // register at initialization time
-  val id = StyleRegistry.register(style)
-}
-
-case class PureStyleId(override val id: Int) extends StyleId {
-  def style: List[StyleProperty] = Nil
-}
-
-object StyleIdPickler extends Pickler[StyleId] {
-  override def pickle(obj: StyleId)(implicit state: PickleState): Unit = {
-    state.enc.writeInt(obj.id)
-  }
-
-  override def unpickle(implicit state: UnpickleState): StyleId = {
-    PureStyleId(state.dec.readInt)
-  }
-}
-
-case class StyleIds(styles: List[StyleId]) extends StyleProperty
+case class InheritClasses(styles: List[StyleClass]) extends StyleProperty
 
 object StyleProperty {
   import boopickle.DefaultBasic._

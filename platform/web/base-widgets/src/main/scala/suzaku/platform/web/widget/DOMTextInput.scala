@@ -23,6 +23,8 @@ class DOMTextInput(context: TextInputProtocol.ChannelContext) extends DOMWidget[
   override def process = {
     case SetValue(text) =>
       modifyDOM(node => node.value = text)
+    case msg =>
+      super.process(msg)
   }
 
 }

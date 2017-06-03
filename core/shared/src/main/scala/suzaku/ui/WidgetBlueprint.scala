@@ -3,7 +3,7 @@ package suzaku.ui
 import arteria.core._
 import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
-import suzaku.ui.style.{StyleId, StyleProperty, StyleIds}
+import suzaku.ui.style.{StyleBaseProperty, StyleClass, StyleClasses, StyleProperty}
 
 trait WidgetBlueprint extends Blueprint {
   type P <: Protocol
@@ -18,13 +18,13 @@ trait WidgetBlueprint extends Blueprint {
 
   def sameAs(that: This): Boolean = equals(that)
 
-  @inline final def <<<(styleProperty: StyleProperty*): this.type = {
+  @inline final def <<<(styleProperty: StyleBaseProperty*): this.type = {
     _style ++= styleProperty.map(p => (p.getClass, p))
     this
   }
 
-  @inline final def <<(styleId: StyleId*): this.type = {
-    _style += (classOf[StyleIds] -> StyleIds(List(styleId: _*)))
+  @inline final def <<(styleId: StyleClass*): this.type = {
+    _style += (classOf[StyleClasses] -> StyleClasses(List(styleId: _*)))
     this
   }
 }

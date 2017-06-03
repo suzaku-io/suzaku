@@ -5,7 +5,7 @@ import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui._
-import suzaku.ui.style.{StyleId, StyleProperty}
+import suzaku.ui.style.{StyleClass, StyleProperty}
 import suzaku.widget.{Button, TextInput}
 
 object TestComp {
@@ -94,11 +94,18 @@ object TestComp {
   def apply(label: String = ""): CBP = CBP(label)
 }
 
-object GreenButton extends StyleId {
+object ButtonStyle extends StyleClass {
   import suzaku.ui.style._
   def style = List(
-    color := 0x00FF00,
     backgroundColor := 0x006000
+  )
+}
+
+object GreenButton extends StyleClass {
+  import suzaku.ui.style._
+  def style = List(
+    inheritClass := ButtonStyle,
+    color := 0x00FF00
   )
 }
 

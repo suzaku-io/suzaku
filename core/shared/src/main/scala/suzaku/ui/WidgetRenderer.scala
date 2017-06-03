@@ -1,21 +1,22 @@
 package suzaku.ui
 
 import arteria.core._
-import suzaku.platform.Logger
+import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
-import suzaku.ui.style.StyleRegistry.StyleRegistration
+import suzaku.ui.style.{InheritClasses, StyleBaseProperty}
 
 import scala.collection.immutable.IntMap
+import scala.concurrent.duration._
 
-abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIProtocol.type] {
+abstract class WidgetRenderer(logger: Logger, platform: Platform) extends MessageChannelHandler[UIProtocol.type] with WidgetParent {
   import WidgetRenderer._
 
   private var builders             = Map.empty[String, WidgetBuilder[_ <: Protocol]]
   private var uiChannel: UIChannel = _
-
-  protected def emptyWidget: Widget
-  protected var nodes          = IntMap[WidgetNode](-1 -> WidgetNode(-1, emptyWidget, Nil, -1))
-  protected var frameRequested = false
+  protected var nodes              = IntMap[WidgetNode](-1 -> WidgetNode(-1, emptyWidget, Nil, -1))
+  protected var rootNode           = Option.empty[WidgetNode]
+  protected var styleInheritance   = IntMap.empty[List[Int]]
+  protected var frameRequested     = false
 
   override def establishing(channel: MessageChannel[ChannelProtocol]) =
     uiChannel = channel
@@ -39,10 +40,17 @@ abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIPr
     }
   }
 
+  def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
+    node.widget.setParent(parent)
+    node.children.foreach(c => setParent(nodes(c), node.widget))
+  }
+
   override def process = {
     case MountRoot(widgetId) =>
       nodes.get(widgetId) match {
         case Some(node) =>
+          rootNode = Some(node)
+          setParent(node, this)
           mountRoot(node.widget.artifact)
         case None =>
           throw new IllegalArgumentException(s"Widget with id $widgetId has no node")
@@ -53,21 +61,44 @@ abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIPr
 
     case SetChildren(widgetId, children) =>
       logger.debug(s"Setting [$children] as children of [$widgetId]")
-      val childArtifacts = children.flatMap(nodes.get(_)).map(_.widget.artifact)
+      val childNodes = children.flatMap(nodes.get(_))
       nodes.get(widgetId).foreach { node =>
-        node.widget.setChildren(childArtifacts.asInstanceOf[Seq[node.widget.Artifact]])
+        node.widget.setChildren(childNodes.map(_.widget).asInstanceOf[Seq[node.widget.W]])
+        childNodes.foreach(c => setParent(c, node.widget))
         nodes = nodes.updated(widgetId, node.copy(children = children))
       }
 
     case UpdateChildren(widgetId, ops) =>
       logger.debug(s"Updating children of [$widgetId] with [$ops]")
       nodes.get(widgetId).foreach { node =>
-        node.widget.updateChildren(ops, widgetId => nodes(widgetId).widget.asInstanceOf[node.widget.V])
+        node.widget.updateChildren(ops, widgetId => nodes(widgetId).widget.asInstanceOf[node.widget.W])
       }
 
     case AddStyles(styles) =>
-      addStyles(styles)
-
+      logger.debug(s"Received styles $styles")
+      var dirtyStyles = false
+      val baseStyles = styles.map {
+        case (styleId, props) =>
+          // extract inheritance information
+          val inherits = props.collect {
+            case i: InheritClasses => i
+          }
+          val baseProps = props.collect {
+            case prop: StyleBaseProperty => prop
+          }
+          if (inherits.nonEmpty) {
+            dirtyStyles = true
+            styleInheritance += styleId -> (inherits.flatMap(_.styles.map(_.id)) :+ styleId)
+          }
+          styleId -> baseProps
+      }
+      (dirtyStyles, rootNode) match {
+        case (true, Some(node)) =>
+          // set parent recursively to apply changed styles
+          setParent(node, this)
+        case _ => // nothing to update
+      }
+      addStyles(baseStyles)
   }
 
   override def materializeChildChannel(channelId: Int,
@@ -100,52 +131,18 @@ abstract class WidgetRenderer(logger: Logger) extends MessageChannelHandler[UIPr
     nodes -= id
   }
 
-  def mountRoot(node: WidgetArtifact): Unit
+  override def mapStyle(id: Int): List[Int] = {
+    logger.debug(s"Inheritance for $id")
+    styleInheritance.getOrElse(id, List(id))
+  }
 
-  def addStyles(styles: List[StyleRegistration]): Unit
+  protected def emptyWidget: Widget
+
+  protected def mountRoot(node: WidgetArtifact): Unit
+
+  protected def addStyles(styles: List[(Int, List[StyleBaseProperty])]): Unit
 }
 
 object WidgetRenderer {
   case class WidgetNode(id: Int, widget: Widget, children: Seq[Int], channelId: Int)
-}
-
-abstract class WidgetArtifact
-
-abstract class Widget {
-  type CP <: Protocol
-  type Artifact <: WidgetArtifact
-  type V <: Widget
-
-  private var messageChannel: MessageChannel[CP] = _
-
-  protected[suzaku] def withChannel(channel: MessageChannel[CP]): this.type = {
-    messageChannel = channel
-    this
-  }
-
-  def channel: MessageChannel[CP] = messageChannel
-
-  def artifact: Artifact
-
-  def setChildren(children: Seq[Artifact]): Unit =
-    throw new NotImplementedError("This widget cannot have children")
-
-  def updateChildren(ops: Seq[ChildOp], widget: Int => V): Unit
-
-  def mapStyle(id: Int): Int = id
-}
-
-abstract class WidgetWithProtocol[P <: Protocol] extends Widget with MessageChannelHandler[P] {
-  override type CP = P
-}
-
-abstract class WidgetBuilder[P <: Protocol](protocol: P) {
-  protected def create(context: P#ChannelContext): WidgetWithProtocol[P]
-
-  def materialize(id: Int, globalId: Int, parent: MessageChannelBase, channelReader: ChannelReader): Widget = {
-    val context = channelReader.read(protocol.contextPickler)
-    val widget  = create(context)
-    val channel = new MessageChannel(protocol)(id, globalId, parent, widget, context)
-    widget.withChannel(channel)
-  }
 }

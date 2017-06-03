@@ -33,12 +33,6 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     case NextFrame(time) =>
       lastFrame = time
       frameRequested = false
-      // check if styles have updated
-      if (StyleRegistry.hasRegistrations) {
-        val styles = StyleRegistry.dequeueRegistrations
-        logger.debug(s"Adding ${styles.size} styles")
-        send(AddStyles(styles))
-      }
       // update dirty component trees
       if (dirtyRoots.nonEmpty)
         logger.debug(s"Updating ${dirtyRoots.size} dirty components")
@@ -47,6 +41,12 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
         updateBranch(Some(shadowComponent), shadowComponent.blueprint, shadowComponent.parent)
       }
       dirtyRoots = Nil
+      // check if styles have updated
+      if (StyleRegistry.hasRegistrations) {
+        val styles = StyleRegistry.dequeueRegistrations
+        logger.debug(s"Adding ${styles.size} styles")
+        send(AddStyles(styles))
+      }
   }
 
   override def established(channel: MessageChannel[ChannelProtocol]) = {
@@ -76,6 +76,12 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       case None =>
         logger.debug(s"Mounting [${newRoot.getId}] as root")
         send(MountRoot(newRoot.getId))
+    }
+    // check if styles have updated
+    if (StyleRegistry.hasRegistrations) {
+      val styles = StyleRegistry.dequeueRegistrations
+      logger.debug(s"Adding ${styles.size} styles")
+      send(AddStyles(styles))
     }
     currentRoot = Some(newRoot)
   }

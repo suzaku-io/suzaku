@@ -8,7 +8,8 @@ trait StyleBuilders {
   def styleFor[S <: StyleProperty, V](build: V => S) = new StyleBuilder(build)
 
   // for style identifiers
-  val styleId = new StyleBuilder[StyleIds, StyleId](styleId => StyleIds(List(styleId)))
+  val inheritClass   = styleFor[InheritClasses, StyleClass](styleClass => InheritClasses(List(styleClass)))
+  val inheritClasses = styleFor[InheritClasses, List[StyleClass]](styleClasses => InheritClasses(styleClasses))
 
   // regular style definitions
   val color           = styleFor(Color)
