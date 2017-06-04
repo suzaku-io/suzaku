@@ -1,4 +1,3 @@
 package suzaku.ui
 
-trait Layout {
-}
+trait Layout {}

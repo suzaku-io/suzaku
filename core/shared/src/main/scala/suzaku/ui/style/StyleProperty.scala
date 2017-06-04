@@ -19,14 +19,18 @@ case class Width(value: LengthUnit) extends StyleBaseProperty
 
 case class Height(value: LengthUnit) extends StyleBaseProperty
 
-// style identifiers
-case class StyleClasses(styles: List[StyleClass]) extends StyleProperty
+// style classes
+sealed trait StyleClassProperty extends StyleProperty
 
-case class InheritClasses(styles: List[StyleClass]) extends StyleProperty
+case class StyleClasses(styles: List[StyleClass]) extends StyleClassProperty
+
+case class InheritClasses(styles: List[StyleClass]) extends StyleClassProperty
+
+case class RemapClasses(styleMap: Map[StyleClass, List[StyleClass]]) extends StyleBaseProperty
 
 object StyleProperty {
   import boopickle.DefaultBasic._
-  implicit val styleIdPickler = StyleIdPickler
+  implicit val styleClassPickler = StyleClassPickler
 
   val pickler = PicklerGenerator.generatePickler[StyleProperty]
 }

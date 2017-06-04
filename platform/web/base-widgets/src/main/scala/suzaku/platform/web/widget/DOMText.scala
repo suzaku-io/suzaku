@@ -1,11 +1,12 @@
 package suzaku.platform.web.widget
 
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.WidgetBuilder
+import suzaku.ui.{WidgetBuilder, WidgetManager}
 import org.scalajs.dom
 import suzaku.widget.TextProtocol
 
-class DOMText(context: TextProtocol.ChannelContext) extends DOMWidget[TextProtocol.type, dom.Text] {
+class DOMText(widgetId: Int, context: TextProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidget[TextProtocol.type, dom.Text](widgetId, widgetManager) {
   import TextProtocol._
 
   val artifact = {
@@ -20,9 +21,9 @@ class DOMText(context: TextProtocol.ChannelContext) extends DOMWidget[TextProtoc
   }
 }
 
-object DOMTextBuilder extends WidgetBuilder(TextProtocol) {
+class DOMTextBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TextProtocol) {
   import TextProtocol._
 
-  override protected def create(context: ChannelContext) =
-    new DOMText(context)
+  override protected def create(widgetId: Int, context: ChannelContext) =
+    new DOMText(widgetId, context, widgetManager)
 }

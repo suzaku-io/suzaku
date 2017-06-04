@@ -1,15 +1,15 @@
 package suzaku.platform.web
 
 import suzaku.platform.web.ui.DOMLinearLayoutBuilder
-import suzaku.ui.{LinearLayout, WidgetRenderer}
+import suzaku.ui.{LinearLayout, WidgetManager}
 import suzaku.widget._
 
 package object widget {
-  def registerWidgets(registry: WidgetRenderer): Unit = {
-    registry.registerWidget(classOf[LinearLayout.WBlueprint], DOMLinearLayoutBuilder)
-    registry.registerWidget(classOf[Button.WBlueprint], DOMButtonBuilder)
-    registry.registerWidget(classOf[ListView.WBlueprint], DOMListViewBuilder)
-    registry.registerWidget(classOf[Text.TextBlueprint], DOMTextBuilder)
-    registry.registerWidget(classOf[TextInput.WBlueprint], DOMTextInputBuilder)
+  def registerWidgets(widgetManager: WidgetManager): Unit = {
+    widgetManager.registerWidget(classOf[LinearLayout.WBlueprint], new DOMLinearLayoutBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Button.WBlueprint], new DOMButtonBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[ListView.WBlueprint], new DOMListViewBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Text.TextBlueprint], new DOMTextBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TextInput.WBlueprint], new DOMTextInputBuilder(widgetManager))
   }
 }

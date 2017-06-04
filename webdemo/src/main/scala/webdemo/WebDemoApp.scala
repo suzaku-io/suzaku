@@ -25,7 +25,7 @@ object TestComp {
       LinearLayout(state.direction, state.justify)(
         TextInput(state.text, value => modState(s => s.copy(text = value))),
         Button(s"Add button ${state.count}", () => add()).withKey(0) <<< (
-          if (state.time % 2 == 0) Order(2) else EmptyStyle
+          if (state.time % 20 == 0) Order(2) else EmptyStyle
         ) << GreenButton,
         Button(s"Remove button ${state.count}", () => dec()).withKey(1) <<< (
           backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
@@ -46,6 +46,8 @@ object TestComp {
         ).withKey(2),
         s"Just some <script>${"text" * state.count} </script>",
         Button(s"${blueprint.label} ${state.time}").withKey(3)
+      ) <<< (
+        if (state.time % 2 == 0) remapClass := GreenButton -> RedButton else EmptyStyle
       )
     }
 
@@ -94,18 +96,33 @@ object TestComp {
   def apply(label: String = ""): CBP = CBP(label)
 }
 
-object ButtonStyle extends StyleClass {
-  import suzaku.ui.style._
+import suzaku.ui.style._
+
+object BaseStyle extends StyleClass {
   def style = List(
+    width := 20.em,
+    backgroundColor := 0xFF60FF
+  )
+}
+
+object ButtonStyle extends StyleClass {
+  def style = List(
+    inheritClass := BaseStyle,
     backgroundColor := 0x006000
   )
 }
 
 object GreenButton extends StyleClass {
-  import suzaku.ui.style._
   def style = List(
-    inheritClass := ButtonStyle,
+    inheritClasses := List(ButtonStyle, BaseStyle),
     color := 0x00FF00
+  )
+}
+
+object RedButton extends StyleClass {
+  def style = List(
+    inheritClasses := List(ButtonStyle, BaseStyle),
+    color := 0xFF0000
   )
 }
 

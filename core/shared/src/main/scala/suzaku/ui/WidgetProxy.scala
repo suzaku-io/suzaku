@@ -34,6 +34,7 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
   def update(newBlueprint: BP): Unit = {
     // update style
     if (newBlueprint._style.nonEmpty || blueprint._style.nonEmpty) {
+      // println(s"Updating style: ${blueprint._style} -> ${newBlueprint._style} ")
       // collect what was removed or updated
       val updated =
         (blueprint._style.keySet ++ newBlueprint._style.keySet).foldLeft(List.empty[(StyleProperty, Boolean)]) {

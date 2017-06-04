@@ -1,11 +1,12 @@
 package suzaku.platform.web.widget
 
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.WidgetBuilder
+import suzaku.ui.{WidgetBuilder, WidgetManager}
 import suzaku.widget.ListViewProtocol
 import org.scalajs.dom
 
-class DOMListView(context: ListViewProtocol.ChannelContext) extends DOMWidget[ListViewProtocol.type, dom.html.Div] {
+class DOMListView(widgetId: Int, context: ListViewProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidget[ListViewProtocol.type, dom.html.Div](widgetId, widgetManager) {
   import ListViewProtocol._
 
   val artifact = {
@@ -31,8 +32,8 @@ class DOMListView(context: ListViewProtocol.ChannelContext) extends DOMWidget[Li
   }
 }
 
-object DOMListViewBuilder extends WidgetBuilder(ListViewProtocol) {
+class DOMListViewBuilder(widgetManager: WidgetManager) extends WidgetBuilder(ListViewProtocol) {
   import ListViewProtocol._
-  override protected def create(context: ChannelContext) =
-    new DOMListView(context)
+  override protected def create(widgetId: Int, context: ChannelContext) =
+    new DOMListView(widgetId, context, widgetManager)
 }

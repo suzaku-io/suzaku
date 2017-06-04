@@ -1,11 +1,12 @@
 package suzaku.platform.web.widget
 
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.WidgetBuilder
+import suzaku.ui.{WidgetBuilder, WidgetManager}
 import suzaku.widget.TextInputProtocol
 import org.scalajs.dom
 
-class DOMTextInput(context: TextInputProtocol.ChannelContext) extends DOMWidget[TextInputProtocol.type, dom.html.Input] {
+class DOMTextInput(widgetId: Int, context: TextInputProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidget[TextInputProtocol.type, dom.html.Input](widgetId, widgetManager) {
   import TextInputProtocol._
 
   val artifact = {
@@ -29,8 +30,9 @@ class DOMTextInput(context: TextInputProtocol.ChannelContext) extends DOMWidget[
 
 }
 
-object DOMTextInputBuilder extends WidgetBuilder(TextInputProtocol) {
+class DOMTextInputBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TextInputProtocol) {
   import TextInputProtocol._
 
-  override protected def create(context: ChannelContext) = new DOMTextInput(context)
+  override protected def create(widgetId: Int, context: ChannelContext) =
+    new DOMTextInput(widgetId, context, widgetManager)
 }

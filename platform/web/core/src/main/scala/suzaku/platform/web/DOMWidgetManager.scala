@@ -6,9 +6,9 @@ import suzaku.platform.{Logger, Platform}
 import suzaku.ui._
 import suzaku.ui.style.StyleBaseProperty
 
-class DOMWidgetRenderer(logger: Logger, platform: Platform) extends WidgetRenderer(logger, platform) {
-  val root                 = DOMWidgetArtifact(dom.document.getElementById("root"))
-  override def emptyWidget = DOMEmptyWidget
+class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager(logger, platform) {
+  val root                                = DOMWidgetArtifact(dom.document.getElementById("root"))
+  override def emptyWidget(widgetId: Int) = new DOMEmptyWidget(widgetId, this)
 
   override def mountRoot(node: WidgetArtifact) = {
     import org.scalajs.dom.ext._
@@ -22,16 +22,18 @@ class DOMWidgetRenderer(logger: Logger, platform: Platform) extends WidgetRender
 
   override def addStyles(styles: List[(Int, List[StyleBaseProperty])]): Unit = {
     // create CSS block for all styles
-    val styleDef = styles.map {
-      case (id, styleProps) =>
-        val className = DOMWidget.mapStyleClass(id)
-        val css = styleProps.map { prop =>
-          val (name, value) = DOMWidget.extractStyle(prop)
-          s"$name:$value;"
-        }
+    val styleDef = styles
+      .map {
+        case (id, styleProps) =>
+          val className = DOMWidget.getClassName(id)
+          val css = styleProps.map { prop =>
+            val (name, value) = DOMWidget.extractStyle(prop)
+            s"$name:$value;"
+          }
 
-        s".$className { ${css.mkString("")} }"
-    }.mkString("\n","\n","\n")
+          s".$className { ${css.mkString("")} }"
+      }
+      .mkString("\n", "\n", "\n")
 
     val style = dom.document.createElement("style").asInstanceOf[dom.html.Style]
     style.`type` = "text/css"

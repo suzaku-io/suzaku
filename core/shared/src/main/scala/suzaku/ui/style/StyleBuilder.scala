@@ -7,9 +7,11 @@ class StyleBuilder[S <: StyleProperty, V](build: V => S) {
 trait StyleBuilders {
   def styleFor[S <: StyleProperty, V](build: V => S) = new StyleBuilder(build)
 
-  // for style identifiers
+  // for style classes
   val inheritClass   = styleFor[InheritClasses, StyleClass](styleClass => InheritClasses(List(styleClass)))
   val inheritClasses = styleFor[InheritClasses, List[StyleClass]](styleClasses => InheritClasses(styleClasses))
+  val remapClass     = styleFor[RemapClasses, (StyleClass, StyleClass)](ct => RemapClasses(Map(ct._1 -> (ct._2 :: Nil))))
+  val remapClasses   = styleFor[RemapClasses, Map[StyleClass, List[StyleClass]]](ct => RemapClasses(ct))
 
   // regular style definitions
   val color           = styleFor(Color)

@@ -10,12 +10,11 @@ abstract class StyleClass {
   val id = StyleRegistry.register(style)
 }
 
-
 case class PureStyleClass(override val id: Int) extends StyleClass {
   def style: List[StyleProperty] = Nil
 }
 
-object StyleIdPickler extends Pickler[StyleClass] {
+object StyleClassPickler extends Pickler[StyleClass] {
   override def pickle(obj: StyleClass)(implicit state: PickleState): Unit = {
     state.enc.writeInt(obj.id)
   }
@@ -24,4 +23,3 @@ object StyleIdPickler extends Pickler[StyleClass] {
     PureStyleClass(state.dec.readInt)
   }
 }
-

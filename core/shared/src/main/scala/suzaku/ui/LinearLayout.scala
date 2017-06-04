@@ -35,7 +35,7 @@ object LinearLayoutProtocol extends Protocol {
     .addConcreteType[SetDirection]
     .addConcreteType[SetJustify]
 
-  implicit val (messagePickler, witnessMsg) = defineProtocol(mPickler)
+  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetProtocol.wmPickler)
 
   final case class ChannelContext(direction: Direction, justify: Justify)
 
@@ -55,16 +55,17 @@ object LinearLayout {
 
     override def initView = ChannelContext(bd.direction, bd.justify)
 
-    override def update(newDesc: WBlueprint) = {
-      if (newDesc.direction != blueprint.direction)
-        send(SetDirection(newDesc.direction))
-      if (newDesc.justify != blueprint.justify)
-        send(SetJustify(newDesc.justify))
-      super.update(newDesc)
+    override def update(newBlueprint: WBlueprint) = {
+      if (newBlueprint.direction != blueprint.direction)
+        send(SetDirection(newBlueprint.direction))
+      if (newBlueprint.justify != blueprint.justify)
+        send(SetJustify(newBlueprint.justify))
+      super.update(newBlueprint)
     }
   }
 
-  case class WBlueprint private[LinearLayout] (direction: Direction, justify: Justify)(content: List[Blueprint]) extends WidgetBlueprint {
+  case class WBlueprint private[LinearLayout] (direction: Direction, justify: Justify)(content: List[Blueprint])
+      extends WidgetBlueprint {
     type P     = LinearLayoutProtocol.type
     type Proxy = WProxy
     type This  = WBlueprint

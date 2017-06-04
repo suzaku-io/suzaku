@@ -16,7 +16,7 @@ trait WidgetBlueprint extends Blueprint {
 
   def children: List[Blueprint] = Nil
 
-  def sameAs(that: This): Boolean = equals(that)
+  def sameAs(that: This): Boolean = equals(that) && _style == that._style
 
   @inline final def <<<(styleProperty: StyleBaseProperty*): this.type = {
     _style ++= styleProperty.map(p => (p.getClass, p))

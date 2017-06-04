@@ -4,11 +4,12 @@ import arteria.core.Protocol
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
 import suzaku.ui.style.StyleBaseProperty
-import suzaku.ui.{WidgetArtifact, WidgetWithProtocol}
+import suzaku.ui.{WidgetArtifact, WidgetManager, WidgetWithProtocol}
 
 case class DOMWidgetArtifact[E <: dom.Node](el: E) extends WidgetArtifact {}
 
-abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtocol[P] {
+abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetManager: WidgetManager)
+    extends WidgetWithProtocol[P](widgetId, widgetManager) {
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
 
@@ -20,9 +21,8 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
     ops.foreach {
       case NoOp(n) =>
         for (_ <- 0 until n) child = child.nextSibling
-      case InsertOp(widgetId) =>
-        val widget = mapWidget(widgetId)
-        widget.setParent(this)
+      case InsertOp(id) =>
+        val widget = mapWidget(id)
         el.insertBefore(widget.artifact.el, child)
       case RemoveOp(n) =>
         for (_ <- 0 until n) {
@@ -32,10 +32,9 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
         }
       case MoveOp(idx) =>
         el.insertBefore(el.childNodes.item(idx), child)
-      case ReplaceOp(widgetId) =>
-        val next = child.nextSibling
-        val widget = mapWidget(widgetId)
-        widget.setParent(this)
+      case ReplaceOp(id) =>
+        val next   = child.nextSibling
+        val widget = mapWidget(id)
         el.replaceChild(widget.artifact.el, child)
         child = next
     }
@@ -50,8 +49,8 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
     val el = artifact.el.asInstanceOf[dom.html.Element]
     el.className = styles match {
       case Nil         => ""
-      case head :: Nil => DOMWidget.mapStyleClass(head)
-      case _           => styles.map(DOMWidget.mapStyleClass).mkString(" ")
+      case head :: Nil => DOMWidget.getClassName(head)
+      case _           => styles.map(DOMWidget.getClassName).mkString(" ")
     }
   }
 
@@ -79,7 +78,7 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node] extends WidgetWithProtoco
 }
 
 object DOMWidget {
-  def mapStyleClass(id: Int): String = {
+  def getClassName(id: Int): String = {
     "_S" + Integer.toString(id, 36)
   }
 
@@ -87,6 +86,8 @@ object DOMWidget {
     import suzaku.ui.style._
     prop match {
       case EmptyStyle => ("", "")
+
+      case _: RemapClasses => ("", "")
 
       case Color(RGB(c)) =>
         ("color", s"rgb(${c.r},${c.g},${c.b})")
@@ -107,6 +108,7 @@ object DOMWidget {
   }
 }
 
-object DOMEmptyWidget extends DOMWidget[Protocol, dom.Comment] {
+class DOMEmptyWidget(widgetId: Int, widgetManager: WidgetManager)
+    extends DOMWidget[Protocol, dom.Comment](widgetId, widgetManager) {
   override def artifact = DOMWidgetArtifact(dom.document.createComment("EMPTY"))
 }

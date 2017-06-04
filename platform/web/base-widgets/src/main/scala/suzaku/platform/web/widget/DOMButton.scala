@@ -1,11 +1,12 @@
 package suzaku.platform.web.widget
 
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.WidgetBuilder
+import suzaku.ui.{WidgetBuilder, WidgetManager}
 import suzaku.widget.ButtonProtocol
 import org.scalajs.dom
 
-class DOMButton(context: ButtonProtocol.ChannelContext) extends DOMWidget[ButtonProtocol.type, dom.html.Button] {
+class DOMButton(widgetId: Int, context: ButtonProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidget[ButtonProtocol.type, dom.html.Button](widgetId, widgetManager) {
   import ButtonProtocol._
 
   val artifact = {
@@ -25,8 +26,9 @@ class DOMButton(context: ButtonProtocol.ChannelContext) extends DOMWidget[Button
   }
 }
 
-object DOMButtonBuilder extends WidgetBuilder(ButtonProtocol) {
+class DOMButtonBuilder(widgetManager: WidgetManager) extends WidgetBuilder(ButtonProtocol) {
   import ButtonProtocol._
 
-  override protected def create(context: ChannelContext) = new DOMButton(context)
+  override protected def create(widgetId: Int, context: ChannelContext) =
+    new DOMButton(widgetId, context, widgetManager)
 }
