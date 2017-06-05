@@ -12,28 +12,38 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     with WidgetParent {
   import WidgetManager._
 
-  private var builders             = Map.empty[String, WidgetBuilder[_ <: Protocol]]
+  private var widgetClassMap       = Map.empty[Int, String]
+  private var registeredWidgets    = Map.empty[String, WidgetBuilder[_ <: Protocol]]
+  private var builders             = Map.empty[Int, WidgetBuilder[_ <: Protocol]]
   private var uiChannel: UIChannel = _
   protected var nodes              = IntMap[WidgetNode](-1 -> WidgetNode(emptyWidget(-1), Nil, -1))
   protected var rootNode           = Option.empty[WidgetNode]
   protected var styleInheritance   = IntMap.empty[List[Int]]
+  protected var themes             = Vector.empty[(Int, Map[Int, List[Int]])]
+  protected var activeTheme        = Map.empty[Int, List[Int]]
   protected var frameRequested     = false
 
   override def establishing(channel: MessageChannel[ChannelProtocol]) =
     uiChannel = channel
 
   def registerWidget(id: String, builder: WidgetBuilder[_ <: Protocol]): Unit =
-    builders += id -> builder
+    registeredWidgets += id -> builder
 
   def registerWidget(clazz: Class[_], builder: WidgetBuilder[_ <: Protocol]): Unit =
-    builders += clazz.getName -> builder
+    registeredWidgets += clazz.getName -> builder
 
-  def buildWidget(widgetType: String,
+  def buildWidget(widgetClass: Int,
                   widgetId: Int,
                   channelId: Int,
                   globalId: Int,
                   channelReader: ChannelReader): Option[Widget] = {
-    builders.get(widgetType).map(builder => builder.materialize(widgetId, channelId, globalId, uiChannel, channelReader))
+    val builder = builders.get(widgetClass) orElse {
+      // update builder map from registered widgets
+      val b = widgetClassMap.get(widgetClass).flatMap(registeredWidgets.get)
+      b.foreach(v => builders += widgetClass -> v)
+      b
+    }
+    builder.map(builder => builder.materialize(widgetId, widgetClass, channelId, globalId, uiChannel, channelReader))
   }
 
   def shouldRenderFrame: Boolean = {
@@ -58,6 +68,23 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
       case None =>
       // no action
     }
+  }
+
+  def rebuildThemes(themes: Seq[(Int, Map[Int, List[Int]])]): Unit = {
+    // join themes to form the active theme
+    activeTheme = themes.foldLeft(Map.empty[Int, List[Int]]) {
+      case (act, (_, styleMap)) =>
+        styleMap.foldLeft(act) {
+          case (current, (widget, styleClasses)) =>
+            current.updated(widget, (current.getOrElse(widget, Nil) ++ styleClasses).distinct)
+        }
+    }
+    // reapply styles as theme changes may affect them
+    rootNode.foreach(n => reapplyStyles(n.widget.widgetId))
+  }
+
+  def applyTheme(widgetClassId: Int): List[Int] = {
+    activeTheme.getOrElse(widgetClassId, Nil)
   }
 
   override def process = {
@@ -138,6 +165,17 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
         case _ => // nothing to update
       }
       addStyles(baseStyles)
+
+    case ActivateTheme(themeId, theme) =>
+      themes :+= (themeId, theme)
+      rebuildThemes(themes)
+
+    case DeactivateTheme(themeId) =>
+      themes = themes.filterNot(_._1 == themeId)
+      rebuildThemes(themes)
+
+    case RegisterWidgetClass(className, classId) =>
+      widgetClassMap += classId -> className
   }
 
   override def materializeChildChannel(channelId: Int,
@@ -146,21 +184,21 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
                                        channelReader: ChannelReader) = {
     import boopickle.Default._
     // read the component creation data
-    val CreateWidget(widgetType, widgetId) = channelReader.read[CreateWidget]
+    val CreateWidget(widgetClass, widgetId) = channelReader.read[CreateWidget]
 
-    logger.debug(f"Building widget $widgetType on channel [$channelId, $globalId%08x]")
+    logger.debug(f"Building widget $widgetClass on channel [$channelId, $globalId%08x]")
     try {
-      buildWidget(widgetType, widgetId, channelId, globalId, channelReader) match {
+      buildWidget(widgetClass, widgetId, channelId, globalId, channelReader) match {
         case Some(widget) =>
           // add a node for the component
           nodes += widgetId -> WidgetNode(widget, Vector.empty, channelId)
           widget.channel
         case None =>
-          throw new IllegalAccessException(s"Unable to materialize a widget '$widgetType'")
+          throw new IllegalAccessException(s"Unable to materialize a widget '$widgetClass'")
       }
     } catch {
       case e: Exception =>
-        logger.error(s"Unhandled exception while building widget $widgetType: $e")
+        logger.error(s"Unhandled exception while building widget $widgetClass: $e")
         throw e
     }
   }
@@ -170,12 +208,12 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     nodes -= id
   }
 
-  override def resolveStyleMapping(id: Int): List[Int] = {
-    id :: Nil
+  override def resolveStyleMapping(ids: List[Int]): List[Int] = {
+    ids
   }
 
-  override def resolveStyleInheritance(id: Int): List[Int] = {
-    styleInheritance.getOrElse(id, id :: Nil)
+  override def resolveStyleInheritance(ids: List[Int]): List[Int] = {
+    ids.flatMap(id => styleInheritance.getOrElse(id, id :: Nil))
   }
 
   protected def emptyWidget(widgetId: Int): Widget

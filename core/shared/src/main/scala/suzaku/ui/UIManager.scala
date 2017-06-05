@@ -3,7 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
-import suzaku.ui.style.StyleRegistry
+import suzaku.ui.style.{StyleRegistry, Theme}
 
 import scala.collection.mutable
 import scala.collection.immutable
@@ -18,14 +18,50 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
   private[suzaku] var viewId = 1
   private var dirtyRoots     = List.empty[ShadowComponent]
   private var frameRequested = false
+  private var themeId        = 0
 
-  private def allocateId: Int = {
-    val id = viewId
-    viewId += 1
+  def render(root: Blueprint): Unit = {
+    val newRoot = updateBranch(currentRoot, root, None)
+    currentRoot match {
+      case Some(view) if view.getId == newRoot.getId =>
+      // no-op
+      case Some(view) =>
+        logger.debug(s"Replacing root [${view.getId}] with [${newRoot.getId}]")
+        view.destroy()
+        send(MountRoot(newRoot.getId))
+      case None =>
+        logger.debug(s"Mounting [${newRoot.getId}] as root")
+        send(MountRoot(newRoot.getId))
+    }
+    // check if styles have updated
+    if (StyleRegistry.hasRegistrations) {
+      val styles = StyleRegistry.dequeueRegistrations
+      logger.debug(s"Adding ${styles.size} styles")
+      send(AddStyles(styles))
+    }
+    currentRoot = Some(newRoot)
+  }
+
+  def activateTheme(theme: Theme): Int = {
+    val id = themeId
+    themeId += 1
+    val activateTheme = ActivateTheme(
+      id,
+      theme.styleMap
+        .map {
+          case (widgetClass, styleClasses) =>
+            UIManager.getWidgetClass(widgetClass.blueprintClass, uiChannel) -> styleClasses.map(_.id)
+        }
+    )
+    send(activateTheme)
     id
   }
 
-  protected def send[A <: Message](message: A)(implicit ev: MessageWitness[A, ChannelProtocol]) = {
+  def deactivateTheme(themeId: Int): Unit = {
+    send(DeactivateTheme(themeId))
+  }
+
+  @inline final protected def send[A <: Message](message: A)(implicit ev: MessageWitness[A, ChannelProtocol]) = {
     uiChannel.send(message)
   }
 
@@ -64,28 +100,6 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     }
   }
 
-  def render(root: Blueprint): Unit = {
-    val newRoot = updateBranch(currentRoot, root, None)
-    currentRoot match {
-      case Some(view) if view.getId == newRoot.getId =>
-      // no-op
-      case Some(view) =>
-        logger.debug(s"Replacing root [${view.getId}] with [${newRoot.getId}]")
-        view.destroy()
-        send(MountRoot(newRoot.getId))
-      case None =>
-        logger.debug(s"Mounting [${newRoot.getId}] as root")
-        send(MountRoot(newRoot.getId))
-    }
-    // check if styles have updated
-    if (StyleRegistry.hasRegistrations) {
-      val styles = StyleRegistry.dequeueRegistrations
-      logger.debug(s"Adding ${styles.size} styles")
-      send(AddStyles(styles))
-    }
-    currentRoot = Some(newRoot)
-  }
-
   private def expand(node: ShadowNode): immutable.Seq[ShadowNode] = node match {
     case seq: ShadowNodeSeq =>
       seq.children.flatMap(expand)
@@ -98,6 +112,12 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       blueprints.flatMap(expandBP)
     case _ =>
       List(bp)
+  }
+
+  private def allocateId: Int = {
+    val id = viewId
+    viewId += 1
+    id
   }
 
   private def updateBranch(current: Option[ShadowNode], blueprint: Blueprint, parent: Option[ShadowNode]): ShadowNode = {
@@ -390,4 +410,22 @@ object UIManager {
     override def toString: String = s"ShadowComponent($blueprint)"
   }
 
+  private var widgetClasses = Map.empty[String, Int]
+  private var widgetClassId = 0
+
+  def getWidgetClass(blueprint: Class[_ <: WidgetBlueprint], uiChannel: MessageChannel[UIProtocol.type]): Int = {
+    this.synchronized {
+      val name = blueprint.getName
+      widgetClasses.get(name) match {
+        case Some(id) => id
+        case None =>
+          // create integer mapping and register the class
+          val id = widgetClassId
+          widgetClassId += 1
+          widgetClasses += name -> id
+          uiChannel.send(RegisterWidgetClass(name, id))
+          id
+      }
+    }
+  }
 }

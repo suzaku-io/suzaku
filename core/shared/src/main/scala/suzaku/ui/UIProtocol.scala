@@ -13,7 +13,7 @@ object UIProtocol extends Protocol {
 
   override type ChannelContext = UIProtocolContext
 
-  case class CreateWidget(widgetType: String, widgetId: Int)
+  case class CreateWidget(widgetClass: Int, widgetId: Int)
 
   sealed trait ChildOp
 
@@ -48,6 +48,12 @@ object UIProtocol extends Protocol {
 
   case class AddStyles(styles: List[StyleRegistration]) extends UIMessage
 
+  case class ActivateTheme(themeId: Int, theme: Map[Int, List[Int]]) extends UIMessage
+
+  case class DeactivateTheme(themeId: Int) extends UIMessage
+
+  case class RegisterWidgetClass(className: String, classId: Int) extends UIMessage
+
   implicit val stylePickler = StyleProperty.pickler
 
   private val uiPickler = compositePickler[UIMessage]
@@ -57,6 +63,9 @@ object UIProtocol extends Protocol {
     .addConcreteType[SetChildren]
     .addConcreteType[UpdateChildren]
     .addConcreteType[AddStyles]
+    .addConcreteType[ActivateTheme]
+    .addConcreteType[DeactivateTheme]
+    .addConcreteType[RegisterWidgetClass]
 
   implicit val (messagePickler, uiMsgWitness) = defineProtocol(uiPickler)
 

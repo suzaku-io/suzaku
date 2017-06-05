@@ -12,11 +12,17 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
 
   private var parent         = Option.empty[WidgetParent]
   private var messageChannel = null: MessageChannel[CP]
+  private var widgetClassId  = -1
   protected var styleClasses = List.empty[Int]
   protected var styleMapping = Map.empty[Int, List[Int]]
 
   protected[suzaku] def withChannel(channel: MessageChannel[CP]): this.type = {
     messageChannel = channel
+    this
+  }
+
+  protected[suzaku] def withClass(classId: Int): this.type = {
+    widgetClassId = classId
     this
   }
 
@@ -33,36 +39,38 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
 
   def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit
 
+  def widgetClass: Int = widgetClassId
+
   def setParent(parent: WidgetParent): Unit = {
     this.parent = Some(parent)
     // reapply styles as mappings might have changed
-    applyStyleClasses(styleClasses.flatMap(resolveStyle))
+    reapplyStyles()
   }
 
   def reapplyStyles(): Unit = {
-    applyStyleClasses(styleClasses.flatMap(resolveStyle))
+    val themeClasses = widgetManager.applyTheme(widgetClassId)
+    applyStyleClasses(resolveStyle(themeClasses ::: styleClasses))
   }
 
-  def resolveStyle(id: Int): List[Int] = {
-    resolveStyleInheritance(id).flatMap(resolveStyleMapping)
+  def resolveStyle(ids: List[Int]): List[Int] = {
+    resolveStyleMapping(resolveStyleInheritance(ids))
   }
 
-  override def resolveStyleMapping(id: Int): List[Int] = {
-    styleMapping
-      .getOrElse(id, id :: Nil)
-      .flatMap(sid => parent.map(_.resolveStyleMapping(sid)).getOrElse(sid :: Nil))
+  override def resolveStyleMapping(ids: List[Int]): List[Int] = {
+    val sid = ids.flatMap(id => styleMapping.getOrElse(id, id :: Nil))
+    parent.map(_.resolveStyleMapping(sid)).getOrElse(sid)
   }
 
-  override def resolveStyleInheritance(id: Int): List[Int] = parent match {
-    case Some(parentWidget) => parentWidget.resolveStyleInheritance(id)
-    case None               => id :: Nil
+  override def resolveStyleInheritance(ids: List[Int]): List[Int] = parent match {
+    case Some(parentWidget) => parentWidget.resolveStyleInheritance(ids)
+    case None               => ids
   }
 }
 
 trait WidgetParent {
-  def resolveStyleMapping(id: Int): List[Int]
+  def resolveStyleMapping(id: List[Int]): List[Int]
 
-  def resolveStyleInheritance(id: Int): List[Int]
+  def resolveStyleInheritance(id: List[Int]): List[Int]
 }
 
 abstract class WidgetArtifact
@@ -77,7 +85,7 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: W
       props.foreach {
         case (StyleClasses(styles), remove) =>
           styleClasses = if (remove) Nil else styles.map(_.id)
-          applyStyleClasses(styleClasses.flatMap(resolveStyle))
+          reapplyStyles()
         case (RemapClasses(styleMap), remove) =>
           // println(s"Remapping styles: $styleMap (remove = $remove")
           styleMapping =
@@ -99,6 +107,7 @@ abstract class WidgetBuilder[P <: Protocol](protocol: P) {
   protected def create(widgetId: Int, context: P#ChannelContext): WidgetWithProtocol[P]
 
   def materialize(widgetId: Int,
+                  widgetClass: Int,
                   channelId: Int,
                   globalId: Int,
                   parent: MessageChannelBase,
@@ -106,6 +115,6 @@ abstract class WidgetBuilder[P <: Protocol](protocol: P) {
     val context = channelReader.read(protocol.contextPickler)
     val widget  = create(widgetId, context)
     val channel = new MessageChannel(protocol)(channelId, globalId, parent, widget, context)
-    widget.withChannel(channel)
+    widget.withChannel(channel).withClass(widgetClass)
   }
 }

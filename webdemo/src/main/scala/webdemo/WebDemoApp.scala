@@ -3,8 +3,9 @@ package webdemo
 import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
-import suzaku.ui.LinearLayoutProtocol.{Direction, Justify}
+import suzaku.ui.layout.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui._
+import suzaku.ui.layout.LinearLayout
 import suzaku.ui.style.{StyleClass, StyleProperty}
 import suzaku.widget.{Button, TextInput}
 
@@ -114,7 +115,6 @@ object ButtonStyle extends StyleClass {
 
 object GreenButton extends StyleClass {
   def style = List(
-    inheritClasses := List(ButtonStyle, BaseStyle),
     color := 0x00FF00
   )
 }
@@ -123,6 +123,12 @@ object RedButton extends StyleClass {
   def style = List(
     inheritClasses := List(ButtonStyle, BaseStyle),
     color := 0xFF0000
+  )
+}
+
+object MyTheme {
+  val theme = Theme(
+    Button -> List(ButtonStyle)
   )
 }
 
@@ -141,6 +147,7 @@ object StatelessTestComp {
 class WebDemoApp(transport: Transport) extends AppBase(transport) {
   override protected def main(): Unit = {
     val comp = TestComp("Testing")
+    uiManager.activateTheme(MyTheme.theme)
     uiManager.render(comp)
   }
 }

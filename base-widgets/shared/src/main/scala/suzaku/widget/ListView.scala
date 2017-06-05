@@ -3,7 +3,7 @@ package suzaku.widget
 import arteria.core._
 import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
-import suzaku.ui.{Blueprint, WidgetBlueprint, WidgetProxy}
+import suzaku.ui.{Blueprint, WidgetBlueprint, WidgetBlueprintProvider, WidgetProxy}
 
 object ListViewProtocol extends Protocol {
 
@@ -21,7 +21,7 @@ object ListViewProtocol extends Protocol {
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
-object ListView {
+object ListView extends WidgetBlueprintProvider {
   class WProxy private[ListView] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
       extends WidgetProxy(ListViewProtocol, bd, viewId, uiChannel) {
     import ListViewProtocol._
@@ -48,6 +48,8 @@ object ListView {
 
     override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
   }
+
+  override def blueprintClass = classOf[WBlueprint]
 
   def apply(direction: String = "horz")(content: Blueprint*) = WBlueprint(direction)(content.toList)
 }

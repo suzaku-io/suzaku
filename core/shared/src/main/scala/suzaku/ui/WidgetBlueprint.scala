@@ -45,3 +45,7 @@ object WidgetProtocol extends Protocol {
 
   implicit val contextPickler = implicitly[Pickler[Unit]]
 }
+
+trait WidgetBlueprintProvider {
+  def blueprintClass: Class[_ <: WidgetBlueprint]
+}

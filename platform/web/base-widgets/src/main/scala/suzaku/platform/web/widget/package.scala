@@ -1,7 +1,8 @@
 package suzaku.platform.web
 
 import suzaku.platform.web.ui.DOMLinearLayoutBuilder
-import suzaku.ui.{LinearLayout, WidgetManager}
+import suzaku.ui.WidgetManager
+import suzaku.ui.layout.LinearLayout
 import suzaku.widget._
 
 package object widget {

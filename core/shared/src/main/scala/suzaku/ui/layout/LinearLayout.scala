@@ -1,8 +1,9 @@
-package suzaku.ui
+package suzaku.ui.layout
 
 import arteria.core._
 import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
+import suzaku.ui._
 
 object LinearLayoutProtocol extends Protocol {
 
@@ -42,7 +43,7 @@ object LinearLayoutProtocol extends Protocol {
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
-object LinearLayout {
+object LinearLayout extends WidgetBlueprintProvider {
   import LinearLayoutProtocol._
 
   class WProxy private[LinearLayout] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
@@ -74,6 +75,8 @@ object LinearLayout {
 
     override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
   }
+
+  override def blueprintClass = classOf[WBlueprint]
 
   def apply(direction: Direction = Direction.Horizontal, justify: Justify = Justify.Start)(content: Blueprint*) =
     WBlueprint(direction, justify)(content.toList)

@@ -2,7 +2,8 @@ package suzaku.platform.web.ui
 
 import org.scalajs.dom
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.{LinearLayoutProtocol, WidgetBuilder, WidgetManager}
+import suzaku.ui.layout.LinearLayoutProtocol
+import suzaku.ui.{WidgetBuilder, WidgetManager}
 
 class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContext, widgetManager: WidgetManager)
     extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) {

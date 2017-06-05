@@ -2,7 +2,7 @@ package suzaku.ui
 
 import arteria.core._
 import boopickle.Default._
-import suzaku.ui.UIProtocol.{CreateWidget, UIChannel}
+import suzaku.ui.UIProtocol.{CreateWidget, RegisterWidgetClass, UIChannel}
 import suzaku.ui.WidgetProtocol.{UpdateStyle, WidgetMessage}
 import suzaku.ui.style.StyleProperty
 
@@ -18,7 +18,10 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
     uiChannel.createChannel(protocol)(
       this,
       initView,
-      CreateWidget(blueprint.getClass.getName, viewId)
+      CreateWidget(
+        UIManager.getWidgetClass(blueprint.getClass, uiChannel),
+        viewId
+      )
     )
 
   // send initial style, if any
