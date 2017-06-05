@@ -102,13 +102,14 @@ import suzaku.ui.style._
 object BaseStyle extends StyleClass {
   def style = List(
     width := 20.em,
+    height := 5.em,
     backgroundColor := 0xFF60FF
   )
 }
 
 object ButtonStyle extends StyleClass {
   def style = List(
-    inheritClass := BaseStyle,
+    extendClass := BaseStyle,
     backgroundColor := 0x006000
   )
 }
@@ -119,16 +120,22 @@ object GreenButton extends StyleClass {
   )
 }
 
+object Large extends StyleClass {
+  def style = List(
+    height := 10.em
+  )
+}
+
 object RedButton extends StyleClass {
   def style = List(
-    inheritClasses := List(ButtonStyle, BaseStyle),
+    inheritClasses := List(Large),
     color := 0xFF0000
   )
 }
 
 object MyTheme {
   val theme = Theme(
-    Button -> List(ButtonStyle)
+    Button -> ButtonStyle
   )
 }
 

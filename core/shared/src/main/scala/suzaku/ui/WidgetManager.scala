@@ -3,7 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
-import suzaku.ui.style.{InheritClasses, StyleBaseProperty}
+import suzaku.ui.style.{ExtendClasses, InheritClasses, StyleBaseProperty}
 
 import scala.collection.immutable.IntMap
 
@@ -19,6 +19,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
   protected var nodes              = IntMap[WidgetNode](-1 -> WidgetNode(emptyWidget(-1), Nil, -1))
   protected var rootNode           = Option.empty[WidgetNode]
   protected var styleInheritance   = IntMap.empty[List[Int]]
+  protected var registeredStyles   = IntMap.empty[List[StyleBaseProperty]]
   protected var themes             = Vector.empty[(Int, Map[Int, List[Int]])]
   protected var activeTheme        = Map.empty[Int, List[Int]]
   protected var frameRequested     = false
@@ -130,6 +131,8 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
             cur.insert(curIdx, cur.remove(idx))
             curIdx += 1
           case ReplaceOp(id) =>
+            val widget = nodes(id).widget
+            widget.setParent(node.widget)
             cur(curIdx) = id
             curIdx += 1
         }
@@ -140,7 +143,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
       }
 
     case AddStyles(styles) =>
-      logger.debug(s"Received styles $styles")
+      logger.debug(s"Received styles ${styles.reverse}")
       var dirtyStyles = false
       val baseStyles = styles.reverse.map {
         case (styleId, props) =>
@@ -148,15 +151,22 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
           val inherits = props.collect {
             case i: InheritClasses => i
           }
+          val extend = props.collect {
+            case e: ExtendClasses => e
+          }
           val baseProps = props.collect {
             case prop: StyleBaseProperty => prop
           }
+          val extProps = extend.flatMap(_.styles.flatMap(sc => registeredStyles.getOrElse(sc.id, Nil)))
           if (inherits.nonEmpty) {
             dirtyStyles = true
             val resolved = inherits.flatMap(_.styles.flatMap(s => styleInheritance.getOrElse(s.id, List(s.id)))).distinct
             styleInheritance += styleId -> (resolved :+ styleId)
           }
-          styleId -> baseProps
+          val allProps = extProps ::: baseProps
+          registeredStyles += styleId -> allProps
+
+          styleId -> allProps
       }
       (dirtyStyles, rootNode) match {
         case (true, Some(node)) =>
@@ -213,7 +223,8 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
   }
 
   override def resolveStyleInheritance(ids: List[Int]): List[Int] = {
-    ids.flatMap(id => styleInheritance.getOrElse(id, id :: Nil))
+    val res = ids.flatMap(id => styleInheritance.getOrElse(id, id :: Nil))
+    res
   }
 
   protected def emptyWidget(widgetId: Int): Widget

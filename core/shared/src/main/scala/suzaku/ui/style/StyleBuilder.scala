@@ -10,6 +10,8 @@ trait StyleBuilders {
   // for style classes
   val inheritClass   = styleFor[InheritClasses, StyleClass](styleClass => InheritClasses(List(styleClass)))
   val inheritClasses = styleFor[InheritClasses, List[StyleClass]](styleClasses => InheritClasses(styleClasses))
+  val extendClass   = styleFor[ExtendClasses, StyleClass](styleClass => ExtendClasses(List(styleClass)))
+  val extendClasses = styleFor[ExtendClasses, List[StyleClass]](styleClasses => ExtendClasses(styleClasses))
   val remapClass     = styleFor[RemapClasses, (StyleClass, StyleClass)](ct => RemapClasses(Map(ct._1 -> (ct._2 :: Nil))))
   val remapClasses   = styleFor[RemapClasses, Map[StyleClass, List[StyleClass]]](ct => RemapClasses(ct))
 

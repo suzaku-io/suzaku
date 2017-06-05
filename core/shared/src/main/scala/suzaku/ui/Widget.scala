@@ -61,10 +61,8 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
     parent.map(_.resolveStyleMapping(sid)).getOrElse(sid)
   }
 
-  override def resolveStyleInheritance(ids: List[Int]): List[Int] = parent match {
-    case Some(parentWidget) => parentWidget.resolveStyleInheritance(ids)
-    case None               => ids
-  }
+  override def resolveStyleInheritance(ids: List[Int]): List[Int] =
+    parent.map(_.resolveStyleInheritance(ids)).getOrElse(ids)
 }
 
 trait WidgetParent {
@@ -92,7 +90,7 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: W
             if (remove)
               Map.empty
             else
-              styleMap.map { case (style, mappedTo) => (style.id, mappedTo.map(_.id)) }
+              styleMap.map { case (style, mappedTo) => (style.id, resolveStyleInheritance(mappedTo.map(_.id))) }
           // reapply styles to children as mappings might have changed
           widgetManager.reapplyStyles(widgetId)
         case (prop: StyleBaseProperty, remove) =>
