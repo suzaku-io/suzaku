@@ -12,9 +12,9 @@ object WebDemoUIEntry {
   var transport: WebWorkerTransport = _
 
   @JSExport
-  def entry(): Unit = {
+  def entry(workerScript: String): Unit = {
     // create the worker to run our application in
-    val worker = new Worker("worker.js")
+    val worker = new Worker(workerScript)
 
     // create the transport
     transport = new WorkerClientTransport(worker)
@@ -22,7 +22,7 @@ object WebDemoUIEntry {
     // listen to messages from worker
     worker.onmessage = onMessage _
 
-    val ui = new WebDemoUI(transport)
+    new WebDemoUI(transport)
   }
 
   def onMessage(msg: dom.MessageEvent) = {

@@ -3,7 +3,7 @@ package suzaku.platform.web
 import arteria.core.Protocol
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
-import suzaku.ui.style.StyleBaseProperty
+import suzaku.ui.style.{LineStyle, RGB, RGBA, RGBColor, StyleBaseProperty}
 import suzaku.ui.{WidgetArtifact, WidgetManager, WidgetWithProtocol}
 
 case class DOMWidgetArtifact[E <: dom.Node](el: E) extends WidgetArtifact {}
@@ -78,32 +78,73 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetMana
 }
 
 object DOMWidget {
+  import suzaku.ui.style._
   def getClassName(id: Int): String = {
     "_S" + Integer.toString(id, 36)
   }
 
+  def color2str(c: RGBColor): String = c match {
+    case RGB(_)     => s"rgb(${c.r},${c.g},${c.b})"
+    case RGBA(_, a) => s"rgba(${c.r},${c.g},${c.b},$a)"
+  }
+
+  def line2str(l: LineStyle): String = l match {
+    case LineNone   => "none"
+    case LineHidden => "hidden"
+    case LineSolid  => "solid"
+    case LineDotted => "dotted"
+    case LineDashed => "dashed"
+    case LineInset  => "inset"
+    case LineOutset => "outset"
+    case LineDouble => "double"
+  }
+
+  def width2str(w: WidthDimension): String = w match {
+    case WidthThin      => "thin"
+    case WidthMedium    => "medium"
+    case WidthThick     => "thick"
+    case WidthLength(l) => l.toString
+  }
+
+  def expand[A <: Direction](prop: A)(toStr: A => String, name: String, ext: String = ""): (String, String) = {
+    val extStr = if (ext.isEmpty) "" else "-" + ext
+    prop match {
+      case _: DirectionTop    => (s"$name-top$extStr", toStr(prop))
+      case _: DirectionRight  => (s"$name-right$extStr", toStr(prop))
+      case _: DirectionBottom => (s"$name-bottom$extStr", toStr(prop))
+      case _: DirectionLeft   => (s"$name-left$extStr", toStr(prop))
+    }
+  }
+
   def extractStyle(prop: StyleBaseProperty): (String, String) = {
-    import suzaku.ui.style._
     prop match {
       case EmptyStyle => ("", "")
 
       case _: RemapClasses => ("", "")
 
-      case Color(RGB(c)) =>
-        ("color", s"rgb(${c.r},${c.g},${c.b})")
-      case Color(RGBA(c, a)) =>
-        ("color", s"rgba(${c.r},${c.g},${c.b},$a)")
-      case BackgroundColor(RGB(c)) =>
-        ("background-color", s"rgb(${c.r},${c.g},${c.b})")
-      case BackgroundColor(RGBA(c, a)) =>
-        ("background-color", s"rgba(${c.r},${c.g},${c.b},$a)")
+      case Color(c)           => ("color", color2str(c))
+      case BackgroundColor(c) => ("background-color", color2str(c))
 
-      case Order(n) =>
-        ("order", n.toString)
-      case Width(l) =>
-        ("width", l.toString)
-      case Height(l) =>
-        ("height", l.toString)
+      case Order(n)         => ("order", n.toString)
+      case ZOrder(n)        => ("z-index", n.toString)
+      case Width(l)         => ("width", l.toString)
+      case Height(l)        => ("height", l.toString)
+      case MaxWidth(value)  => ("max-width", value.toString)
+      case MaxHeight(value) => ("max-height", value.toString)
+      case MinWidth(value)  => ("min-width", value.toString)
+      case MinHeight(value) => ("min-height", value.toString)
+
+      case p: Margin  => expand(p)(_.value.toString, "margin")
+      case p: Padding => expand(p)(_.value.toString, "padding")
+      case p: Offset  => expand(p)(_.value.toString, "offset")
+
+      case p: BorderWidth => expand(p)(_.value.toString, "border", "width")
+      case p: BorderStyle => expand(p)(s => line2str(s.style), "border", "style")
+      case p: BorderColor => expand(p)(c => color2str(c.color), "border", "color")
+
+      case OutlineWidth(w) => ("outline-width", width2str(w))
+      case OutlineStyle(s) => ("outline-style", line2str(s))
+      case OutlineColor(c) => ("outline-color", color2str(c))
     }
   }
 }

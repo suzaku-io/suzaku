@@ -6,11 +6,17 @@ object StyleRegistry {
   var styleClassId         = 1
   var pendingRegistrations = List.empty[StyleRegistration]
 
-  def register(style: List[StyleProperty]): Int = {
+  def register(style: List[StyleDef]): Int = {
+    val styles = style.flatMap {
+      case StyleSeq(seq) =>
+        seq
+      case s: StyleProperty =>
+        s :: Nil
+    }
     this.synchronized {
       val id = styleClassId
       styleClassId += 1
-      pendingRegistrations ::= id -> style
+      pendingRegistrations ::= id -> styles
       id
     }
   }

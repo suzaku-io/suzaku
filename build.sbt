@@ -9,7 +9,7 @@ val commonSettings = Seq(
   organization := "io.suzaku",
   version := Version.library,
   scalaVersion := "2.12.2",
-  scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8"),
+  scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8", "-Ypatmat-exhaust-depth", "40"),
   libraryDependencies ++= Seq(
     scalaTest.value,
     scalaMock.value

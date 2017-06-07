@@ -102,7 +102,7 @@ import suzaku.ui.style._
 object BaseStyle extends StyleClass {
   def style = List(
     width := 20.em,
-    height := 5.em,
+    height := auto,
     backgroundColor := 0xFF60FF
   )
 }
@@ -110,7 +110,10 @@ object BaseStyle extends StyleClass {
 object ButtonStyle extends StyleClass {
   def style = List(
     extendClass := BaseStyle,
-    backgroundColor := 0x006000
+    backgroundColor := 0x006000,
+    padding := (10.px, 20.px),
+    margin := 10.px,
+    outline := (thin, dotted, 0xFF00FF)
   )
 }
 
@@ -126,10 +129,15 @@ object Large extends StyleClass {
   )
 }
 
+object Red extends StyleClass {
+  def style = List(
+    color := 0xFF0000
+  )
+}
+
 object RedButton extends StyleClass {
   def style = List(
-    inheritClasses := List(Large),
-    color := 0xFF0000
+    inheritClasses := (Large, Red)
   )
 }
 
