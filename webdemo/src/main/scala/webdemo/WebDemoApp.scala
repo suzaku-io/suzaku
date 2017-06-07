@@ -103,7 +103,10 @@ object BaseStyle extends StyleClass {
   def style = List(
     width := 20.em,
     height := auto,
-    backgroundColor := 0xFF60FF
+    backgroundColor := 0x0060FF,
+    hover := (
+      outlineWidth := thick
+    )
   )
 }
 
@@ -113,7 +116,10 @@ object ButtonStyle extends StyleClass {
     backgroundColor := 0x006000,
     padding := (10.px, 20.px),
     margin := 10.px,
-    outline := (thin, dotted, 0xFF00FF)
+    outline := (thin, dotted, 0xFF00FF),
+    hover := (
+      backgroundColor := 0xFF00FF
+    )
   )
 }
 
@@ -125,7 +131,7 @@ object GreenButton extends StyleClass {
 
 object Large extends StyleClass {
   def style = List(
-    height := 10.em
+    height := auto
   )
 }
 

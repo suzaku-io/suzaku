@@ -4,7 +4,7 @@ import boopickle.Default._
 import org.scalajs.dom
 import suzaku.platform.{Logger, Platform}
 import suzaku.ui._
-import suzaku.ui.style.StyleBaseProperty
+import suzaku.ui.style.{Active, Hover, PseudoClass, StyleBaseProperty}
 
 class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager(logger, platform) {
   val root                                = DOMWidgetArtifact(dom.document.getElementById("root"))
@@ -20,18 +20,36 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
     root.el.appendChild(domElement)
   }
 
-  override def addStyles(styles: List[(Int, List[StyleBaseProperty])]): Unit = {
+  override def addStyles(styles: List[(Int, String, List[StyleBaseProperty])]): Unit = {
     // create CSS block for all styles
     val styleDef = styles
       .map {
-        case (id, styleProps) =>
-          val className = DOMWidget.getClassName(id)
-          val css = styleProps.map { prop =>
-            val (name, value) = DOMWidget.extractStyle(prop)
-            s"$name:$value;"
+        case (styleId, styleName, styleProps) =>
+          val className = DOMWidget.getClassName(styleId)
+          val (regularStyles, pseudoStyles) = styleProps.foldLeft((List.empty[String], Map.empty[String, List[String]])) {
+            case ((regular, pseudo), pc: PseudoClass) =>
+              val ps = pc.props.map { prop =>
+                val (name, value) = DOMWidget.extractStyle(prop)
+                s"$name:$value;"
+              }
+              val name = pc match {
+                case _: Hover  => "hover"
+                case _: Active => "active"
+              }
+
+              (regular, pseudo.updated(name, ps ::: pseudo.getOrElse(name, Nil)))
+            case ((regular, pseudo), prop) =>
+              val (name, value) = DOMWidget.extractStyle(prop)
+              (s"$name:$value;" :: regular, pseudo)
           }
 
-          s".$className { ${css.mkString("")} }"
+          val css = s".$className { ${regularStyles.mkString("")} }"
+
+          val pseudoCss =
+            pseudoStyles.map { case (name, innerStyles) =>
+              s"\n.$className:$name { ${innerStyles.mkString("")} }"
+            }.mkString("")
+          css + pseudoCss + s" /* $styleName */"
       }
       .mkString("\n", "\n", "\n")
 

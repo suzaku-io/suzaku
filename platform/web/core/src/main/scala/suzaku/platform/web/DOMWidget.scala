@@ -80,7 +80,7 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetMana
 object DOMWidget {
   import suzaku.ui.style._
   def getClassName(id: Int): String = {
-    "_S" + Integer.toString(id, 36)
+    "_S" + Integer.toString(id, 10)
   }
 
   def color2str(c: RGBColor): String = c match {

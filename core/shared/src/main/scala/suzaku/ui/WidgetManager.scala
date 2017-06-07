@@ -146,7 +146,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
       logger.debug(s"Received styles ${styles.reverse}")
       var dirtyStyles = false
       val baseStyles = styles.reverse.map {
-        case (styleId, props) =>
+        case (styleId, styleName, props) =>
           // extract inheritance information
           val inherits = props.collect {
             case i: InheritClasses => i
@@ -166,7 +166,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
           val allProps = extProps ::: baseProps
           registeredStyles += styleId -> allProps
 
-          styleId -> allProps
+          (styleId, styleName, allProps)
       }
       (dirtyStyles, rootNode) match {
         case (true, Some(node)) =>
@@ -231,7 +231,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
   protected def mountRoot(node: WidgetArtifact): Unit
 
-  protected def addStyles(styles: List[(Int, List[StyleBaseProperty])]): Unit
+  protected def addStyles(styles: List[(Int, String, List[StyleBaseProperty])]): Unit
 }
 
 object WidgetManager {

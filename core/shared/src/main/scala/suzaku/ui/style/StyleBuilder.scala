@@ -26,10 +26,10 @@ trait StyleBuilders {
   def stylesFor[S <: StyleProperty, V](build: List[V] => S) = new MultiStyleBuilder(build)
 
   // for style classes
-  val inheritClass   = styleFor[InheritClasses, StyleClass](styleClass => InheritClasses(List(styleClass)))
-  val inheritClasses = stylesFor[InheritClasses, StyleClass](styleClasses => InheritClasses(styleClasses))
-  val extendClass    = styleFor[ExtendClasses, StyleClass](styleClass => ExtendClasses(List(styleClass)))
-  val extendClasses  = stylesFor[ExtendClasses, StyleClass](styleClasses => ExtendClasses(styleClasses))
+  val inheritClass   = styleFor[InheritClasses, StyleClass](styleClass => InheritClasses(styleClass :: Nil))
+  val inheritClasses = stylesFor[InheritClasses, StyleClass](InheritClasses)
+  val extendClass    = styleFor[ExtendClasses, StyleClass](styleClass => ExtendClasses(styleClass :: Nil))
+  val extendClasses  = stylesFor[ExtendClasses, StyleClass](ExtendClasses)
   val remapClass     = styleFor[RemapClasses, (StyleClass, StyleClass)](ct => RemapClasses(Map(ct._1 -> (ct._2 :: Nil))))
   val remapClasses   = stylesFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(ct.toMap))
 
@@ -116,4 +116,7 @@ trait StyleBuilders {
   val order  = styleFor(Order)
   val zOrder = styleFor(ZOrder)
 
+  // pseudo classes
+  val hover  = stylesFor[Hover, StyleBaseProperty](Hover)
+  val active = stylesFor[Active, StyleBaseProperty](Active)
 }

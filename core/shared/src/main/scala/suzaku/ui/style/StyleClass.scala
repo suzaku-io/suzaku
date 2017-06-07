@@ -2,12 +2,12 @@ package suzaku.ui.style
 
 import boopickle.{PickleState, Pickler, UnpickleState}
 
-// Style identifiers
+// Style classes
 abstract class StyleClass {
   def style: List[StyleDef]
 
   // register at initialization time
-  val id = StyleRegistry.register(style)
+  val id = StyleRegistry.register(getClass, style)
 }
 
 case class PureStyleClass(override val id: Int) extends StyleClass {

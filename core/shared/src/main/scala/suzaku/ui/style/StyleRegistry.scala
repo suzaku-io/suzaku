@@ -1,12 +1,12 @@
 package suzaku.ui.style
 
 object StyleRegistry {
-  type StyleRegistration = (Int, List[StyleProperty])
+  type StyleRegistration = (Int, String, List[StyleProperty])
 
   var styleClassId         = 1
   var pendingRegistrations = List.empty[StyleRegistration]
 
-  def register(style: List[StyleDef]): Int = {
+  def register(styleClass: Class[_ <: StyleClass], style: List[StyleDef]): Int = {
     val styles = style.flatMap {
       case StyleSeq(seq) =>
         seq
@@ -16,7 +16,7 @@ object StyleRegistry {
     this.synchronized {
       val id = styleClassId
       styleClassId += 1
-      pendingRegistrations ::= id -> styles
+      pendingRegistrations ::= (id, styleClass.getSimpleName, styles)
       id
     }
   }

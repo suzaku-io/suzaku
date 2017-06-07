@@ -116,6 +116,15 @@ case class MaxHeight(value: LengthUnit) extends StyleBaseProperty
 case class MinWidth(value: LengthUnit)  extends StyleBaseProperty
 case class MinHeight(value: LengthUnit) extends StyleBaseProperty
 
+// pseudo classes
+trait PseudoClass {
+  def props: List[StyleBaseProperty]
+}
+
+case class Hover(props: List[StyleBaseProperty]) extends StyleBaseProperty with PseudoClass
+
+case class Active(props: List[StyleBaseProperty]) extends StyleBaseProperty with PseudoClass
+
 // style classes
 sealed trait StyleClassProperty extends StyleProperty
 
@@ -131,7 +140,8 @@ object StyleProperty {
   import boopickle.DefaultBasic._
   implicit val styleClassPickler = StyleClassPickler
 
-  val styleBasePickler = compositePickler[StyleBaseProperty]
+  implicit val styleBasePickler = compositePickler[StyleBaseProperty]
+  styleBasePickler
     .addConcreteType[EmptyStyle.type]
     .addConcreteType[Color]
     .addConcreteType[BackgroundColor]
@@ -175,6 +185,8 @@ object StyleProperty {
     .addConcreteType[MinWidth]
     .addConcreteType[MinHeight]
     .addConcreteType[RemapClasses]
+    .addConcreteType[Hover]
+    .addConcreteType[Active]
 
   val stylePickler = compositePickler[StyleProperty]
     .join(styleBasePickler)
