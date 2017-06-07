@@ -2,11 +2,11 @@ package suzaku.ui.style
 
 import boopickle.Default._
 
-sealed trait StyleDef
+trait StyleDef
 
-sealed trait StyleProperty extends StyleDef
+trait StyleProperty extends StyleDef
 
-sealed trait StyleBaseProperty extends StyleProperty
+trait StyleBaseProperty extends StyleProperty
 
 // meta styles
 case class StyleSeq(styles: List[StyleBaseProperty]) extends StyleDef {
@@ -20,87 +20,101 @@ object StyleSeq {
 // normal style properties
 case object EmptyStyle extends StyleBaseProperty
 
-case class Color(color: RGBColor) extends StyleBaseProperty
-
+case class Color(color: RGBColor)           extends StyleBaseProperty
 case class BackgroundColor(color: RGBColor) extends StyleBaseProperty
 
+case class OutlineWidth(value: WidthDimension) extends StyleBaseProperty
+case class OutlineStyle(style: LineStyle)      extends StyleBaseProperty
+case class OutlineColor(color: RGBColor)       extends StyleBaseProperty
+
+trait LengthProperty extends StyleBaseProperty {
+  def value: LengthDimension
+}
+
+trait WidthProperty extends StyleBaseProperty {
+  def value: WidthDimension
+}
+
+trait LineStyleProperty extends StyleBaseProperty {
+  def style: LineStyle
+}
+
+trait ColorProperty extends StyleBaseProperty {
+  def color: RGBColor
+}
+
+// font and text
+case class FontFamily(family: List[String])    extends StyleBaseProperty
+case class FontSize(size: FontDimension)       extends StyleBaseProperty
+case class FontWeight(weight: WeightDimension) extends StyleBaseProperty
+case object FontItalics                        extends StyleBaseProperty
+
+object FontFamily {
+  def apply(family: String*): FontFamily = FontFamily(family.toList)
+}
+
+// properties with directionality
 sealed trait Direction
 trait DirectionTop    extends Direction
 trait DirectionRight  extends Direction
 trait DirectionBottom extends Direction
 trait DirectionLeft   extends Direction
 
-sealed trait Margin extends Direction with StyleBaseProperty {
-  def value: LengthDimension
-}
+sealed trait Margin extends Direction with LengthProperty
 
-case class MarginLeft(value: LengthDimension)   extends StyleBaseProperty with Margin with DirectionLeft
-case class MarginTop(value: LengthDimension)    extends StyleBaseProperty with Margin with DirectionTop
-case class MarginRight(value: LengthDimension)  extends StyleBaseProperty with Margin with DirectionRight
-case class MarginBottom(value: LengthDimension) extends StyleBaseProperty with Margin with DirectionBottom
+case class MarginTop(value: LengthDimension)    extends Margin with DirectionTop
+case class MarginRight(value: LengthDimension)  extends Margin with DirectionRight
+case class MarginBottom(value: LengthDimension) extends Margin with DirectionBottom
+case class MarginLeft(value: LengthDimension)   extends Margin with DirectionLeft
 
-sealed trait Padding extends Direction with StyleBaseProperty {
-  def value: LengthDimension
-}
+sealed trait Padding extends Direction with LengthProperty
 
-case class PaddingLeft(value: LengthDimension)   extends StyleBaseProperty with Padding with DirectionLeft
-case class PaddingTop(value: LengthDimension)    extends StyleBaseProperty with Padding with DirectionTop
-case class PaddingRight(value: LengthDimension)  extends StyleBaseProperty with Padding with DirectionRight
-case class PaddingBottom(value: LengthDimension) extends StyleBaseProperty with Padding with DirectionBottom
+case class PaddingTop(value: LengthDimension)    extends Padding with DirectionTop
+case class PaddingRight(value: LengthDimension)  extends Padding with DirectionRight
+case class PaddingBottom(value: LengthDimension) extends Padding with DirectionBottom
+case class PaddingLeft(value: LengthDimension)   extends Padding with DirectionLeft
 
-sealed trait Offset extends Direction with StyleBaseProperty {
-  def value: LengthDimension
-}
+sealed trait Offset extends Direction with LengthProperty
 
-case class OffsetLeft(value: LengthDimension)   extends StyleBaseProperty with Offset with DirectionLeft
-case class OffsetTop(value: LengthDimension)    extends StyleBaseProperty with Offset with DirectionTop
-case class OffsetRight(value: LengthDimension)  extends StyleBaseProperty with Offset with DirectionRight
-case class OffsetBottom(value: LengthDimension) extends StyleBaseProperty with Offset with DirectionBottom
+case class OffsetTop(value: LengthDimension)    extends Offset with DirectionTop
+case class OffsetRight(value: LengthDimension)  extends Offset with DirectionRight
+case class OffsetBottom(value: LengthDimension) extends Offset with DirectionBottom
+case class OffsetLeft(value: LengthDimension)   extends Offset with DirectionLeft
 
-sealed trait BorderWidth extends Direction with StyleBaseProperty {
-  def value: WidthDimension
-}
+sealed trait BorderWidth extends Direction with WidthProperty
 
-case class BorderLeftWidth(value: WidthDimension)   extends StyleBaseProperty with BorderWidth with DirectionLeft
-case class BorderTopWidth(value: WidthDimension)    extends StyleBaseProperty with BorderWidth with DirectionTop
-case class BorderRightWidth(value: WidthDimension)  extends StyleBaseProperty with BorderWidth with DirectionRight
-case class BorderBottomWidth(value: WidthDimension) extends StyleBaseProperty with BorderWidth with DirectionBottom
+case class BorderWidthTop(value: WidthDimension)    extends BorderWidth with DirectionTop
+case class BorderWidthRight(value: WidthDimension)  extends BorderWidth with DirectionRight
+case class BorderWidthBottom(value: WidthDimension) extends BorderWidth with DirectionBottom
+case class BorderWidthLeft(value: WidthDimension)   extends BorderWidth with DirectionLeft
 
-sealed trait BorderStyle extends Direction with StyleBaseProperty {
-  def style: LineStyle
-}
+sealed trait BorderStyle extends Direction with LineStyleProperty
 
-case class BorderLeftStyle(style: LineStyle)   extends StyleBaseProperty with BorderStyle with DirectionLeft
-case class BorderTopStyle(style: LineStyle)    extends StyleBaseProperty with BorderStyle with DirectionTop
-case class BorderRightStyle(style: LineStyle)  extends StyleBaseProperty with BorderStyle with DirectionRight
-case class BorderBottomStyle(style: LineStyle) extends StyleBaseProperty with BorderStyle with DirectionBottom
+case class BorderStyleTop(style: LineStyle)    extends BorderStyle with DirectionTop
+case class BorderStyleRight(style: LineStyle)  extends BorderStyle with DirectionRight
+case class BorderStyleBottom(style: LineStyle) extends BorderStyle with DirectionBottom
+case class BorderStyleLeft(style: LineStyle)   extends BorderStyle with DirectionLeft
 
-sealed trait BorderColor extends Direction with StyleBaseProperty {
-  def color: RGBColor
-}
+sealed trait BorderColor extends Direction with ColorProperty
 
-case class BorderLeftColor(color: RGBColor)   extends StyleBaseProperty with BorderColor with DirectionLeft
-case class BorderTopColor(color: RGBColor)    extends StyleBaseProperty with BorderColor with DirectionTop
-case class BorderRightColor(color: RGBColor)  extends StyleBaseProperty with BorderColor with DirectionRight
-case class BorderBottomColor(color: RGBColor) extends StyleBaseProperty with BorderColor with DirectionBottom
-
-case class OutlineWidth(value: WidthDimension) extends StyleBaseProperty
-case class OutlineStyle(style: LineStyle)      extends StyleBaseProperty
-case class OutlineColor(color: RGBColor)       extends StyleBaseProperty
+case class BorderColorTop(color: RGBColor)    extends BorderColor with DirectionTop
+case class BorderColorRight(color: RGBColor)  extends BorderColor with DirectionRight
+case class BorderColorBottom(color: RGBColor) extends BorderColor with DirectionBottom
+case class BorderColorLeft(color: RGBColor)   extends BorderColor with DirectionLeft
 
 // Layout related styles
 case class Order(order: Int)  extends StyleBaseProperty
 case class ZOrder(order: Int) extends StyleBaseProperty
 
 // dimension styles
-case class Width(value: LengthDimension)  extends StyleBaseProperty
-case class Height(value: LengthDimension) extends StyleBaseProperty
+case class Width(value: LengthUnit)  extends StyleBaseProperty
+case class Height(value: LengthUnit) extends StyleBaseProperty
 
-case class MaxWidth(value: LengthDimension)  extends StyleBaseProperty
-case class MaxHeight(value: LengthDimension) extends StyleBaseProperty
+case class MaxWidth(value: LengthUnit)  extends StyleBaseProperty
+case class MaxHeight(value: LengthUnit) extends StyleBaseProperty
 
-case class MinWidth(value: LengthDimension)  extends StyleBaseProperty
-case class MinHeight(value: LengthDimension) extends StyleBaseProperty
+case class MinWidth(value: LengthUnit)  extends StyleBaseProperty
+case class MinHeight(value: LengthUnit) extends StyleBaseProperty
 
 // style classes
 sealed trait StyleClassProperty extends StyleProperty
@@ -117,5 +131,54 @@ object StyleProperty {
   import boopickle.DefaultBasic._
   implicit val styleClassPickler = StyleClassPickler
 
-  val pickler = PicklerGenerator.generatePickler[StyleProperty]
+  val styleBasePickler = compositePickler[StyleBaseProperty]
+    .addConcreteType[EmptyStyle.type]
+    .addConcreteType[Color]
+    .addConcreteType[BackgroundColor]
+    .addConcreteType[FontFamily]
+    .addConcreteType[FontSize]
+    .addConcreteType[FontWeight]
+    .addConcreteType[FontItalics.type]
+    .addConcreteType[MarginTop]
+    .addConcreteType[MarginRight]
+    .addConcreteType[MarginBottom]
+    .addConcreteType[MarginLeft]
+    .addConcreteType[PaddingTop]
+    .addConcreteType[PaddingRight]
+    .addConcreteType[PaddingBottom]
+    .addConcreteType[PaddingLeft]
+    .addConcreteType[OffsetTop]
+    .addConcreteType[OffsetRight]
+    .addConcreteType[OffsetBottom]
+    .addConcreteType[OffsetLeft]
+    .addConcreteType[BorderWidthTop]
+    .addConcreteType[BorderWidthRight]
+    .addConcreteType[BorderWidthBottom]
+    .addConcreteType[BorderWidthLeft]
+    .addConcreteType[BorderStyleTop]
+    .addConcreteType[BorderStyleRight]
+    .addConcreteType[BorderStyleBottom]
+    .addConcreteType[BorderStyleLeft]
+    .addConcreteType[BorderColorTop]
+    .addConcreteType[BorderColorRight]
+    .addConcreteType[BorderColorBottom]
+    .addConcreteType[BorderColorLeft]
+    .addConcreteType[OutlineWidth]
+    .addConcreteType[OutlineStyle]
+    .addConcreteType[OutlineColor]
+    .addConcreteType[Order]
+    .addConcreteType[ZOrder]
+    .addConcreteType[Width]
+    .addConcreteType[Height]
+    .addConcreteType[MaxWidth]
+    .addConcreteType[MaxHeight]
+    .addConcreteType[MinWidth]
+    .addConcreteType[MinHeight]
+    .addConcreteType[RemapClasses]
+
+  val stylePickler = compositePickler[StyleProperty]
+    .join(styleBasePickler)
+    .addConcreteType[StyleClasses]
+    .addConcreteType[InheritClasses]
+    .addConcreteType[ExtendClasses]
 }

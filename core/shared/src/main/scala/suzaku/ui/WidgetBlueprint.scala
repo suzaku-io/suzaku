@@ -35,7 +35,7 @@ trait WidgetBlueprint extends Blueprint {
 }
 
 object WidgetProtocol extends Protocol {
-  implicit val stylePropertyPickler = StyleProperty.pickler
+  implicit val stylePropertyPickler = StyleProperty.stylePickler
 
   sealed trait WidgetMessage extends Message
 

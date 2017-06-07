@@ -106,6 +106,28 @@ object DOMWidget {
     case WidthLength(l) => l.toString
   }
 
+  def size2str(size: FontDimension): String = size match {
+    case FontXXSmall   => "xx-small"
+    case FontXSmall    => "x-small"
+    case FontSmall     => "small"
+    case FontSmaller   => "smaller"
+    case FontMedium    => "medium"
+    case FontLarge     => "large"
+    case FontLarger    => "larger"
+    case FontXLarge    => "x-large"
+    case FontXXLarge   => "xx-large"
+    case FontLength(s) => s.toString
+  }
+
+  def weight2str(weight: WeightDimension): String = weight match {
+    case WeightNormal       => "normal"
+    case WeightBold         => "bold"
+    case WeightBolder       => "bolder"
+    case WeightLighter      => "lighter"
+    case WeightValue(value) => (math.round(value / 100.0) * 100 max 100 min 900).toString
+
+  }
+
   def expand[A <: Direction](prop: A)(toStr: A => String, name: String, ext: String = ""): (String, String) = {
     val extStr = if (ext.isEmpty) "" else "-" + ext
     prop match {
@@ -125,6 +147,11 @@ object DOMWidget {
       case Color(c)           => ("color", color2str(c))
       case BackgroundColor(c) => ("background-color", color2str(c))
 
+      case FontFamily(family) => ("font-family", family.mkString("\"", "\",\"", "\""))
+      case FontSize(size)     => ("font-size", size2str(size))
+      case FontWeight(weight) => ("font-weight", weight2str(weight))
+      case FontItalics        => ("font-style", "italics")
+
       case Order(n)         => ("order", n.toString)
       case ZOrder(n)        => ("z-index", n.toString)
       case Width(l)         => ("width", l.toString)
@@ -138,7 +165,7 @@ object DOMWidget {
       case p: Padding => expand(p)(_.value.toString, "padding")
       case p: Offset  => expand(p)(_.value.toString, "offset")
 
-      case p: BorderWidth => expand(p)(_.value.toString, "border", "width")
+      case p: BorderWidth => expand(p)(w => width2str(w.value), "border", "width")
       case p: BorderStyle => expand(p)(s => line2str(s.style), "border", "style")
       case p: BorderColor => expand(p)(c => color2str(c.color), "border", "color")
 

@@ -110,7 +110,7 @@ lazy val baseWidgets = crossProject
     name := "suzaku-widgets",
     libraryDependencies ++= Seq()
   )
-  .dependsOn(core)
+  .dependsOn(core % "compile->compile;test->test")
 
 lazy val baseWidgetsJS  = baseWidgets.js
 lazy val baseWidgetsJVM = baseWidgets.jvm
@@ -132,7 +132,7 @@ lazy val webCore = project
     scalacOptions ++= sourceMapSetting.value,
     scalaJSStage in Global := FastOptStage
   )
-  .dependsOn(coreJS)
+  .dependsOn(coreJS % "compile->compile;test->test")
 
 /**
   * Suzaku base web widgets

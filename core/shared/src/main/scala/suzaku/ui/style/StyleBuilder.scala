@@ -3,8 +3,8 @@ package suzaku.ui.style
 class StyleBuilder[S <: StyleProperty, V](build: V => S) {
   def :=(value: V): S = build(value)
 }
-class MultiStyleBuilder[S <: StyleProperty, V](build: Seq[V] => S) {
-  def :=(values: V*): S = build(values)
+class MultiStyleBuilder[S <: StyleProperty, V](build: List[V] => S) {
+  def :=(values: V*): S = build(values.toList)
 }
 
 abstract class TRBLBuilder[A](top: A => StyleBaseProperty,
@@ -22,14 +22,14 @@ abstract class TRBLBuilder[A](top: A => StyleBaseProperty,
 }
 
 trait StyleBuilders {
-  def styleFor[S <: StyleProperty, V](build: V => S)       = new StyleBuilder(build)
-  def stylesFor[S <: StyleProperty, V](build: Seq[V] => S) = new MultiStyleBuilder(build)
+  def styleFor[S <: StyleProperty, V](build: V => S)        = new StyleBuilder(build)
+  def stylesFor[S <: StyleProperty, V](build: List[V] => S) = new MultiStyleBuilder(build)
 
   // for style classes
   val inheritClass   = styleFor[InheritClasses, StyleClass](styleClass => InheritClasses(List(styleClass)))
-  val inheritClasses = stylesFor[InheritClasses, StyleClass](styleClasses => InheritClasses(styleClasses.toList))
+  val inheritClasses = stylesFor[InheritClasses, StyleClass](styleClasses => InheritClasses(styleClasses))
   val extendClass    = styleFor[ExtendClasses, StyleClass](styleClass => ExtendClasses(List(styleClass)))
-  val extendClasses  = stylesFor[ExtendClasses, StyleClass](styleClasses => ExtendClasses(styleClasses.toList))
+  val extendClasses  = stylesFor[ExtendClasses, StyleClass](styleClasses => ExtendClasses(styleClasses))
   val remapClass     = styleFor[RemapClasses, (StyleClass, StyleClass)](ct => RemapClasses(Map(ct._1 -> (ct._2 :: Nil))))
   val remapClasses   = stylesFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(ct.toMap))
 
@@ -37,6 +37,12 @@ trait StyleBuilders {
   val color           = styleFor(Color)
   val backgroundColor = styleFor(BackgroundColor)
 
+  // font
+  val fontFamily = stylesFor[FontFamily, String](families => FontFamily(families))
+  val fontSize   = styleFor(FontSize)
+  val fontWeight = styleFor(FontWeight)
+
+  // layout styles
   val marginLeft   = styleFor(MarginLeft)
   val marginTop    = styleFor(MarginTop)
   val marginRight  = styleFor(MarginRight)
@@ -58,28 +64,28 @@ trait StyleBuilders {
   class OffsetBuilder extends TRBLBuilder[LengthDimension](OffsetTop, OffsetRight, OffsetBottom, OffsetLeft)
   val offset = new OffsetBuilder
 
-  val borderWidthLeft   = styleFor(BorderLeftWidth)
-  val borderWidthTop    = styleFor(BorderTopWidth)
-  val borderWidthRight  = styleFor(BorderRightWidth)
-  val borderWidthBottom = styleFor(BorderBottomWidth)
+  val borderWidthLeft   = styleFor(BorderWidthLeft)
+  val borderWidthTop    = styleFor(BorderWidthTop)
+  val borderWidthRight  = styleFor(BorderWidthRight)
+  val borderWidthBottom = styleFor(BorderWidthBottom)
   class BorderWidthBuilder
-      extends TRBLBuilder[WidthDimension](BorderTopWidth, BorderRightWidth, BorderBottomWidth, BorderLeftWidth)
+      extends TRBLBuilder[WidthDimension](BorderWidthTop, BorderWidthRight, BorderWidthBottom, BorderWidthLeft)
   val borderWidth = new BorderWidthBuilder
 
-  val borderStyleLeft   = styleFor(BorderLeftStyle)
-  val borderStyleTop    = styleFor(BorderTopStyle)
-  val borderStyleRight  = styleFor(BorderRightStyle)
-  val borderStyleBottom = styleFor(BorderBottomStyle)
+  val borderStyleLeft   = styleFor(BorderStyleLeft)
+  val borderStyleTop    = styleFor(BorderStyleTop)
+  val borderStyleRight  = styleFor(BorderStyleRight)
+  val borderStyleBottom = styleFor(BorderStyleBottom)
   class BorderStyleBuilder
-      extends TRBLBuilder[LineStyle](BorderTopStyle, BorderRightStyle, BorderBottomStyle, BorderLeftStyle)
+      extends TRBLBuilder[LineStyle](BorderStyleTop, BorderStyleRight, BorderStyleBottom, BorderStyleLeft)
   val borderStyle = new BorderStyleBuilder
 
-  val borderColorLeft   = styleFor(BorderLeftColor)
-  val borderColorTop    = styleFor(BorderTopColor)
-  val borderColorRight  = styleFor(BorderRightColor)
-  val borderColorBottom = styleFor(BorderBottomColor)
+  val borderColorLeft   = styleFor(BorderColorLeft)
+  val borderColorTop    = styleFor(BorderColorTop)
+  val borderColorRight  = styleFor(BorderColorRight)
+  val borderColorBottom = styleFor(BorderColorBottom)
   class BorderColorBuilder
-      extends TRBLBuilder[RGBColor](BorderTopColor, BorderRightColor, BorderBottomColor, BorderLeftColor)
+      extends TRBLBuilder[RGBColor](BorderColorTop, BorderColorRight, BorderColorBottom, BorderColorLeft)
   val borderColor = new BorderColorBuilder
   class BorderBuilder {
     def :=(w: WidthDimension)                            = borderWidth := w

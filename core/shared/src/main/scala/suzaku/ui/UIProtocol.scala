@@ -54,7 +54,7 @@ object UIProtocol extends Protocol {
 
   case class RegisterWidgetClass(className: String, classId: Int) extends UIMessage
 
-  implicit val stylePickler = StyleProperty.pickler
+  implicit val stylePickler = StyleProperty.stylePickler
 
   private val uiPickler = compositePickler[UIMessage]
     .addConcreteType[NextFrame]

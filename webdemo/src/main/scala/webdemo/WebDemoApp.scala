@@ -3,10 +3,10 @@ package webdemo
 import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
-import suzaku.ui.layout.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui._
 import suzaku.ui.layout.LinearLayout
-import suzaku.ui.style.{StyleClass, StyleProperty}
+import suzaku.ui.layout.LinearLayoutProtocol.{Direction, Justify}
+import suzaku.ui.style.StyleClass
 import suzaku.widget.{Button, TextInput}
 
 object TestComp {
@@ -137,7 +137,10 @@ object Red extends StyleClass {
 
 object RedButton extends StyleClass {
   def style = List(
-    inheritClasses := (Large, Red)
+    inheritClasses := (Large, Red),
+    fontFamily := ("Times New Roman", "Times", "serif"),
+    fontSize := xxlarge,
+    fontWeight := 600
   )
 }
 
