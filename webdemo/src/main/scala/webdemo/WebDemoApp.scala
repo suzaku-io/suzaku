@@ -7,12 +7,13 @@ import suzaku.ui._
 import suzaku.ui.layout.LinearLayout
 import suzaku.ui.layout.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui.style.StyleClass
-import suzaku.widget.{Button, TextInput}
+import suzaku.widget.{Button, Checkbox, TextInput}
 
 object TestComp {
   case class State(count: Int,
                    time: Long,
                    text: String,
+                   checked: Boolean,
                    direction: Direction = Direction.Horizontal,
                    justify: Justify = Justify.Start)
 
@@ -24,6 +25,9 @@ object TestComp {
     def render(state: State) = {
       import suzaku.ui.style._
       LinearLayout(state.direction, state.justify)(
+        Checkbox(state.checked, value => modState(s => s.copy(checked = value))) <<< (
+          width := 10.em
+        ),
         TextInput(state.text, value => modState(s => s.copy(text = value))),
         Button(s"Add button ${state.count}", () => add()).withKey(0) <<< (
           if (state.time % 20 == 0) Order(2) else EmptyStyle
@@ -48,7 +52,8 @@ object TestComp {
         s"Just some <script>${"text" * state.count} </script>",
         Button(s"${blueprint.label} ${state.time}").withKey(3)
       ) <<< (
-        if (state.time % 2 == 0) remapClass := GreenButton -> RedButton else EmptyStyle
+        if (state.time % 2 == 0) remapClass := GreenButton -> RedButton else EmptyStyle,
+        if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
       )
     }
 
@@ -77,7 +82,7 @@ object TestComp {
       println(s"Will receive $nextBlueprint")
     }
 
-    def initialState = State(0, 0, "init")
+    def initialState = State(0, 0, "init", checked = false)
 
     def add(): Unit = {
       modState(state => state.copy(count = state.count + 1))
