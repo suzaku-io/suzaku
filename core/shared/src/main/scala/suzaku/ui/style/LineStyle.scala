@@ -26,6 +26,6 @@ trait LineStyleImplicits {
   implicit def solid2Style(a: Keywords.solid.type): LineStyle   = LineSolid
   implicit def dotted2Style(a: Keywords.dotted.type): LineStyle = LineDotted
   implicit def dashed2Style(a: Keywords.dashed.type): LineStyle = LineDashed
-  implicit def inset2Style(a: Keywords.inset.type): LineStyle = LineInset
+  implicit def inset2Style(a: Keywords.inset.type): LineStyle   = LineInset
   implicit def outset2Style(a: Keywords.outset.type): LineStyle = LineOutset
 }

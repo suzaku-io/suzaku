@@ -36,7 +36,6 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
                 case _: Hover  => "hover"
                 case _: Active => "active"
               }
-
               (regular, pseudo.updated(name, ps ::: pseudo.getOrElse(name, Nil)))
             case ((regular, pseudo), prop) =>
               val (name, value) = DOMWidget.extractStyle(prop)
@@ -46,9 +45,12 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
           val css = s".$className { ${regularStyles.mkString("")} }"
 
           val pseudoCss =
-            pseudoStyles.map { case (name, innerStyles) =>
-              s"\n.$className:$name { ${innerStyles.mkString("")} }"
-            }.mkString("")
+            pseudoStyles
+              .map {
+                case (name, innerStyles) =>
+                  s"\n.$className:$name { ${innerStyles.mkString("")} }"
+              }
+              .mkString("")
           css + pseudoCss + s" /* $styleName */"
       }
       .mkString("\n", "\n", "\n")

@@ -103,7 +103,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
   "View manager child update" should {
     "update nothing" in new MockFixture {
       val vm = new TestUIManager(uiChannel)
-      (uiChannel.send(_: UIProtocol.UIMessage)(_:MessageWitness[UIProtocol.UIMessage,UIProtocol.type])).expects(*, *)
+      (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
@@ -240,7 +240,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
 
     "replace with another view" in new MockFixture {
       val vm = new TestUIManager(uiChannel)
-      (uiChannel.send(_: UIProtocol.UIMessage)(_:MessageWitness[UIProtocol.UIMessage,UIProtocol.type])).expects(*, *)
+      (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)

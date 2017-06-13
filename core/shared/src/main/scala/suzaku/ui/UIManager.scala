@@ -418,7 +418,7 @@ object UIManager {
       val name = blueprint.getName
       widgetClasses.get(name) match {
         case Some(id) => id
-        case None =>
+        case None     =>
           // create integer mapping and register the class
           val id = widgetClassId
           widgetClassId += 1
