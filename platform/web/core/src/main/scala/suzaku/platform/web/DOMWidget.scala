@@ -3,7 +3,7 @@ package suzaku.platform.web
 import arteria.core.Protocol
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
-import suzaku.ui.style.{LineStyle, RGB, RGBA, RGBColor, StyleBaseProperty}
+import suzaku.ui.style.StyleBaseProperty
 import suzaku.ui.{WidgetArtifact, WidgetManager, WidgetWithProtocol}
 
 case class DOMWidgetArtifact[E <: dom.Node](el: E) extends WidgetArtifact {}
@@ -13,7 +13,7 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetMana
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
 
-  @inline protected def modifyDOM(f: E => Unit): Unit = f(artifact.el)
+  @inline protected[web] def modifyDOM(f: E => Unit): Unit = f(artifact.el)
 
   def updateChildren(ops: Seq[ChildOp], mapWidget: Int => W): Unit = {
     val el    = artifact.el
@@ -140,9 +140,7 @@ object DOMWidget {
 
   def extractStyle(prop: StyleBaseProperty): (String, String) = {
     prop match {
-      case EmptyStyle => ("", "")
-
-      case _: RemapClasses => ("", "")
+      case EmptyStyle | RemapClasses(_) => ("", "")
 
       case Color(c)           => ("color", color2str(c))
       case BackgroundColor(c) => ("background-color", color2str(c))

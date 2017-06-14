@@ -1,7 +1,5 @@
 package suzaku.ui.style
 
-import boopickle.Default._
-
 trait StyleDef
 
 trait StyleProperty extends StyleDef
@@ -137,8 +135,9 @@ case class ExtendClasses(styles: List[StyleClass]) extends StyleClassProperty
 case class RemapClasses(styleMap: Map[StyleClass, List[StyleClass]]) extends StyleBaseProperty
 
 object StyleProperty {
-  import boopickle.DefaultBasic._
-  implicit val styleClassPickler = StyleClassPickler
+  import boopickle.Default._
+
+  implicit val styleClassPickler = new StyleClassPickler
 
   implicit val styleBasePickler = compositePickler[StyleBaseProperty]
   styleBasePickler

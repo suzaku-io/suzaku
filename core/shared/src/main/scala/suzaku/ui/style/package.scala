@@ -6,4 +6,4 @@ package object style
     with Colors
     with ThemeImplicits
     with LineStyleImplicits
-    with KeywordTypes {}
+

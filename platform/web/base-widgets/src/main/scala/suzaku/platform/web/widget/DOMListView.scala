@@ -1,7 +1,7 @@
 package suzaku.platform.web.widget
 
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.{WidgetBuilder, WidgetManager}
+import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
 import suzaku.widget.ListViewProtocol
 import org.scalajs.dom
 
@@ -14,12 +14,13 @@ class DOMListView(widgetId: Int, context: ListViewProtocol.ChannelContext, widge
     DOMWidgetArtifact(div.render)
   }
 
-  override def setChildren(children: Seq[W]) = {
+  override def setChildren(children: Seq[Widget]) = {
     import org.scalajs.dom.ext._
     modifyDOM { el =>
       el.childNodes.foreach(el.removeChild)
       children.foreach { c =>
-        el.appendChild(c.artifact.el)
+        val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.Node]]
+        el.appendChild(widget.artifact.el)
       }
     }
   }

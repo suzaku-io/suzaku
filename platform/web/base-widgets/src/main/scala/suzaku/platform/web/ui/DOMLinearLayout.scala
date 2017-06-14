@@ -2,8 +2,8 @@ package suzaku.platform.web.ui
 
 import org.scalajs.dom
 import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.layout.LinearLayoutProtocol
-import suzaku.ui.{WidgetBuilder, WidgetManager}
+import suzaku.ui.layout._
+import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
 
 class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContext, widgetManager: WidgetManager)
     extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) {
@@ -46,13 +46,48 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
   updateDirection(context.direction)
   updateJustify(context.justify)
 
-  override def setChildren(children: Seq[W]) = {
+  override def setChildren(children: Seq[Widget]) = {
     import org.scalajs.dom.ext._
     modifyDOM { el =>
       el.childNodes.foreach(el.removeChild)
       children.foreach { c =>
-        el.appendChild(c.artifact.el)
+        val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.Node]]
+        el.appendChild(widget.artifact.el)
+        resolveLayout(widget, widget.layoutProperties)
       }
+    }
+  }
+
+  override def resolveLayout(w: Widget, layoutProperties: List[LayoutProperty]): Unit = {
+    val widget    = w.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
+    val modWidget = (f: dom.html.Element => Unit) => widget.modifyDOM(f)
+
+    layoutProperties foreach {
+      case AlignSelf(alignment) =>
+        modWidget { el =>
+          el.style.removeProperty("align-self")
+          if (alignment != AlignAuto) {
+            el.style.setProperty(
+              "align-self",
+              alignment match {
+                case AlignStart    => "start"
+                case AlignEnd      => "end"
+                case AlignCenter   => "center"
+                case AlignBaseline => "baseline"
+                case AlignStretch  => "stretch"
+                case AlignAuto     => "auto"
+              }
+            )
+          }
+        }
+      case LayoutWeight(weight) =>
+        modWidget { el =>
+          el.style.removeProperty("flex-grow")
+          if (weight != 0) {
+            el.style.setProperty("flex-grow", weight.toString)
+          }
+        }
+      case _ => // ignore others
     }
   }
 

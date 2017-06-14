@@ -1,5 +1,7 @@
 package suzaku.ui.style
 
+import suzaku.ui.Keywords
+
 import scala.language.implicitConversions
 
 sealed trait LineStyle

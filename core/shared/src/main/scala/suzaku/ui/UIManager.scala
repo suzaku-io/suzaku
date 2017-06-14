@@ -3,7 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
-import suzaku.ui.style.{StyleRegistry, Theme}
+import suzaku.ui.style.{StyleClassRegistry, Theme}
 
 import scala.collection.mutable
 import scala.collection.immutable
@@ -34,8 +34,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
         send(MountRoot(newRoot.getId))
     }
     // check if styles have updated
-    if (StyleRegistry.hasRegistrations) {
-      val styles = StyleRegistry.dequeueRegistrations
+    if (StyleClassRegistry.hasRegistrations) {
+      val styles = StyleClassRegistry.dequeueRegistrations
       logger.debug(s"Adding ${styles.size} styles")
       send(AddStyles(styles))
     }
@@ -78,8 +78,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       }
       dirtyRoots = Nil
       // check if styles have updated
-      if (StyleRegistry.hasRegistrations) {
-        val styles = StyleRegistry.dequeueRegistrations
+      if (StyleClassRegistry.hasRegistrations) {
+        val styles = StyleClassRegistry.dequeueRegistrations
         logger.debug(s"Adding ${styles.size} styles")
         send(AddStyles(styles))
       }

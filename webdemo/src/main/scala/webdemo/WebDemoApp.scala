@@ -4,7 +4,6 @@ import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
-import suzaku.ui.layout.LinearLayout
 import suzaku.ui.layout.LinearLayoutProtocol.{Direction, Justify}
 import suzaku.ui.style.StyleClass
 import suzaku.widget.{Button, Checkbox, TextInput}
@@ -24,19 +23,21 @@ object TestComp {
   class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy) extends Component[CBP, State](initialBlueprint, proxy) {
     def render(state: State) = {
       import suzaku.ui.style._
+      import suzaku.ui.layout._
+      import suzaku.ui.KeywordTypes._
+
       LinearLayout(state.direction, state.justify)(
         Checkbox(state.checked, value => modState(s => s.copy(checked = value))) <<< (
           width := 10.em
         ),
         TextInput(state.text, value => modState(s => s.copy(text = value))),
         Button(s"Add button ${state.count}", () => add()).withKey(0) <<< (
-          if (state.time % 20 == 0) Order(2) else EmptyStyle
+          Order(2),
         ) << GreenButton,
-        Button(s"Remove button ${state.count}", () => dec()).withKey(1) <<< (
+        Button(s"Remove button ${state.count}", () => dec()).withKey(1).withLayout(alignSelf := start) <<< (
           backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
-          color := 0xFF80FF,
-          width := 40.em
-        ),
+          color := 0xFF80FF
+        )  << RedButton,
         if (state.count == 0)
           EmptyBlueprint
         else
@@ -52,7 +53,6 @@ object TestComp {
         s"Just some <script>${"text" * state.count} </script>",
         Button(s"${blueprint.label} ${state.time}").withKey(3)
       ) <<< (
-        if (state.time % 2 == 0) remapClass := GreenButton -> RedButton else EmptyStyle,
         if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
       )
     }
@@ -103,10 +103,10 @@ object TestComp {
 }
 
 import suzaku.ui.style._
+import suzaku.ui.KeywordTypes._
 
 object BaseStyle extends StyleClass {
   def style = List(
-    width := 20.em,
     height := auto,
     backgroundColor := 0x0060FF,
     hover := (

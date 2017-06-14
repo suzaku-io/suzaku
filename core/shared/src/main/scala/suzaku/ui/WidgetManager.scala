@@ -3,6 +3,8 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
+import suzaku.ui.layout.LayoutProperty
+import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
 import suzaku.ui.style.{ExtendClasses, InheritClasses, StyleBaseProperty}
 
 import scala.collection.immutable.IntMap
@@ -146,7 +148,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
       logger.debug(s"Received styles ${styles.reverse}")
       var dirtyStyles = false
       val baseStyles = styles.reverse.map {
-        case (styleId, styleName, props) =>
+        case StyleClassRegistration(styleId, styleName, props) =>
           // extract inheritance information
           val inherits = props.collect {
             case i: InheritClasses => i
@@ -191,7 +193,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
   override def materializeChildChannel(channelId: Int,
                                        globalId: Int,
                                        parent: MessageChannelBase,
-                                       channelReader: ChannelReader) = {
+                                       channelReader: ChannelReader): MessageChannelBase = {
     import boopickle.Default._
     // read the component creation data
     val CreateWidget(widgetClass, widgetId) = channelReader.read[CreateWidget]
@@ -226,6 +228,8 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     val res = ids.flatMap(id => styleInheritance.getOrElse(id, id :: Nil))
     res
   }
+
+  override def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit = {}
 
   protected def emptyWidget(widgetId: Int): Widget
 

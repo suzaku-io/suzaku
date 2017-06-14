@@ -2,7 +2,8 @@ package suzaku.ui
 
 import arteria.core._
 import suzaku.ui.UIProtocol.ChildOp
-import suzaku.ui.WidgetProtocol.UpdateStyle
+import suzaku.ui.WidgetProtocol.{UpdateLayout, UpdateStyle}
+import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.{RemapClasses, StyleBaseProperty, StyleClasses}
 
 abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends WidgetParent {
@@ -10,11 +11,12 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
   type Artifact <: WidgetArtifact
   type W <: Widget
 
-  private var parent         = Option.empty[WidgetParent]
+  protected var parent       = Option.empty[WidgetParent]
   private var messageChannel = null: MessageChannel[CP]
   private var widgetClassId  = -1
   protected var styleClasses = List.empty[Int]
   protected var styleMapping = Map.empty[Int, List[Int]]
+  protected var layoutProps  = List.empty[LayoutProperty]
 
   protected[suzaku] def withChannel(channel: MessageChannel[CP]): this.type = {
     messageChannel = channel
@@ -30,7 +32,7 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
 
   def artifact: Artifact
 
-  def setChildren(children: Seq[W]): Unit =
+  def setChildren(children: Seq[Widget]): Unit =
     throw new NotImplementedError("This widget cannot have children")
 
   def updateChildren(ops: Seq[ChildOp], widget: Int => W): Unit
@@ -40,6 +42,8 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
   def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit
 
   def widgetClass: Int = widgetClassId
+
+  def layoutProperties = layoutProps
 
   def setParent(parent: WidgetParent): Unit = {
     this.parent = Some(parent)
@@ -63,12 +67,16 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
 
   override def resolveStyleInheritance(ids: List[Int]): List[Int] =
     parent.map(_.resolveStyleInheritance(ids)).getOrElse(ids)
+
+  override def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit = {}
 }
 
 trait WidgetParent {
   def resolveStyleMapping(id: List[Int]): List[Int]
 
   def resolveStyleInheritance(id: List[Int]): List[Int]
+
+  def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit
 }
 
 abstract class WidgetArtifact
@@ -98,6 +106,11 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: W
         case unknown =>
           throw new IllegalArgumentException(s"Style property '$unknown' not allowed here")
       }
+
+    case UpdateLayout(props) =>
+      println(s"Update layout with $props")
+      layoutProps = props
+      parent.foreach(_.resolveLayout(this, layoutProps))
   }
 }
 

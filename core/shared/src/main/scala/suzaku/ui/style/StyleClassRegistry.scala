@@ -1,10 +1,10 @@
 package suzaku.ui.style
 
-object StyleRegistry {
-  type StyleRegistration = (Int, String, List[StyleProperty])
+object StyleClassRegistry {
+  case class StyleClassRegistration(id: Int, className: String, styleProps: List[StyleProperty])
 
-  var styleClassId         = 1
-  var pendingRegistrations = List.empty[StyleRegistration]
+  private var styleClassId         = 1
+  private var pendingRegistrations = List.empty[StyleClassRegistration]
 
   def register(styleClass: Class[_ <: StyleClass], style: List[StyleDef]): Int = {
     val styles = style.flatMap {
@@ -16,14 +16,14 @@ object StyleRegistry {
     this.synchronized {
       val id = styleClassId
       styleClassId += 1
-      pendingRegistrations ::= (id, styleClass.getSimpleName, styles)
+      pendingRegistrations ::= StyleClassRegistration(id, styleClass.getSimpleName, styles)
       id
     }
   }
 
   def hasRegistrations = pendingRegistrations.nonEmpty
 
-  def dequeueRegistrations: List[StyleRegistration] = {
+  def dequeueRegistrations: List[StyleClassRegistration] = {
     this.synchronized {
       val regs = pendingRegistrations
       pendingRegistrations = Nil

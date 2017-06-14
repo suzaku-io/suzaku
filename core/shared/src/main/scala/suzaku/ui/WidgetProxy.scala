@@ -2,8 +2,8 @@ package suzaku.ui
 
 import arteria.core._
 import boopickle.Default._
-import suzaku.ui.UIProtocol.{CreateWidget, RegisterWidgetClass, UIChannel}
-import suzaku.ui.WidgetProtocol.{UpdateStyle, WidgetMessage}
+import suzaku.ui.UIProtocol.{CreateWidget, UIChannel}
+import suzaku.ui.WidgetProtocol.{UpdateLayout, UpdateStyle, WidgetMessage}
 import suzaku.ui.style.StyleProperty
 
 abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val protocol: P,
@@ -24,9 +24,11 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
       )
     )
 
-  // send initial style, if any
+  // send initial style and layout, if any
   if (blueprint._style.nonEmpty)
     send(UpdateStyle(blueprint._style.map(p => (p._2, false)).toList))
+  if (blueprint._layout.nonEmpty)
+    send(UpdateLayout(blueprint._layout))
 
   @inline def send[A <: Message](message: A)(implicit ev: MessageWitness[A, P]): Unit = {
     channel.send(message)
@@ -56,6 +58,11 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
       if (updated.nonEmpty)
         send(UpdateStyle(updated))
     }
+    // update layout properties
+    if (newBlueprint._layout != blueprint._layout) {
+      send(UpdateLayout(newBlueprint._layout))
+    }
+
     blueprint = newBlueprint
   }
 
