@@ -20,3 +20,16 @@ trait AlignmentImplicits {
   implicit def baseline2align(a: Keywords.baseline.type): Alignment = AlignBaseline
   implicit def stretch2align(a: Keywords.stretch.type): Alignment   = AlignStretch
 }
+
+object Alignment {
+  import boopickle.Default._
+
+  implicit val alignmentPickler = compositePickler[Alignment]
+    .addConcreteType[AlignAuto.type]
+    .addConcreteType[AlignStart.type]
+    .addConcreteType[AlignEnd.type]
+    .addConcreteType[AlignCenter.type]
+    .addConcreteType[AlignBaseline.type]
+    .addConcreteType[AlignStretch.type]
+
+}

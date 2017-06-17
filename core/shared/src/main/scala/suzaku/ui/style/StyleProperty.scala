@@ -102,8 +102,6 @@ case class BorderColorRight(color: RGBColor)  extends BorderColor with Direction
 case class BorderColorBottom(color: RGBColor) extends BorderColor with DirectionBottom
 case class BorderColorLeft(color: RGBColor)   extends BorderColor with DirectionLeft
 
-// Layout related styles
-
 // dimension styles
 case class Width(value: LengthUnit)  extends StyleBaseProperty
 case class Height(value: LengthUnit) extends StyleBaseProperty

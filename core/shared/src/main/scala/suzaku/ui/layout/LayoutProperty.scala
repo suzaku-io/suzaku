@@ -28,6 +28,7 @@ class LayoutIdPickler extends Pickler[LayoutId] {
 
 object LayoutProperty {
   import boopickle.Default._
+  import Alignment._
 
   implicit val layoutIdPickler = new LayoutIdPickler
 

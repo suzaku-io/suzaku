@@ -32,10 +32,15 @@ object TestComp {
         ),
         TextInput(state.text, value => modState(s => s.copy(text = value))),
         Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
-        Button(s"Remove button ${state.count}", () => dec()).withKey(1).withLayout(alignSelf := start) << (
-          backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
-          color := 0xFF80FF
-        )  << RedButton,
+        Button(s"Remove button ${state.count}", () => dec())
+          .withKey(1)
+          .withLayout(alignSelf := start)
+          .withStyle(
+            backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
+            color := 0xFF80FF,
+            RedButton,
+            Large
+          ),
         if (state.count == 0)
           EmptyBlueprint
         else
@@ -134,7 +139,7 @@ object GreenButton extends StyleClass {
 
 object Large extends StyleClass {
   def style = List(
-    height := auto
+    height := 100.px
   )
 }
 
