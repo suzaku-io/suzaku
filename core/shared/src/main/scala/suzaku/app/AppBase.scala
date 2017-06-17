@@ -18,10 +18,10 @@ abstract class AppBase(transport: Transport,
   protected val logger: Logger = new Logger {
     import suzaku.util.LoggerProtocol._
     import Logger._
-    override def debug(message: String): Unit = if (logLevel <= LogLevelDebug) loggerChannel.send(LogDebug(message))
-    override def info(message: String): Unit  = if (logLevel <= LogLevelInfo) loggerChannel.send(LogInfo(message))
-    override def warn(message: String): Unit  = if (logLevel <= LogLevelWarn) loggerChannel.send(LogWarn(message))
-    override def error(message: String): Unit = if (logLevel <= LogLevelError) loggerChannel.send(LogError(message))
+    override def debug(message: String): Unit = if (logLevel <= LogLevelDebug) println(message)
+    override def info(message: String): Unit  = if (logLevel <= LogLevelInfo) println(message)
+    override def warn(message: String): Unit  = if (logLevel <= LogLevelWarn) println(message)
+    override def error(message: String): Unit = if (logLevel <= LogLevelError) println(message)
   }
   protected val uiManager = new UIManager(logger, channelEstablished, flushMessages _)
   protected val router    = new MessageRouter[RouterMessage](createHandler(uiManager), false)

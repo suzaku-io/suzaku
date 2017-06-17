@@ -3,7 +3,7 @@ package suzaku.ui.style
 import boopickle.{PickleState, Pickler, UnpickleState}
 
 // Style classes
-abstract class StyleClass {
+abstract class StyleClass extends StylePropOrClass {
   def style: List[StyleDef]
 
   // register at initialization time

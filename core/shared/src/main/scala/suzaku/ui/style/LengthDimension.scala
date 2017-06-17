@@ -35,12 +35,38 @@ case object LengthAuto extends LengthUnit {
   override def toString: String = "auto"
 }
 
+object LengthDimension {
+  import boopickle.Default._
+  implicit val lengthPickler = compositePickler[LengthUnit]
+    .addTransform[LengthPx, Double](_.value, LengthPx)
+    .addTransform[LengthPct, Double](_.value, LengthPct)
+    .addTransform[LengthEm, Double](_.value, LengthEm)
+    .addTransform[LengthRem, Double](_.value, LengthRem)
+    .addTransform[LengthVw, Double](_.value, LengthVw)
+    .addTransform[LengthVh, Double](_.value, LengthVh)
+    .addConcreteType[LengthAuto.type]
+
+  implicit val lengthDimensionPickler = compositePickler[LengthDimension]
+    .join(lengthPickler)
+    .addTransform[LengthU, Double](_.value, LengthU)
+}
+
 sealed trait WidthDimension
 
 case object WidthThin                 extends WidthDimension
 case object WidthMedium               extends WidthDimension
 case object WidthThick                extends WidthDimension
 case class WidthLength(w: LengthUnit) extends WidthDimension
+
+object WidthDimension {
+  import boopickle.Default._
+  import LengthDimension._
+  implicit val widthPickler = compositePickler[WidthDimension]
+    .addConcreteType[WidthThin.type]
+    .addConcreteType[WidthMedium.type]
+    .addConcreteType[WidthThick.type]
+    .addConcreteType[WidthLength]
+}
 
 sealed trait FontDimension
 
@@ -55,6 +81,22 @@ case object FontXLarge                       extends FontDimension
 case object FontXXLarge                      extends FontDimension
 case class FontLength(size: LengthDimension) extends FontDimension
 
+object FontDimension {
+  import boopickle.Default._
+  import LengthDimension._
+  implicit val fontPickler = compositePickler[FontDimension]
+    .addConcreteType[FontXXSmall.type]
+    .addConcreteType[FontXSmall.type]
+    .addConcreteType[FontSmall.type]
+    .addConcreteType[FontSmaller.type]
+    .addConcreteType[FontMedium.type]
+    .addConcreteType[FontLarge.type]
+    .addConcreteType[FontLarger.type]
+    .addConcreteType[FontXLarge.type]
+    .addConcreteType[FontXXLarge.type]
+    .addConcreteType[FontLength]
+}
+
 sealed trait WeightDimension
 
 case object WeightNormal            extends WeightDimension
@@ -62,6 +104,16 @@ case object WeightBold              extends WeightDimension
 case object WeightBolder            extends WeightDimension
 case object WeightLighter           extends WeightDimension
 case class WeightValue(weight: Int) extends WeightDimension
+
+object WeightDimension {
+  import boopickle.Default._
+  implicit val weightPickler = compositePickler[WeightDimension]
+    .addConcreteType[WeightNormal.type]
+    .addConcreteType[WeightBold.type]
+    .addConcreteType[WeightBolder.type]
+    .addConcreteType[WeightLighter.type]
+    .addConcreteType[WeightValue]
+}
 
 trait LengthImplicits {
   implicit class int2length(v: Int) {

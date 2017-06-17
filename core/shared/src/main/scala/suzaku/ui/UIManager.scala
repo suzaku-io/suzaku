@@ -398,8 +398,8 @@ object UIManager {
       nextState = f(nextState.asInstanceOf[S])
       if (!isDirty) {
         addDirtyRoot(this)
+        isDirty = true
       }
-      isDirty = true
     }
 
     override def destroy(): Unit = {

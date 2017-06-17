@@ -30,7 +30,7 @@ abstract class WebWorkerTransport extends Transport {
 class WorkerTransport(worker: DedicatedWorkerGlobalScope) extends WebWorkerTransport {
   override def send(data: ByteBuffer): Unit = {
     assert(data.hasTypedArray())
-    val out = data.typedArray.buffer
+    val out = data.typedArray.buffer.slice(0, data.limit())
     worker.postMessage(out, js.Array(out).asInstanceOf[js.UndefOr[js.Array[dom.raw.Transferable]]])
   }
 }
@@ -38,7 +38,7 @@ class WorkerTransport(worker: DedicatedWorkerGlobalScope) extends WebWorkerTrans
 class WorkerClientTransport(worker: Worker) extends WebWorkerTransport {
   override def send(data: ByteBuffer): Unit = {
     assert(data.hasTypedArray())
-    val out = data.typedArray.buffer
+    val out = data.typedArray.buffer.slice(0, data.limit())
     worker.postMessage(out, js.Array(out).asInstanceOf[js.UndefOr[js.Array[dom.raw.Transferable]]])
   }
 }

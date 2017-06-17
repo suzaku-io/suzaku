@@ -22,6 +22,19 @@ case object LineOutset extends LineStyle
 
 case object LineDouble extends LineStyle
 
+object LineStyle {
+  import boopickle.Default._
+  implicit val lineStylePickler = compositePickler[LineStyle]
+    .addConcreteType[LineNone.type]
+    .addConcreteType[LineHidden.type]
+    .addConcreteType[LineSolid.type]
+    .addConcreteType[LineDotted.type]
+    .addConcreteType[LineDashed.type]
+    .addConcreteType[LineInset.type]
+    .addConcreteType[LineOutset.type]
+    .addConcreteType[LineDouble.type]
+}
+
 trait LineStyleImplicits {
   implicit def none2Style(a: Keywords.none.type): LineStyle     = LineNone
   implicit def hidden2Style(a: Keywords.hidden.type): LineStyle = LineHidden

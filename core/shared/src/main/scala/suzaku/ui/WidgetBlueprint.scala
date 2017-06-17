@@ -3,7 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.ui.UIProtocol.UIChannel
 import suzaku.ui.layout.LayoutProperty
-import suzaku.ui.style.{StyleBaseProperty, StyleClass, StyleClasses, StyleDef, StyleProperty, StyleSeq}
+import suzaku.ui.style.{StyleBaseProperty, StyleClass, StyleClasses, StyleDef, StylePropOrClass, StyleProperty, StyleSeq}
 
 trait WidgetBlueprint extends Blueprint {
   type P <: Protocol
@@ -19,18 +19,19 @@ trait WidgetBlueprint extends Blueprint {
 
   def sameAs(that: This): Boolean = equals(that) && _style == that._style
 
-  @inline final def <<<(styleProperty: StyleDef*): this.type = {
+  @noinline final def <<(styleProperty: StylePropOrClass*): this.type = {
+    var styleClasses = List.empty[StyleClass]
     val styles = styleProperty.flatMap {
       case StyleSeq(seq)        => seq
       case s: StyleBaseProperty => s :: Nil
-      case _                    => Nil
+      case c: StyleClass =>
+        styleClasses ::= c
+        Nil
+      case _ => Nil
     }
     _style ++= styles.map(p => (p.getClass, p))
-    this
-  }
-
-  @inline final def <<(styleId: StyleClass*): this.type = {
-    _style += (classOf[StyleClasses] -> StyleClasses(List(styleId: _*)))
+    if (styleClasses.nonEmpty)
+      _style += (classOf[StyleClasses] -> StyleClasses(styleClasses.reverse))
     this
   }
 
@@ -43,7 +44,7 @@ trait WidgetBlueprint extends Blueprint {
 object WidgetProtocol extends Protocol {
   import boopickle.Default._
 
-  implicit val stylePropertyPickler = StyleProperty.stylePickler
+  implicit val stylePropertyPickler  = StyleProperty.stylePickler
   implicit val layoutPropertyPickler = LayoutProperty.layoutPickler
 
   sealed trait WidgetMessage extends Message

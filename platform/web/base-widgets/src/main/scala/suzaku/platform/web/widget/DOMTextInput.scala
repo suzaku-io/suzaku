@@ -26,7 +26,7 @@ class DOMTextInput(widgetId: Int, context: TextInputProtocol.ChannelContext, wid
       modifyDOM { node =>
         // save cursor/selection
         val start = node.selectionStart
-        val end = node.selectionEnd
+        val end   = node.selectionEnd
         node.value = text
         // restore
         node.setSelectionRange(start, end)

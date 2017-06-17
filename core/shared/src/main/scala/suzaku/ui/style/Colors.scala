@@ -13,6 +13,13 @@ case class RGB(rgb: Int) extends RGBColor
 
 case class RGBA(rgb: Int, a: Double) extends RGBColor
 
+object RGBColor {
+  import boopickle.Default._
+  implicit val colorPickler = compositePickler[RGBColor]
+    .addConcreteType[RGB]
+    .addConcreteType[RGBA]
+}
+
 trait Colors {
   @inline def rgb(r: Int, g: Int, b: Int) = RGB(((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF))
 

@@ -3,7 +3,7 @@ package suzaku.ui.layout
 object LayoutIdRegistry {
   case class LayoutIdRegistration(id: Int, className: String)
 
-  private var layoutId = 1
+  private var layoutId             = 1
   private var pendingRegistrations = List.empty[LayoutIdRegistration]
 
   def register(layoutClass: Class[_ <: LayoutId]): Int = {

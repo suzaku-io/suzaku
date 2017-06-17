@@ -7,7 +7,8 @@ import suzaku.ui._
 import suzaku.ui.style.{Active, Hover, PseudoClass, StyleBaseProperty}
 
 class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager(logger, platform) {
-  val root                                = DOMWidgetArtifact(dom.document.getElementById("root"))
+  val root = DOMWidgetArtifact(dom.document.getElementById("root").asInstanceOf[dom.html.Div])
+
   override def emptyWidget(widgetId: Int) = new DOMEmptyWidget(widgetId, this)
 
   override def mountRoot(node: WidgetArtifact) = {

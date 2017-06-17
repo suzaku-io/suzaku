@@ -6,9 +6,9 @@ import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceO
 import suzaku.ui.style.StyleBaseProperty
 import suzaku.ui.{WidgetArtifact, WidgetManager, WidgetWithProtocol}
 
-case class DOMWidgetArtifact[E <: dom.Node](el: E) extends WidgetArtifact {}
+case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
 
-abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetManager: WidgetManager)
+abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: WidgetManager)
     extends WidgetWithProtocol[P](widgetId, widgetManager) {
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
@@ -46,11 +46,10 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetMana
   }
 
   override def applyStyleClasses(styles: List[Int]): Unit = {
-    val el = artifact.el.asInstanceOf[dom.html.Element]
-    el.className = styles match {
-      case Nil         => ""
-      case head :: Nil => DOMWidget.getClassName(head)
-      case _           => styles.map(DOMWidget.getClassName).mkString(" ")
+    styles match {
+      case head :: Nil => artifact.el.className = DOMWidget.getClassName(head)
+      case Nil         => artifact.el.removeAttribute("class")
+      case _           => artifact.el.className = styles.map(DOMWidget.getClassName).mkString(" ")
     }
   }
 
@@ -72,9 +71,9 @@ abstract class DOMWidget[P <: Protocol, E <: dom.Node](widgetId: Int, widgetMana
 
   protected def updateStyleProperty(property: String, remove: Boolean, value: String) =
     if (remove)
-      artifact.el.asInstanceOf[dom.html.Element].style.removeProperty(property)
+      artifact.el.style.removeProperty(property)
     else
-      artifact.el.asInstanceOf[dom.html.Element].style.setProperty(property, value)
+      artifact.el.style.setProperty(property, value)
 }
 
 object DOMWidget {
@@ -175,6 +174,12 @@ object DOMWidget {
 }
 
 class DOMEmptyWidget(widgetId: Int, widgetManager: WidgetManager)
-    extends DOMWidget[Protocol, dom.Comment](widgetId, widgetManager) {
-  override def artifact = DOMWidgetArtifact(dom.document.createComment("EMPTY"))
+    extends DOMWidget[Protocol, dom.html.Element](widgetId, widgetManager) {
+
+  // a Comment is not really an HTMLElement, but we will mark it as such to make it compile :)
+  override val artifact = DOMWidgetArtifact(dom.document.createComment("EMPTY").asInstanceOf[dom.html.Element])
+
+  override def applyStyleClasses(styles: List[Int]): Unit = {}
+
+  override def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit = {}
 }

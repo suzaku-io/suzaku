@@ -1,6 +1,8 @@
 package suzaku.ui.style
 
-trait StyleDef
+trait StylePropOrClass
+
+trait StyleDef extends StylePropOrClass
 
 trait StyleProperty extends StyleDef
 
@@ -136,6 +138,9 @@ case class RemapClasses(styleMap: Map[StyleClass, List[StyleClass]]) extends Sty
 
 object StyleProperty {
   import boopickle.Default._
+
+  // import specific picklers to prevent huge macro overhead
+  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, RGBColor._, LineStyle._
 
   implicit val styleClassPickler = new StyleClassPickler
 

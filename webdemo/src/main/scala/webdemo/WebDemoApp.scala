@@ -4,7 +4,7 @@ import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
-import suzaku.ui.layout.LinearLayoutProtocol.{Direction, Justify}
+import suzaku.ui.layout.{Direction, Justify}
 import suzaku.ui.style.StyleClass
 import suzaku.widget.{Button, Checkbox, TextInput}
 
@@ -27,14 +27,14 @@ object TestComp {
       import suzaku.ui.KeywordTypes._
 
       LinearLayout(state.direction, state.justify)(
-        Checkbox(state.checked, value => modState(s => s.copy(checked = value))) <<< (
+        Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
           width := 10.em
         ),
         TextInput(state.text, value => modState(s => s.copy(text = value))),
-        Button(s"Add button ${state.count}", () => add()).withKey(0) <<< (
+        Button(s"Add button ${state.count}", () => add()).withKey(0) << (
           Order(2),
         ) << GreenButton,
-        Button(s"Remove button ${state.count}", () => dec()).withKey(1).withLayout(alignSelf := start) <<< (
+        Button(s"Remove button ${state.count}", () => dec()).withKey(1).withLayout(alignSelf := start) << (
           backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
           color := 0xFF80FF
         )  << RedButton,
@@ -52,7 +52,7 @@ object TestComp {
         ).withKey(2),
         s"Just some <script>${"text" * state.count} </script>",
         Button(s"${blueprint.label} ${state.time}").withKey(3)
-      ) <<< (
+      ) << (
         if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
       )
     }
