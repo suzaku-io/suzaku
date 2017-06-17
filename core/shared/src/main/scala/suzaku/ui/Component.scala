@@ -17,7 +17,7 @@ object StatelessProxy extends StateProxy {
 abstract class Component[BP <: ComponentBlueprint, State](initialBlueprint: BP, proxy: StateProxy) {
   private[suzaku] var _blueprint: BP = initialBlueprint
 
-  def blueprint: BP = _blueprint
+  final def blueprint: BP = _blueprint
 
   protected final def modState(f: State => State): Unit = proxy.modState(f)
 

@@ -70,8 +70,8 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
             el.style.setProperty(
               "align-self",
               alignment match {
-                case AlignStart    => "start"
-                case AlignEnd      => "end"
+                case AlignStart    => "flex-start"
+                case AlignEnd      => "flex-end"
                 case AlignCenter   => "center"
                 case AlignBaseline => "baseline"
                 case AlignStretch  => "stretch"

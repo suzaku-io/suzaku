@@ -23,7 +23,14 @@ class DOMTextInput(widgetId: Int, context: TextInputProtocol.ChannelContext, wid
 
   override def process = {
     case SetValue(text) =>
-      modifyDOM(node => node.value = text)
+      modifyDOM { node =>
+        // save cursor/selection
+        val start = node.selectionStart
+        val end = node.selectionEnd
+        node.value = text
+        // restore
+        node.setSelectionRange(start, end)
+      }
     case msg =>
       super.process(msg)
   }

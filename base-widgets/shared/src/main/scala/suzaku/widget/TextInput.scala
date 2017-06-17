@@ -3,7 +3,7 @@ package suzaku.widget
 import arteria.core._
 import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
-import suzaku.ui.{WidgetBlueprint, WidgetBlueprintProvider, WidgetProxy}
+import suzaku.ui.{WidgetBlueprint, WidgetBlueprintProvider, WidgetProtocol, WidgetProxy}
 
 object TextInputProtocol extends Protocol {
 
@@ -17,7 +17,7 @@ object TextInputProtocol extends Protocol {
     .addConcreteType[SetValue]
     .addConcreteType[ValueChanged]
 
-  implicit val (messagePickler, witnessMsg) = defineProtocol(mPickler)
+  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetProtocol.wmPickler)
 
   case class ChannelContext(initialValue: String)
 
