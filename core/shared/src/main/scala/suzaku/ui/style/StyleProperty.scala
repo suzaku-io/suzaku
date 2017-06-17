@@ -103,8 +103,6 @@ case class BorderColorBottom(color: RGBColor) extends BorderColor with Direction
 case class BorderColorLeft(color: RGBColor)   extends BorderColor with DirectionLeft
 
 // Layout related styles
-case class Order(order: Int)  extends StyleBaseProperty
-case class ZOrder(order: Int) extends StyleBaseProperty
 
 // dimension styles
 case class Width(value: LengthUnit)  extends StyleBaseProperty
@@ -180,8 +178,6 @@ object StyleProperty {
     .addConcreteType[OutlineWidth]
     .addConcreteType[OutlineStyle]
     .addConcreteType[OutlineColor]
-    .addConcreteType[Order]
-    .addConcreteType[ZOrder]
     .addConcreteType[Width]
     .addConcreteType[Height]
     .addConcreteType[MaxWidth]

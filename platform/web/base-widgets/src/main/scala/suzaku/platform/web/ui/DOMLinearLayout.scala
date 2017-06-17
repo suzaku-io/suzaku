@@ -58,36 +58,58 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
     }
   }
 
+  private val allPropNames = List(
+    "align-self",
+    "flex-grow",
+    "order",
+    "z-index"
+  )
+
   override def resolveLayout(w: Widget, layoutProperties: List[LayoutProperty]): Unit = {
     val widget    = w.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
     val modWidget = (f: dom.html.Element => Unit) => widget.modifyDOM(f)
 
-    layoutProperties foreach {
-      case AlignSelf(alignment) =>
-        modWidget { el =>
-          el.style.removeProperty("align-self")
-          if (alignment != AlignAuto) {
-            el.style.setProperty(
-              "align-self",
-              alignment match {
-                case AlignStart    => "flex-start"
-                case AlignEnd      => "flex-end"
-                case AlignCenter   => "center"
-                case AlignBaseline => "baseline"
-                case AlignStretch  => "stretch"
-                case AlignAuto     => "auto"
-              }
-            )
+    // only for real HTML elements
+    if(!scalajs.js.isUndefined(widget.artifact.el.style)) {
+      // first remove all layout properties
+      modWidget { el =>
+        allPropNames.foreach(el.style.removeProperty)
+      }
+      layoutProperties foreach {
+        case AlignSelf(alignment) =>
+          modWidget { el =>
+            if (alignment != AlignAuto) {
+              el.style.setProperty(
+                "align-self",
+                alignment match {
+                  case AlignStart => "flex-start"
+                  case AlignEnd => "flex-end"
+                  case AlignCenter => "center"
+                  case AlignBaseline => "baseline"
+                  case AlignStretch => "stretch"
+                  case AlignAuto => "auto"
+                }
+              )
+            }
           }
-        }
-      case LayoutWeight(weight) =>
-        modWidget { el =>
-          el.style.removeProperty("flex-grow")
-          if (weight != 0) {
-            el.style.setProperty("flex-grow", weight.toString)
+        case LayoutWeight(weight) =>
+          modWidget { el =>
+            if (weight != 0) {
+              el.style.setProperty("flex-grow", weight.toString)
+            }
           }
-        }
-      case _ => // ignore others
+        case Order(n) =>
+          modWidget { el =>
+            if (n != 0)
+              el.style.setProperty("order", n.toString)
+          }
+        case ZOrder(n) =>
+          modWidget { el =>
+            el.style.setProperty("z-index", n.toString)
+          }
+
+        case _ => // ignore others
+      }
     }
   }
 

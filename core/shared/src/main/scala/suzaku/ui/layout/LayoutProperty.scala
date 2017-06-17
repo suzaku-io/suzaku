@@ -9,10 +9,10 @@ abstract class LayoutId {
 }
 
 case class AlignSelf(align: Alignment) extends LayoutProperty
-
-case class LayoutWeight(weight: Int) extends LayoutProperty
-
+case class LayoutWeight(weight: Int)   extends LayoutProperty
 case class LayoutGroupId(id: LayoutId) extends LayoutProperty
+case class Order(order: Int)           extends LayoutProperty
+case class ZOrder(order: Int)          extends LayoutProperty
 
 case class PureLayoutId(override val id: Int) extends LayoutId
 
@@ -32,6 +32,8 @@ object LayoutProperty {
   implicit val layoutIdPickler = new LayoutIdPickler
 
   val layoutPickler = compositePickler[LayoutProperty]
+    .addConcreteType[Order]
+    .addConcreteType[ZOrder]
     .addConcreteType[AlignSelf]
     .addConcreteType[LayoutWeight]
     .addConcreteType[LayoutGroupId]

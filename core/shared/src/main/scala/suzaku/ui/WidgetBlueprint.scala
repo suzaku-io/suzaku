@@ -19,7 +19,7 @@ trait WidgetBlueprint extends Blueprint {
 
   def sameAs(that: This): Boolean = equals(that) && _style == that._style
 
-  @noinline final def <<(styleProperty: StylePropOrClass*): this.type = {
+  final def <<(styleProperty: StylePropOrClass*): this.type = {
     var styleClasses = List.empty[StyleClass]
     val styles = styleProperty.flatMap {
       case StyleSeq(seq)        => seq

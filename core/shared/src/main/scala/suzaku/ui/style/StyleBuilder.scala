@@ -113,9 +113,6 @@ trait StyleBuilders {
   val minWidth  = styleFor(MinWidth)
   val minHeight = styleFor(MinHeight)
 
-  val order  = styleFor(Order)
-  val zOrder = styleFor(ZOrder)
-
   // pseudo classes
   val hover  = stylesFor[Hover, StyleBaseProperty](Hover)
   val active = stylesFor[Active, StyleBaseProperty](Active)

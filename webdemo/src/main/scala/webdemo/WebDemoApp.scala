@@ -31,9 +31,7 @@ object TestComp {
           width := 10.em
         ),
         TextInput(state.text, value => modState(s => s.copy(text = value))),
-        Button(s"Add button ${state.count}", () => add()).withKey(0) << (
-          Order(2),
-        ) << GreenButton,
+        Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
         Button(s"Remove button ${state.count}", () => dec()).withKey(1).withLayout(alignSelf := start) << (
           backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
           color := 0xFF80FF

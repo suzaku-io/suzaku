@@ -149,8 +149,6 @@ object DOMWidget {
       case FontWeight(weight) => ("font-weight", weight2str(weight))
       case FontItalics        => ("font-style", "italics")
 
-      case Order(n)         => ("order", n.toString)
-      case ZOrder(n)        => ("z-index", n.toString)
       case Width(l)         => ("width", l.toString)
       case Height(l)        => ("height", l.toString)
       case MaxWidth(value)  => ("max-width", value.toString)
