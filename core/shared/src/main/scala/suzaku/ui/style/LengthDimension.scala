@@ -6,34 +6,16 @@ import scala.language.implicitConversions
 
 sealed trait LengthDimension
 
-sealed trait LengthUnit extends LengthDimension {
-  val value: Double
-  val unit: String
+sealed trait LengthUnit extends LengthDimension
 
-  override def toString: String = value.toString + unit
-}
-
-final case class LengthU(value: Double) extends LengthDimension {
-  override def toString: String = value.toString
-}
-
-final case class LengthPx(value: Double) extends LengthUnit { val unit = "px" }
-
-final case class LengthPct(value: Double) extends LengthUnit { val unit = "%" }
-
-final case class LengthEm(value: Double) extends LengthUnit { val unit = "em" }
-
-final case class LengthRem(value: Double) extends LengthUnit { val unit = "rem" }
-
-final case class LengthVw(value: Double) extends LengthUnit { val unit = "vw" }
-
-final case class LengthVh(value: Double) extends LengthUnit { val unit = "vh" }
-
-case object LengthAuto extends LengthUnit {
-  val value                     = 0
-  val unit                      = ""
-  override def toString: String = "auto"
-}
+case class LengthU(value: Double)   extends LengthDimension
+case class LengthPx(value: Double)  extends LengthUnit
+case class LengthPct(value: Double) extends LengthUnit
+case class LengthEm(value: Double)  extends LengthUnit
+case class LengthRem(value: Double) extends LengthUnit
+case class LengthVw(value: Double)  extends LengthUnit
+case class LengthVh(value: Double)  extends LengthUnit
+case object LengthAuto              extends LengthUnit
 
 object LengthDimension {
   import boopickle.Default._

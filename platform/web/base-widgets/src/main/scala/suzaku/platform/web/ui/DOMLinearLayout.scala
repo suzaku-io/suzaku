@@ -43,6 +43,20 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
     }
   ) _
 
+  val updateAlignment = updateStyleProperty[Alignment](
+    artifact.el,
+    "align-items",
+    (value, set, remove) =>
+      value match {
+        case AlignAuto     => remove()
+        case AlignStart    => set("flex-start")
+        case AlignEnd      => set("flex-end")
+        case AlignCenter   => set("center")
+        case AlignBaseline => set("baseline")
+        case AlignStretch  => remove()
+    }
+  ) _
+
   updateDirection(context.direction)
   updateJustify(context.justify)
 
@@ -70,7 +84,7 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
     val modWidget = (f: dom.html.Element => Unit) => widget.modifyDOM(f)
 
     // only for real HTML elements
-    if(!scalajs.js.isUndefined(widget.artifact.el.style)) {
+    if (!scalajs.js.isUndefined(widget.artifact.el.style)) {
       // first remove all layout properties
       modWidget { el =>
         allPropNames.foreach(el.style.removeProperty)
@@ -82,12 +96,12 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
               el.style.setProperty(
                 "align-self",
                 alignment match {
-                  case AlignStart => "flex-start"
-                  case AlignEnd => "flex-end"
-                  case AlignCenter => "center"
+                  case AlignStart    => "flex-start"
+                  case AlignEnd      => "flex-end"
+                  case AlignCenter   => "center"
                   case AlignBaseline => "baseline"
-                  case AlignStretch => "stretch"
-                  case AlignAuto => "auto"
+                  case AlignStretch  => "stretch"
+                  case AlignAuto     => "auto"
                 }
               )
             }
@@ -118,6 +132,8 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
       updateDirection(direction)
     case SetJustify(justify) =>
       updateJustify(justify)
+    case SetAlignment(align) =>
+      updateAlignment(align)
     case msg =>
       super.process(msg)
   }

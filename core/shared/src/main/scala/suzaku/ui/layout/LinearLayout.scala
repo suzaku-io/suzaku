@@ -1,11 +1,11 @@
 package suzaku.ui.layout
 
 import arteria.core._
-import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
 import suzaku.ui._
 
 object LinearLayoutProtocol extends Protocol {
+  import boopickle.Default._
 
   sealed trait LayoutMessage extends Message
 
@@ -13,13 +13,18 @@ object LinearLayoutProtocol extends Protocol {
 
   final case class SetJustify(justify: Justify) extends LayoutMessage
 
+  final case class SetAlignment(align: Alignment) extends LayoutMessage
+
+  import Alignment._
+
   private val mPickler = compositePickler[LayoutMessage]
     .addConcreteType[SetDirection]
     .addConcreteType[SetJustify]
+    .addConcreteType[SetAlignment]
 
   implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetProtocol.wmPickler)
 
-  final case class ChannelContext(direction: Direction, justify: Justify)
+  final case class ChannelContext(direction: Direction, justify: Justify, align: Alignment)
 
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
@@ -35,18 +40,21 @@ object LinearLayout extends WidgetBlueprintProvider {
         super.process(message)
     }
 
-    override def initView = ChannelContext(bd.direction, bd.justify)
+    override def initWidget = ChannelContext(bd.direction, bd.justify, bd.align)
 
     override def update(newBlueprint: WBlueprint) = {
       if (newBlueprint.direction != blueprint.direction)
         send(SetDirection(newBlueprint.direction))
       if (newBlueprint.justify != blueprint.justify)
         send(SetJustify(newBlueprint.justify))
+      if (newBlueprint.align != blueprint.align)
+        send(SetAlignment(newBlueprint.align))
       super.update(newBlueprint)
     }
   }
 
-  case class WBlueprint private[LinearLayout] (direction: Direction, justify: Justify)(content: List[Blueprint])
+  case class WBlueprint private[LinearLayout] (direction: Direction, justify: Justify, align: Alignment)(
+      content: List[Blueprint])
       extends WidgetBlueprint {
     type P     = LinearLayoutProtocol.type
     type Proxy = WProxy
@@ -59,6 +67,7 @@ object LinearLayout extends WidgetBlueprintProvider {
 
   override def blueprintClass = classOf[WBlueprint]
 
-  def apply(direction: Direction = Direction.Horizontal, justify: Justify = Justify.Start)(content: Blueprint*) =
-    WBlueprint(direction, justify)(content.toList)
+  def apply(direction: Direction = Direction.Horizontal, justify: Justify = Justify.Start, align: Alignment = AlignAuto)(
+      content: Blueprint*) =
+    WBlueprint(direction, justify, align)(content.toList)
 }

@@ -34,7 +34,7 @@ object Text {
       extends WidgetProxy(TextProtocol, td, viewId, uiChannel) {
     import TextProtocol._
 
-    override def initView = ChannelContext(td.text)
+    override def initWidget = ChannelContext(td.text)
 
     override def update(newBlueprint: TextBlueprint) = {
       if (newBlueprint.text != blueprint.text)

@@ -36,7 +36,7 @@ object Checkbox extends WidgetBlueprintProvider {
         super.process(message)
     }
 
-    override def initView = ChannelContext(bd.value)
+    override def initWidget = ChannelContext(bd.value)
 
     override def update(newBlueprint: WBlueprint) = {
       if (newBlueprint.value != blueprint.value)

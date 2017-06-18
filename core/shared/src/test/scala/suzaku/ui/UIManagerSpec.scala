@@ -33,8 +33,8 @@ object TestView {
   class TestProxy(bp: TestBlueprint)(viewId: Int, uiChannel: UIChannel)
       extends WidgetProxy(TestProtocol, bp, viewId, uiChannel)
       with BaseProxy {
-    var updates                     = 0
-    override protected def initView = {}
+    var updates                       = 0
+    override protected def initWidget = {}
 
     override def update(newDesc: TestBlueprint): Unit = {
       updates += 1
@@ -54,8 +54,8 @@ object AnotherView {
   class AnotherProxy(bp: AnotherBlueprint)(viewId: Int, uiChannel: UIChannel)
       extends WidgetProxy(TestProtocol, bp, viewId, uiChannel)
       with BaseProxy {
-    var updates                     = 0
-    override protected def initView = {}
+    var updates                       = 0
+    override protected def initWidget = {}
 
     override def update(newDesc: AnotherBlueprint): Unit = {
       updates += 1

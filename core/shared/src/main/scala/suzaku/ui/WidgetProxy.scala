@@ -8,7 +8,7 @@ import suzaku.ui.style.StyleProperty
 
 abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val protocol: P,
                                                                  protected var blueprint: BP,
-                                                                 viewId: Int,
+                                                                 widgetId: Int,
                                                                  uiChannel: UIChannel)
     extends MessageChannelHandler[P] {
 
@@ -17,10 +17,10 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
   protected val channel =
     uiChannel.createChannel(protocol)(
       this,
-      initView,
+      initWidget,
       CreateWidget(
         UIManager.getWidgetClass(blueprint.getClass, uiChannel),
-        viewId
+        widgetId
       )
     )
 
@@ -34,7 +34,7 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
     channel.send(message)
   }
 
-  protected def initView: ChannelProtocol#ChannelContext
+  protected def initWidget: ChannelProtocol#ChannelContext
 
   def update(newBlueprint: BP): Unit = {
     // update style

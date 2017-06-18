@@ -36,7 +36,7 @@ object Button extends WidgetBlueprintProvider {
         super.process(message)
     }
 
-    override def initView = ChannelContext(bd.label)
+    override def initWidget = ChannelContext(bd.label)
 
     override def update(newBlueprint: WBlueprint) = {
       if (newBlueprint.label != blueprint.label)

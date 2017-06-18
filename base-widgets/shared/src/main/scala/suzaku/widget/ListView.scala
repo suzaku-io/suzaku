@@ -30,7 +30,7 @@ object ListView extends WidgetBlueprintProvider {
         super.process(message)
     }
 
-    override def initView = ChannelContext(bd.direction)
+    override def initWidget = ChannelContext(bd.direction)
 
     override def update(newDesc: WBlueprint) = {
       if (newDesc.direction != blueprint.direction)

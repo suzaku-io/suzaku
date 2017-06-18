@@ -78,16 +78,17 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, wi
 
 object DOMWidget {
   import suzaku.ui.style._
+
   def getClassName(id: Int): String = {
     "_S" + Integer.toString(id, 10)
   }
 
-  def color2str(c: RGBColor): String = c match {
+  private def show(c: RGBColor): String = c match {
     case RGB(_)     => s"rgb(${c.r},${c.g},${c.b})"
     case RGBA(_, a) => s"rgba(${c.r},${c.g},${c.b},$a)"
   }
 
-  def line2str(l: LineStyle): String = l match {
+  private def show(l: LineStyle): String = l match {
     case LineNone   => "none"
     case LineHidden => "hidden"
     case LineSolid  => "solid"
@@ -98,14 +99,14 @@ object DOMWidget {
     case LineDouble => "double"
   }
 
-  def width2str(w: WidthDimension): String = w match {
+  private def show(w: WidthDimension): String = w match {
     case WidthThin      => "thin"
     case WidthMedium    => "medium"
     case WidthThick     => "thick"
     case WidthLength(l) => l.toString
   }
 
-  def size2str(size: FontDimension): String = size match {
+  private def show(size: FontDimension): String = size match {
     case FontXXSmall   => "xx-small"
     case FontXSmall    => "x-small"
     case FontSmall     => "small"
@@ -118,55 +119,65 @@ object DOMWidget {
     case FontLength(s) => s.toString
   }
 
-  def weight2str(weight: WeightDimension): String = weight match {
+  private def show(weight: WeightDimension): String = weight match {
     case WeightNormal       => "normal"
     case WeightBold         => "bold"
     case WeightBolder       => "bolder"
     case WeightLighter      => "lighter"
     case WeightValue(value) => (math.round(value / 100.0) * 100 max 100 min 900).toString
-
   }
 
-  def expand[A <: Direction](prop: A)(toStr: A => String, name: String, ext: String = ""): (String, String) = {
+  private def show(l: LengthDimension): String = l match {
+    case LengthU(value)   => value.toString
+    case LengthPx(value)  => s"${value}px"
+    case LengthPct(value) => s"$value%"
+    case LengthEm(value)  => s"${value}em"
+    case LengthRem(value) => s"${value}rem"
+    case LengthVw(value)  => s"${value}vw"
+    case LengthVh(value)  => s"${value}vh"
+    case LengthAuto       => "auto"
+  }
+
+  def expand[A <: Direction](prop: A)(show: A => String, name: String, ext: String = ""): (String, String) = {
     val extStr = if (ext.isEmpty) "" else "-" + ext
     prop match {
-      case _: DirectionTop    => (s"$name-top$extStr", toStr(prop))
-      case _: DirectionRight  => (s"$name-right$extStr", toStr(prop))
-      case _: DirectionBottom => (s"$name-bottom$extStr", toStr(prop))
-      case _: DirectionLeft   => (s"$name-left$extStr", toStr(prop))
+      case _: DirectionTop    => (s"$name-top$extStr", show(prop))
+      case _: DirectionRight  => (s"$name-right$extStr", show(prop))
+      case _: DirectionBottom => (s"$name-bottom$extStr", show(prop))
+      case _: DirectionLeft   => (s"$name-left$extStr", show(prop))
     }
   }
 
   def extractStyle(prop: StyleBaseProperty): (String, String) = {
     prop match {
-      case EmptyStyle | RemapClasses(_) => ("", "")
-
-      case Color(c)           => ("color", color2str(c))
-      case BackgroundColor(c) => ("background-color", color2str(c))
+      case Color(c)           => ("color", show(c))
+      case BackgroundColor(c) => ("background-color", show(c))
 
       case FontFamily(family) => ("font-family", family.mkString("\"", "\",\"", "\""))
-      case FontSize(size)     => ("font-size", size2str(size))
-      case FontWeight(weight) => ("font-weight", weight2str(weight))
+      case FontSize(size)     => ("font-size", show(size))
+      case FontWeight(weight) => ("font-weight", show(weight))
       case FontItalics        => ("font-style", "italics")
 
-      case Width(l)         => ("width", l.toString)
-      case Height(l)        => ("height", l.toString)
-      case MaxWidth(value)  => ("max-width", value.toString)
-      case MaxHeight(value) => ("max-height", value.toString)
-      case MinWidth(value)  => ("min-width", value.toString)
-      case MinHeight(value) => ("min-height", value.toString)
+      case Width(l)         => ("width", show(l))
+      case Height(l)        => ("height", show(l))
+      case MaxWidth(value)  => ("max-width", show(value))
+      case MaxHeight(value) => ("max-height", show(value))
+      case MinWidth(value)  => ("min-width", show(value))
+      case MinHeight(value) => ("min-height", show(value))
 
-      case p: Margin  => expand(p)(_.value.toString, "margin")
-      case p: Padding => expand(p)(_.value.toString, "padding")
-      case p: Offset  => expand(p)(_.value.toString, "offset")
+      case p: Margin  => expand(p)(l => show(l.value), "margin")
+      case p: Padding => expand(p)(l => show(l.value), "padding")
+      case p: Offset  => expand(p)(l => show(l.value), "offset")
 
-      case p: BorderWidth => expand(p)(w => width2str(w.value), "border", "width")
-      case p: BorderStyle => expand(p)(s => line2str(s.style), "border", "style")
-      case p: BorderColor => expand(p)(c => color2str(c.color), "border", "color")
+      case p: BorderWidth => expand(p)(w => show(w.value), "border", "width")
+      case p: BorderStyle => expand(p)(s => show(s.style), "border", "style")
+      case p: BorderColor => expand(p)(c => show(c.color), "border", "color")
 
-      case OutlineWidth(w) => ("outline-width", width2str(w))
-      case OutlineStyle(s) => ("outline-style", line2str(s))
-      case OutlineColor(c) => ("outline-color", color2str(c))
+      case OutlineWidth(w) => ("outline-width", show(w))
+      case OutlineStyle(s) => ("outline-style", show(s))
+      case OutlineColor(c) => ("outline-color", show(c))
+
+      case EmptyStyle | RemapClasses(_) => ("", "")
     }
   }
 }

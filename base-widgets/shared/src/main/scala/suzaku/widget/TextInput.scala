@@ -36,7 +36,7 @@ object TextInput extends WidgetBlueprintProvider {
         super.process(message)
     }
 
-    override protected def initView = ChannelContext(bd.value)
+    override protected def initWidget = ChannelContext(bd.value)
 
     override def update(newBlueprint: WBlueprint) = {
       if (newBlueprint.value != blueprint.value)

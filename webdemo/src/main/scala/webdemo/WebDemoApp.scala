@@ -4,17 +4,18 @@ import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
-import suzaku.ui.layout.{Direction, Justify}
 import suzaku.ui.style.StyleClass
 import suzaku.widget.{Button, Checkbox, TextInput}
 
 object TestComp {
+  import suzaku.ui.layout._
   case class State(count: Int,
                    time: Long,
                    text: String,
                    checked: Boolean,
                    direction: Direction = Direction.Horizontal,
-                   justify: Justify = Justify.Start)
+                   justify: Justify = Justify.Start,
+                   align: Alignment = AlignStretch)
 
   case class CBP private (label: String) extends ComponentBlueprint {
     override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
@@ -26,7 +27,7 @@ object TestComp {
       import suzaku.ui.layout._
       import suzaku.ui.KeywordTypes._
 
-      LinearLayout(state.direction, state.justify)(
+      LinearLayout(state.direction, state.justify, state.align)(
         Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
           width := 10.em
         ),
@@ -46,13 +47,17 @@ object TestComp {
         else
           for (i <- 0 until state.count) yield List(Button(s"A $i"), Button(s"B $i")): Blueprint,
         Button(
-          s"Direction",
+          s"Direction ${state.direction}",
           () => modState(state => state.copy(direction = flipDirection(state.direction)))
-        ).withKey(2),
+        ),
         Button(
-          s"Justify",
+          s"Justify ${state.justify}",
           () => modState(state => state.copy(justify = flipJustify(state.justify)))
-        ).withKey(2),
+        ),
+        Button(
+          s"Align ${state.align}",
+          () => modState(state => state.copy(align = flipAlignment(state.align)))
+        ),
         s"Just some <script>${"text" * state.count} </script>",
         Button(s"${blueprint.label} ${state.time}").withKey(3)
       ) << (
@@ -78,6 +83,16 @@ object TestComp {
         case Center       => SpaceBetween
         case SpaceBetween => SpaceAround
         case SpaceAround  => Start
+      }
+    }
+
+    def flipAlignment(align: Alignment): Alignment = {
+      align match {
+        case AlignStart    => AlignEnd
+        case AlignEnd      => AlignCenter
+        case AlignCenter   => AlignBaseline
+        case AlignBaseline => AlignStretch
+        case AlignStretch  => AlignStart
       }
     }
 
