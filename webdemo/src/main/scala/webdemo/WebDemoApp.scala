@@ -4,6 +4,7 @@ import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
+import suzaku.ui.layout.LayoutId
 import suzaku.ui.style.StyleClass
 import suzaku.widget.{Button, Checkbox, TextInput}
 
@@ -27,41 +28,47 @@ object TestComp {
       import suzaku.ui.layout._
       import suzaku.ui.KeywordTypes._
 
-      LinearLayout(state.direction, state.justify, state.align)(
-        Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
-          width := 10.em
-        ),
-        TextInput(state.text, value => modState(s => s.copy(text = value))),
-        Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
-        Button(s"Remove button ${state.count}", () => dec())
-          .withKey(1)
-          .withLayout(alignSelf := start)
-          .withStyle(
-            backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
-            color := 0xFF80FF,
-            RedButton,
-            Large
+      GridLayout(800.px, 100.px ~ 300.px, List(Nil))(
+        LinearLayout(state.direction, state.justify, state.align)(
+          Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
+            width := 10.em
           ),
-        if (state.count == 0)
-          EmptyBlueprint
-        else
-          for (i <- 0 until state.count) yield List(Button(s"A $i"), Button(s"B $i")): Blueprint,
-        Button(
-          s"Direction ${state.direction}",
-          () => modState(state => state.copy(direction = flipDirection(state.direction)))
+          TextInput(state.text, value => modState(s => s.copy(text = value))),
+          Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
+          Button(s"Remove button ${state.count}", () => dec())
+            .withKey(1)
+            .withLayout(alignSelf := start, group := Layout1)
+            .withStyle(
+              backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
+              color := 0xFF80FF,
+              RedButton,
+              Large
+            ),
+          if (state.count == 0)
+            EmptyBlueprint
+          else
+            for (i <- 0 until state.count) yield List(Button(s"A $i"), Button(s"B $i")): Blueprint,
+          Button(
+            s"Direction ${state.direction}",
+            () => modState(state => state.copy(direction = flipDirection(state.direction)))
+          ),
+          Button(
+            s"Justify ${state.justify}",
+            () => modState(state => state.copy(justify = flipJustify(state.justify)))
+          ),
+          Button(
+            s"Align ${state.align}",
+            () => modState(state => state.copy(align = flipAlignment(state.align)))
+          ),
+          s"Just some <script>${"text" * state.count} </script>",
+          Button(s"${blueprint.label} ${state.time}").withKey(3)
+        ) << (
+          if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
         ),
-        Button(
-          s"Justify ${state.justify}",
-          () => modState(state => state.copy(justify = flipJustify(state.justify)))
-        ),
-        Button(
-          s"Align ${state.align}",
-          () => modState(state => state.copy(align = flipAlignment(state.align)))
-        ),
-        s"Just some <script>${"text" * state.count} </script>",
-        Button(s"${blueprint.label} ${state.time}").withKey(3)
-      ) << (
-        if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
+        Button("HUGE!") << (
+          width := 100.%%,
+          height := 100.%%
+        )
       )
     }
 
@@ -122,6 +129,9 @@ object TestComp {
 
 import suzaku.ui.style._
 import suzaku.ui.KeywordTypes._
+
+object Layout1 extends LayoutId
+object Layout2 extends LayoutId
 
 object BaseStyle extends StyleClass {
   def style = List(

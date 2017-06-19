@@ -22,8 +22,8 @@ object ListViewProtocol extends Protocol {
 }
 
 object ListView extends WidgetBlueprintProvider {
-  class WProxy private[ListView] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(ListViewProtocol, bd, viewId, uiChannel) {
+  class WProxy private[ListView] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(ListViewProtocol, bd, widgetId, uiChannel) {
     import ListViewProtocol._
     override def process = {
       case message =>
@@ -46,7 +46,7 @@ object ListView extends WidgetBlueprintProvider {
 
     override val children = content
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new WProxy(this)(widgetId, uiChannel)
   }
 
   override def blueprintClass = classOf[WBlueprint]

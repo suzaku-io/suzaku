@@ -83,12 +83,12 @@ object DOMWidget {
     "_S" + Integer.toString(id, 10)
   }
 
-  private def show(c: RGBColor): String = c match {
+  def show(c: RGBColor): String = c match {
     case RGB(_)     => s"rgb(${c.r},${c.g},${c.b})"
     case RGBA(_, a) => s"rgba(${c.r},${c.g},${c.b},$a)"
   }
 
-  private def show(l: LineStyle): String = l match {
+  def show(l: LineStyle): String = l match {
     case LineNone   => "none"
     case LineHidden => "hidden"
     case LineSolid  => "solid"
@@ -99,14 +99,14 @@ object DOMWidget {
     case LineDouble => "double"
   }
 
-  private def show(w: WidthDimension): String = w match {
+  def show(w: WidthDimension): String = w match {
     case WidthThin      => "thin"
     case WidthMedium    => "medium"
     case WidthThick     => "thick"
     case WidthLength(l) => l.toString
   }
 
-  private def show(size: FontDimension): String = size match {
+  def show(size: FontDimension): String = size match {
     case FontXXSmall   => "xx-small"
     case FontXSmall    => "x-small"
     case FontSmall     => "small"
@@ -119,7 +119,7 @@ object DOMWidget {
     case FontLength(s) => s.toString
   }
 
-  private def show(weight: WeightDimension): String = weight match {
+  def show(weight: WeightDimension): String = weight match {
     case WeightNormal       => "normal"
     case WeightBold         => "bold"
     case WeightBolder       => "bolder"
@@ -127,7 +127,7 @@ object DOMWidget {
     case WeightValue(value) => (math.round(value / 100.0) * 100 max 100 min 900).toString
   }
 
-  private def show(l: LengthDimension): String = l match {
+  def show(l: LengthDimension): String = l match {
     case LengthU(value)   => value.toString
     case LengthPx(value)  => s"${value}px"
     case LengthPct(value) => s"$value%"

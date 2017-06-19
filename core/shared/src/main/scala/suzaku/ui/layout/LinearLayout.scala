@@ -32,8 +32,8 @@ object LinearLayoutProtocol extends Protocol {
 object LinearLayout extends WidgetBlueprintProvider {
   import LinearLayoutProtocol._
 
-  class WProxy private[LinearLayout] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(LinearLayoutProtocol, bd, viewId, uiChannel) {
+  class WProxy private[LinearLayout] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(LinearLayoutProtocol, bd, widgetId, uiChannel) {
 
     override def process = {
       case message =>
@@ -62,7 +62,7 @@ object LinearLayout extends WidgetBlueprintProvider {
 
     override val children = content
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new WProxy(this)(widgetId, uiChannel)
   }
 
   override def blueprintClass = classOf[WBlueprint]

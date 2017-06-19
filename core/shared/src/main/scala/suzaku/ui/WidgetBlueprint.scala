@@ -15,7 +15,7 @@ trait WidgetBlueprint extends Blueprint {
   private[suzaku] val _style  = mutable.Map.empty[Class[_], StyleProperty]
   private[suzaku] var _layout = List.empty[LayoutProperty]
 
-  def createProxy(viewId: Int, uiChannel: UIChannel): Proxy
+  def createProxy(widgetId: Int, uiChannel: UIChannel): Proxy
 
   def children: List[Blueprint] = Nil
 

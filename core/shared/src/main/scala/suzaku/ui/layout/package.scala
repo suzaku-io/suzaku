@@ -1,3 +1,3 @@
 package suzaku.ui
 
-package object layout extends LayoutBuilders with AlignmentImplicits
+package object layout extends LayoutBuilders with AlignmentImplicits with GridImplicits

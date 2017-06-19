@@ -30,8 +30,8 @@ trait BaseProxy {
 
 object TestView {
 
-  class TestProxy(bp: TestBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TestProtocol, bp, viewId, uiChannel)
+  class TestProxy(bp: TestBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(TestProtocol, bp, widgetId, uiChannel)
       with BaseProxy {
     var updates                       = 0
     override protected def initWidget = {}
@@ -46,13 +46,13 @@ object TestView {
     override type This  = TestBlueprint
     override type Proxy = TestProxy
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel): Proxy = new TestProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel): Proxy = new TestProxy(this)(widgetId, uiChannel)
   }
 }
 
 object AnotherView {
-  class AnotherProxy(bp: AnotherBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TestProtocol, bp, viewId, uiChannel)
+  class AnotherProxy(bp: AnotherBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(TestProtocol, bp, widgetId, uiChannel)
       with BaseProxy {
     var updates                       = 0
     override protected def initWidget = {}
@@ -67,7 +67,7 @@ object AnotherView {
     override type This  = AnotherBlueprint
     override type Proxy = AnotherProxy
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel): Proxy = new AnotherProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel): Proxy = new AnotherProxy(this)(widgetId, uiChannel)
   }
 }
 
@@ -111,7 +111,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       val next = List(
         TestBlueprint(0)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes.head.blueprint shouldBe TestBlueprint(0)
@@ -127,7 +127,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       val next = List(
         TestBlueprint(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes.head.blueprint shouldBe TestBlueprint(1)
@@ -143,7 +143,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       val next = List(
         EmptyBlueprint
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 1
@@ -157,7 +157,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       val next = List(
         TestBlueprint(1)
       )
-      vm.viewId = 1
+      vm.widgetId = 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes.head.blueprint shouldBe TestBlueprint(1)
@@ -172,7 +172,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       )
       val next = List(
         )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 0
@@ -191,7 +191,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(1),
         TestBlueprint(2)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 2
@@ -212,7 +212,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(0),
         TestBlueprint(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 2
@@ -231,14 +231,14 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(0),
         TestBlueprint(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 3
       ops shouldBe Seq(NoOp(2), InsertOp(nodes.last.getId))
     }
 
-    "replace with another view" in new MockFixture {
+    "replace with another widget" in new MockFixture {
       val vm = new TestUIManager(uiChannel)
       (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
 
@@ -248,7 +248,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       val next = List(
         AnotherBlueprint("Kala")
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 1
@@ -267,7 +267,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(0).withKey(0),
         TestBlueprint(1).withKey(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 3
@@ -289,7 +289,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(5).withKey(5),
         TestBlueprint(1).withKey(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 3
@@ -314,7 +314,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(3).withKey(3),
         TestBlueprint(1).withKey(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 4
@@ -340,7 +340,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
         TestBlueprint(3).withKey(3),
         TestBlueprint(1).withKey(1)
       )
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 4
@@ -355,7 +355,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       val vm      = new TestUIManager(uiChannel)
       val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
       val next    = 99.to(0, -1).map(i => TestBlueprint(i).withKey(i)).toList
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 100
@@ -363,11 +363,11 @@ class UIManagerSpec extends UnitSpec with MockFactory {
       ops shouldBe (0 until 99).map(_ => MoveOp(99))
     }
 
-    "reorder reversed with different view" in new MockFixture {
+    "reorder reversed with different widget" in new MockFixture {
       val vm      = new TestUIManager(uiChannel)
       val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
       val next    = 99.to(0, -1).map(i => AnotherBlueprint(s"$i").withKey(i)).toList
-      vm.viewId = current.map(_.widgetId).max + 1
+      vm.widgetId = current.map(_.widgetId).max + 1
 
       val (nodes, ops) = vm.updateChildren(null, current, next)
       nodes should have size 100

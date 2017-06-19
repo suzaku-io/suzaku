@@ -25,8 +25,8 @@ object CheckboxProtocol extends Protocol {
 }
 
 object Checkbox extends WidgetBlueprintProvider {
-  class WProxy private[Checkbox] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(CheckboxProtocol, bd, viewId, uiChannel) {
+  class WProxy private[Checkbox] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(CheckboxProtocol, bd, widgetId, uiChannel) {
     import CheckboxProtocol._
 
     override def process = {
@@ -51,7 +51,7 @@ object Checkbox extends WidgetBlueprintProvider {
     type Proxy = WProxy
     type This  = WBlueprint
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new WProxy(this)(widgetId, uiChannel)
   }
 
   override def blueprintClass = classOf[WBlueprint]

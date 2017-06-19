@@ -16,21 +16,25 @@ case class ZOrder(order: Int)          extends LayoutProperty
 
 case class PureLayoutId(override val id: Int) extends LayoutId
 
-class LayoutIdPickler extends Pickler[LayoutId] {
-  override def pickle(obj: LayoutId)(implicit state: PickleState): Unit = {
-    state.enc.writeInt(obj.id)
+object LayoutId {
+
+  implicit object LayoutIdPickler extends Pickler[LayoutId] {
+    override def pickle(obj: LayoutId)(implicit state: PickleState): Unit = {
+      state.enc.writeInt(obj.id)
+    }
+
+    override def unpickle(implicit state: UnpickleState): LayoutId = {
+      PureLayoutId(state.dec.readInt)
+    }
   }
 
-  override def unpickle(implicit state: UnpickleState): LayoutId = {
-    PureLayoutId(state.dec.readInt)
-  }
 }
 
 object LayoutProperty {
   import boopickle.Default._
   import Alignment._
 
-  implicit val layoutIdPickler = new LayoutIdPickler
+  implicit val layoutIdPickler = LayoutId.LayoutIdPickler
 
   val layoutPickler = compositePickler[LayoutProperty]
     .addConcreteType[Order]

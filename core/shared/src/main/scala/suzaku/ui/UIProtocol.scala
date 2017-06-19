@@ -2,6 +2,8 @@ package suzaku.ui
 
 import arteria.core._
 import boopickle.Default._
+import suzaku.ui.layout.LayoutId
+import suzaku.ui.layout.LayoutIdRegistry.LayoutIdRegistration
 import suzaku.ui.style.StyleProperty
 import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
 
@@ -47,6 +49,8 @@ object UIProtocol extends Protocol {
   case class UpdateChildren(widgetId: Int, ops: Seq[ChildOp]) extends UIMessage
 
   case class AddStyles(styles: List[StyleClassRegistration]) extends UIMessage
+
+  case class AddLayoutIds(ids: List[LayoutIdRegistration]) extends UIMessage
 
   case class ActivateTheme(themeId: Int, theme: Map[Int, List[Int]]) extends UIMessage
 

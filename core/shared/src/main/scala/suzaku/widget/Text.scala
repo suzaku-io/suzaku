@@ -27,11 +27,11 @@ object Text {
     type Proxy = TextProxy
     type This  = TextBlueprint
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new TextProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new TextProxy(this)(widgetId, uiChannel)
   }
 
-  class TextProxy private[Text] (td: TextBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TextProtocol, td, viewId, uiChannel) {
+  class TextProxy private[Text] (td: TextBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(TextProtocol, td, widgetId, uiChannel) {
     import TextProtocol._
 
     override def initWidget = ChannelContext(td.text)

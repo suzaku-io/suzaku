@@ -3,6 +3,7 @@ package suzaku.ui
 import arteria.core._
 import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
+import suzaku.ui.layout.LayoutIdRegistry
 import suzaku.ui.style.{StyleClassRegistry, Theme}
 
 import scala.collection.mutable
@@ -12,22 +13,22 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     extends MessageChannelHandler[UIProtocol.type] {
   import UIManager._
 
-  private var lastFrame      = 0L
-  protected var uiChannel    = null: MessageChannel[ChannelProtocol]
-  private var currentRoot    = Option.empty[ShadowNode]
-  private[suzaku] var viewId = 1
-  private var dirtyRoots     = List.empty[ShadowComponent]
-  private var frameRequested = false
-  private var themeId        = 0
+  private var lastFrame        = 0L
+  protected var uiChannel      = null: MessageChannel[ChannelProtocol]
+  private var currentRoot      = Option.empty[ShadowNode]
+  private[suzaku] var widgetId = 1
+  private var dirtyRoots       = List.empty[ShadowComponent]
+  private var frameRequested   = false
+  private var themeId          = 0
 
   def render(root: Blueprint): Unit = {
     val newRoot = updateBranch(currentRoot, root, None)
     currentRoot match {
-      case Some(view) if view.getId == newRoot.getId =>
+      case Some(widget) if widget.getId == newRoot.getId =>
       // no-op
-      case Some(view) =>
-        logger.debug(s"Replacing root [${view.getId}] with [${newRoot.getId}]")
-        view.destroy()
+      case Some(widget) =>
+        logger.debug(s"Replacing root [${widget.getId}] with [${newRoot.getId}]")
+        widget.destroy()
         send(MountRoot(newRoot.getId))
       case None =>
         logger.debug(s"Mounting [${newRoot.getId}] as root")
@@ -38,6 +39,12 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       val styles = StyleClassRegistry.dequeueRegistrations
       logger.debug(s"Adding ${styles.size} styles")
       send(AddStyles(styles))
+    }
+    // check if layout identifiers updated
+    if (LayoutIdRegistry.hasRegistrations) {
+      val layoutIds = LayoutIdRegistry.dequeueRegistrations
+      logger.debug(s"Adding ${layoutIds.size} layout identifiers")
+      send(AddLayoutIds(layoutIds))
     }
     currentRoot = Some(newRoot)
   }
@@ -115,8 +122,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
   }
 
   private def allocateId: Int = {
-    val id = viewId
-    viewId += 1
+    val id = widgetId
+    widgetId += 1
     id
   }
 
@@ -128,15 +135,15 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
           case EmptyBlueprint =>
             EmptyNode
 
-          case viewBP: WidgetBlueprint =>
-            val viewId     = allocateId
-            val shadowView = new ShadowWidget(viewBP, viewId, parent, uiChannel)
-            if (viewBP.children.nonEmpty) {
-              val children = viewBP.children.map(c => updateBranch(None, c, Some(shadowView)))
-              send(SetChildren(viewId, children.flatMap(expand).map(_.getId)))
-              shadowView.withChildren(children)
+          case widgetBP: WidgetBlueprint =>
+            val widgetId   = allocateId
+            val shadowWidget = new ShadowWidget(widgetBP, widgetId, parent, uiChannel)
+            if (widgetBP.children.nonEmpty) {
+              val children = widgetBP.children.map(c => updateBranch(None, c, Some(shadowWidget)))
+              send(SetChildren(widgetId, children.flatMap(expand).map(_.getId)))
+              shadowWidget.withChildren(children)
             } else {
-              shadowView
+              shadowWidget
             }
 
           case componentBP: ComponentBlueprint =>
@@ -161,28 +168,28 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
         }
 
       case Some(node: ShadowWidget) =>
-        // there's an existing view node here that should be updated/replaced
+        // there's an existing widget node here that should be updated/replaced
         blueprint match {
           case EmptyBlueprint =>
             EmptyNode
 
-          case viewBP: WidgetBlueprint if viewBP.getClass eq node.blueprint.getClass =>
-            val (newChildren, ops) = updateChildren(node, node.children.flatMap(expand), viewBP.children.flatMap(expandBP))
+          case widgetBP: WidgetBlueprint if widgetBP.getClass eq node.blueprint.getClass =>
+            val (newChildren, ops) = updateChildren(node, node.children.flatMap(expand), widgetBP.children.flatMap(expandBP))
             if (ops.nonEmpty)
               send(UpdateChildren(node.widgetId, ops))
             node.children = newChildren
-            if (viewBP sameAs node.blueprint.asInstanceOf[viewBP.This]) {
+            if (widgetBP sameAs node.blueprint.asInstanceOf[widgetBP.This]) {
               // no change, return current node
               node
             } else {
               // update node
-              node.proxy.update(viewBP)
-              node.blueprint = viewBP
+              node.proxy.update(widgetBP)
+              node.blueprint = widgetBP
               node
             }
 
           case _ =>
-            // always replace when different view or component
+            // always replace when different widget or component
             updateBranch(None, blueprint, parent)
         }
 
@@ -208,7 +215,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
             }
             node
           case _ =>
-            // always replace when different view or component
+            // always replace when different widget or component
             updateBranch(None, blueprint, parent)
         }
 
@@ -308,9 +315,9 @@ object UIManager {
     type BP <: Blueprint
     var blueprint: BP
 
-    def getView: ShadowWidget
+    def getWidget: ShadowWidget
 
-    def getId: Int = getView.widgetId
+    def getId: Int = getWidget.widgetId
 
     def key: Iterable[Any] = blueprint.key
 
@@ -321,7 +328,7 @@ object UIManager {
     type BP = EmptyBlueprint.type
 
     override var blueprint             = EmptyBlueprint
-    override def getView: ShadowWidget = null
+    override def getWidget: ShadowWidget = null
     override def getId: Int            = -1
     override def destroy(): Unit       = {}
   }
@@ -338,7 +345,7 @@ object UIManager {
       this
     }
 
-    override def getView: ShadowWidget = throw new NotImplementedError("ShadowNodeSeq does not have a view")
+    override def getWidget: ShadowWidget = throw new NotImplementedError("ShadowNodeSeq does not have a widget")
 
     override def getId: Int = throw new NotImplementedError("ShadowNodeSeq does not have an id")
 
@@ -360,11 +367,11 @@ object UIManager {
     val proxy    = blueprint.createProxy(widgetId, uiChannel).asInstanceOf[WidgetProxy[Protocol, WidgetBlueprint]]
     var children = Seq.empty[ShadowNode]
 
-    override def getView: ShadowWidget = this
+    override def getWidget: ShadowWidget = this
 
     override def destroy(): Unit = {
       children.foreach(_.destroy())
-      proxy.destroyView()
+      proxy.destroyWidget()
     }
 
     def withChildren(c: List[ShadowNode]): ShadowWidget = {
@@ -392,7 +399,7 @@ object UIManager {
 
     component.didMount()
 
-    override def getView: ShadowWidget = inner.getView
+    override def getWidget: ShadowWidget = inner.getWidget
 
     override def modState[S](f: (S) => S): Unit = {
       nextState = f(nextState.asInstanceOf[S])

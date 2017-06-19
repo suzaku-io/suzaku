@@ -10,4 +10,6 @@ trait LayoutBuilders {
   val alignSelf = layoutFor(AlignSelf)
   val order     = layoutFor(Order)
   val zOrder    = layoutFor(ZOrder)
+  val group     = layoutFor(LayoutGroupId)
+  val weight    = layoutFor(LayoutWeight)
 }

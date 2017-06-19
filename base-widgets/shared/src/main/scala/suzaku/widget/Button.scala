@@ -25,8 +25,8 @@ object ButtonProtocol extends Protocol {
 }
 
 object Button extends WidgetBlueprintProvider {
-  class WProxy private[Button] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(ButtonProtocol, bd, viewId, uiChannel) {
+  class WProxy private[Button] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(ButtonProtocol, bd, widgetId, uiChannel) {
     import ButtonProtocol._
 
     override def process = {
@@ -50,7 +50,7 @@ object Button extends WidgetBlueprintProvider {
     type Proxy = WProxy
     type This  = WBlueprint
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new WProxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new WProxy(this)(widgetId, uiChannel)
   }
 
   override def blueprintClass = classOf[WBlueprint]

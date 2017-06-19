@@ -66,7 +66,7 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
     blueprint = newBlueprint
   }
 
-  def destroyView(): Unit = {
+  def destroyWidget(): Unit = {
     if (isClosed)
       throw new Exception("Already closed")
     channel.close()

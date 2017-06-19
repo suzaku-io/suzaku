@@ -25,7 +25,6 @@ object Keywords {
   case object center
   case object baseline
   case object stretch
-  case object group
 }
 
 trait KeywordTypes {
@@ -53,7 +52,6 @@ trait KeywordTypes {
   val center   = Keywords.center
   val baseline = Keywords.baseline
   val stretch  = Keywords.stretch
-  val group    = Keywords.group
 }
 
 object KeywordTypes extends KeywordTypes

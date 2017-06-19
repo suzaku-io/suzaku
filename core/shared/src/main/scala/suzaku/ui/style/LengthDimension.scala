@@ -15,6 +15,7 @@ case class LengthEm(value: Double)  extends LengthUnit
 case class LengthRem(value: Double) extends LengthUnit
 case class LengthVw(value: Double)  extends LengthUnit
 case class LengthVh(value: Double)  extends LengthUnit
+case class LengthFr(value: Int)     extends LengthUnit
 case object LengthAuto              extends LengthUnit
 
 object LengthDimension {
@@ -26,6 +27,7 @@ object LengthDimension {
     .addTransform[LengthRem, Double](_.value, LengthRem)
     .addTransform[LengthVw, Double](_.value, LengthVw)
     .addTransform[LengthVh, Double](_.value, LengthVh)
+    .addTransform[LengthFr, Int](_.value, LengthFr)
     .addConcreteType[LengthAuto.type]
 
   implicit val lengthDimensionPickler = compositePickler[LengthDimension]
@@ -105,6 +107,7 @@ trait LengthImplicits {
     def rem = LengthRem(v)
     def vw  = LengthVw(v)
     def vh  = LengthVh(v)
+    def fr  = LengthFr(v)
   }
 
   implicit class double2length(v: Double) {

@@ -25,8 +25,8 @@ object TextInputProtocol extends Protocol {
 }
 
 object TextInput extends WidgetBlueprintProvider {
-  class WProxy private[TextInput] (bd: WBlueprint)(viewId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TextInputProtocol, bd, viewId, uiChannel) {
+  class WProxy private[TextInput] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(TextInputProtocol, bd, widgetId, uiChannel) {
     import TextInputProtocol._
 
     override def process = {
@@ -51,7 +51,7 @@ object TextInput extends WidgetBlueprintProvider {
     type Proxy = WProxy
     type This  = WBlueprint
 
-    override def createProxy(viewId: Int, uiChannel: UIChannel) = new Proxy(this)(viewId, uiChannel)
+    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
   }
 
   override def blueprintClass = classOf[WBlueprint]
