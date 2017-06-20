@@ -28,7 +28,7 @@ object TestComp {
       import suzaku.ui.layout._
       import suzaku.ui.KeywordTypes._
 
-      GridLayout(800.px, 100.px ~ 300.px, List(Nil))(
+      LinearLayout(Direction.Vertical)(
         LinearLayout(state.direction, state.justify, state.align)(
           Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
             width := 10.em
@@ -37,7 +37,7 @@ object TestComp {
           Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
           Button(s"Remove button ${state.count}", () => dec())
             .withKey(1)
-            .withLayout(alignSelf := start, group := Layout1)
+            .withLayout(alignSelf := start)
             .withStyle(
               backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
               color := 0xFF80FF,
@@ -65,9 +65,18 @@ object TestComp {
         ) << (
           if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
         ),
-        Button("HUGE!") << (
-          width := 100.%%,
-          height := 100.%%
+        GridLayout(
+          400.px ~ 400.px ~ 200.px ~ 200.px,
+          100.px ~ 300.px ~ 100.px,
+          List(
+            Layout1 :: Layout1 :: Layout1 :: Layout2 :: Nil,
+            Layout3 :: Layout3 :: Layout3 :: Layout2 :: Nil,
+            Layout3 :: Layout3 :: Layout3 :: Layout4 :: Nil
+          )
+        )(
+          Button("1").withLayout(slot := Layout1) << (backgroundColor := Colors.blue),
+          Button("2").withLayout(slot := Layout2) << (backgroundColor := Colors.green),
+          Button("3").withLayout(slot := Layout3) << (backgroundColor := Colors.red)
         )
       )
     }
@@ -132,6 +141,8 @@ import suzaku.ui.KeywordTypes._
 
 object Layout1 extends LayoutId
 object Layout2 extends LayoutId
+object Layout3 extends LayoutId
+object Layout4 extends LayoutId
 
 object BaseStyle extends StyleClass {
   def style = List(

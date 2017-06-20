@@ -67,6 +67,7 @@ object UIProtocol extends Protocol {
     .addConcreteType[SetChildren]
     .addConcreteType[UpdateChildren]
     .addConcreteType[AddStyles]
+    .addConcreteType[AddLayoutIds]
     .addConcreteType[ActivateTheme]
     .addConcreteType[DeactivateTheme]
     .addConcreteType[RegisterWidgetClass]

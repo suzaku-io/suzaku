@@ -8,11 +8,12 @@ abstract class LayoutId {
   val id = LayoutIdRegistry.register(getClass)
 }
 
-case class AlignSelf(align: Alignment) extends LayoutProperty
-case class LayoutWeight(weight: Int)   extends LayoutProperty
-case class LayoutGroupId(id: LayoutId) extends LayoutProperty
-case class Order(order: Int)           extends LayoutProperty
-case class ZOrder(order: Int)          extends LayoutProperty
+case class AlignSelf(align: Alignment)   extends LayoutProperty
+case class JustifySelf(align: Alignment) extends LayoutProperty
+case class LayoutWeight(weight: Int)     extends LayoutProperty
+case class LayoutSlotId(id: LayoutId)    extends LayoutProperty
+case class Order(order: Int)             extends LayoutProperty
+case class ZOrder(order: Int)            extends LayoutProperty
 
 case class PureLayoutId(override val id: Int) extends LayoutId
 
@@ -30,6 +31,8 @@ object LayoutId {
 
 }
 
+object EmptySlot extends LayoutId
+
 object LayoutProperty {
   import boopickle.Default._
   import Alignment._
@@ -40,6 +43,7 @@ object LayoutProperty {
     .addConcreteType[Order]
     .addConcreteType[ZOrder]
     .addConcreteType[AlignSelf]
+    .addConcreteType[JustifySelf]
     .addConcreteType[LayoutWeight]
-    .addConcreteType[LayoutGroupId]
+    .addConcreteType[LayoutSlotId]
 }

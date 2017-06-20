@@ -6,7 +6,8 @@ import suzaku.ui.layout._
 import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
 
 class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, widgetManager: WidgetManager)
-    extends DOMWidget[GridLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) {
+    extends DOMWidget[GridLayoutProtocol.type, dom.html.Div](widgetId, widgetManager)
+    with DOMLayout {
   import GridLayoutProtocol._
 
   val artifact = {
@@ -70,6 +71,52 @@ class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, w
     }
   }
 
+  override protected val layoutPropNames = List(
+    "grid-area",
+    "align-self",
+    "justify-self"
+  )
+
+  override protected def resolveLayout(modWidget: (dom.html.Element => Unit) => Unit,
+                                       layoutProperty: LayoutProperty): Unit = {
+    layoutProperty match {
+      case LayoutSlotId(layoutGroup) =>
+        println(s"Set grid area to ${layoutGroup.id}")
+        modWidget { el =>
+          el.style.setProperty("grid-area", s"_L${layoutGroup.id}")
+        }
+
+      case AlignSelf(alignment) =>
+        modWidget { el =>
+          el.style.setProperty(
+            "align-self",
+            alignment match {
+              case AlignStart   => "start"
+              case AlignEnd     => "end"
+              case AlignCenter  => "center"
+              case AlignStretch => "stretch"
+              case _ =>
+                throw new IllegalArgumentException(s"Alignment $alignment is not supported for Grid layout")
+            }
+          )
+        }
+
+      case JustifySelf(alignment) =>
+        modWidget { el =>
+          el.style.setProperty(
+            "justify-self",
+            alignment match {
+              case AlignStart   => "start"
+              case AlignEnd     => "end"
+              case AlignCenter  => "center"
+              case AlignStretch => "stretch"
+              case _ =>
+                throw new IllegalArgumentException(s"Alignment $alignment is not supported for Grid layout")
+            }
+          )
+        }
+    }
+  }
 }
 
 class DOMGridLayoutBuilder(widgetManager: WidgetManager) extends WidgetBuilder(GridLayoutProtocol) {

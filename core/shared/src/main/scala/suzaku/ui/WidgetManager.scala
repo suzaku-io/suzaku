@@ -178,6 +178,9 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
       }
       addStyles(baseStyles)
 
+    case AddLayoutIds(ids) =>
+      // TODO store somewhere
+
     case ActivateTheme(themeId, theme) =>
       themes :+= (themeId, theme)
       rebuildThemes(themes)

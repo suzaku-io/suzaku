@@ -6,7 +6,7 @@ import suzaku.ui.layout._
 import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
 
 class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContext, widgetManager: WidgetManager)
-    extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) {
+    extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) with DOMLayout {
   import LinearLayoutProtocol._
   import Direction._
   import Justify._
@@ -72,58 +72,46 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
     }
   }
 
-  private val allPropNames = List(
-    "align-self",
-    "flex-grow",
+  override protected val layoutPropNames = List(
     "order",
-    "z-index"
+    "align-self",
+    "flex-grow"
   )
 
-  override def resolveLayout(w: Widget, layoutProperties: List[LayoutProperty]): Unit = {
-    val widget    = w.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
-    val modWidget = (f: dom.html.Element => Unit) => widget.modifyDOM(f)
+  override protected def resolveLayout(modWidget : (dom.html.Element => Unit) => Unit, layoutProperty: LayoutProperty): Unit = {
+    layoutProperty match {
+      case Order(n) =>
+        modWidget { el =>
+          if (n != 0)
+            el.style.setProperty("order", n.toString)
+        }
+      case AlignSelf(alignment) =>
+        modWidget { el =>
+          if (alignment != AlignAuto) {
+            el.style.setProperty(
+              "align-self",
+              alignment match {
+                case AlignStart => "flex-start"
+                case AlignEnd => "flex-end"
+                case AlignCenter => "center"
+                case AlignBaseline => "baseline"
+                case AlignStretch => "stretch"
+                case AlignAuto => "auto"
+              }
+            )
+          }
+        }
+      case LayoutWeight(w) =>
+        modWidget { el =>
+          if (w != 0) {
+            el.style.setProperty("flex-grow", w.toString)
+          }
+        }
+      case LayoutSlotId(layoutId) =>
+        // allow but ignore
 
-    // only for real HTML elements
-    if (!scalajs.js.isUndefined(widget.artifact.el.style)) {
-      // first remove all layout properties
-      modWidget { el =>
-        allPropNames.foreach(el.style.removeProperty)
-      }
-      layoutProperties foreach {
-        case AlignSelf(alignment) =>
-          modWidget { el =>
-            if (alignment != AlignAuto) {
-              el.style.setProperty(
-                "align-self",
-                alignment match {
-                  case AlignStart    => "flex-start"
-                  case AlignEnd      => "flex-end"
-                  case AlignCenter   => "center"
-                  case AlignBaseline => "baseline"
-                  case AlignStretch  => "stretch"
-                  case AlignAuto     => "auto"
-                }
-              )
-            }
-          }
-        case LayoutWeight(weight) =>
-          modWidget { el =>
-            if (weight != 0) {
-              el.style.setProperty("flex-grow", weight.toString)
-            }
-          }
-        case Order(n) =>
-          modWidget { el =>
-            if (n != 0)
-              el.style.setProperty("order", n.toString)
-          }
-        case ZOrder(n) =>
-          modWidget { el =>
-            el.style.setProperty("z-index", n.toString)
-          }
-
-        case _ => // ignore others
-      }
+      case other =>
+        throw new IllegalArgumentException(s"Layout property $other is not supported for LinearLayout")
     }
   }
 
