@@ -11,7 +11,6 @@ package object widget {
     widgetManager.registerWidget(classOf[GridLayout.WBlueprint], new DOMGridLayoutBuilder(widgetManager))
     widgetManager.registerWidget(classOf[Button.WBlueprint], new DOMButtonBuilder(widgetManager))
     widgetManager.registerWidget(classOf[Checkbox.WBlueprint], new DOMCheckboxBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[ListView.WBlueprint], new DOMListViewBuilder(widgetManager))
     widgetManager.registerWidget(classOf[Text.TextBlueprint], new DOMTextBuilder(widgetManager))
     widgetManager.registerWidget(classOf[TextInput.WBlueprint], new DOMTextInputBuilder(widgetManager))
   }

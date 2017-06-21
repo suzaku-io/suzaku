@@ -77,7 +77,7 @@ object TestComp {
           Button("1").withLayout(slot := Layout1) << (backgroundColor := Colors.blue),
           Button("2").withLayout(slot := Layout2) << (backgroundColor := Colors.green),
           Button("3").withLayout(slot := Layout3) << (backgroundColor := Colors.red)
-        )
+        ).withLayout(weight := 1)
       )
     }
 
@@ -104,6 +104,7 @@ object TestComp {
 
     def flipAlignment(align: Alignment): Alignment = {
       align match {
+        case AlignAuto     => AlignStart
         case AlignStart    => AlignEnd
         case AlignEnd      => AlignCenter
         case AlignCenter   => AlignBaseline

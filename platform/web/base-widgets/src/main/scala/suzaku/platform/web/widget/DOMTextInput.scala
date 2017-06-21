@@ -10,11 +10,11 @@ class DOMTextInput(widgetId: Int, context: TextInputProtocol.ChannelContext, wid
   import TextInputProtocol._
 
   val artifact = {
-    import scalatags.JsDom.all._
-
-    val node = input(tpe := "text", oninput := onChange _).render
-    node.value = context.initialValue
-    DOMWidgetArtifact(node)
+    val el = tag[dom.html.Input]("input")
+    el.addEventListener("input", onChange _)
+    el.setAttribute("type", "text")
+    el.value = context.initialValue
+    DOMWidgetArtifact(el)
   }
 
   private def onChange(e: dom.Event): Unit = {

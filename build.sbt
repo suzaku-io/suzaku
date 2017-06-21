@@ -88,8 +88,7 @@ lazy val core = crossProject
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      scalaJSDOM.value,
-      scalaTags.value
+      scalaJSDOM.value
     ),
     scalacOptions ++= sourceMapSetting.value,
     scalaJSStage in Global := FastOptStage
@@ -126,8 +125,7 @@ lazy val webCore = project
   .settings(
     name := "suzaku-core-web",
     libraryDependencies ++= Seq(
-      scalaJSDOM.value,
-      scalaTags.value
+      scalaJSDOM.value
     ),
     scalacOptions ++= sourceMapSetting.value,
     scalaJSStage in Global := FastOptStage

@@ -62,6 +62,9 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, wi
   }
 
   // helpers
+
+  protected def tag[T <: dom.html.Element](name: String) = dom.document.createElement(name).asInstanceOf[T]
+
   protected def textNode(text: String): dom.Text = dom.document.createTextNode(text)
 
   protected def updateStyleProperty[A](el: dom.html.Element, property: String, f: (A, String => Unit, () => Unit) => Unit)(
@@ -135,6 +138,7 @@ object DOMWidget {
     case LengthRem(value) => s"${value}rem"
     case LengthVw(value)  => s"${value}vw"
     case LengthVh(value)  => s"${value}vh"
+    case LengthFr(value)  => s"${value}fr"
     case LengthAuto       => "auto"
   }
 

@@ -10,12 +10,11 @@ class DOMCheckbox(widgetId: Int, context: CheckboxProtocol.ChannelContext, widge
   import CheckboxProtocol._
 
   val artifact = {
-    import scalatags.JsDom.all._
-    // the presence of the "checked" attribute makes the input checked, even with a false value
-    val checkbox =
-      if (context.value) input(`type` := "checkbox", checked := true, onclick := onChange _)
-      else input(`type` := "checkbox", onclick := onChange _)
-    DOMWidgetArtifact(checkbox.render)
+    val el = tag[dom.html.Input]("input")
+    el.addEventListener("click", onChange _)
+    el.setAttribute("type", "checkbox")
+    el.checked = context.value
+    DOMWidgetArtifact(el)
   }
 
   def onChange(e: dom.Event): Unit = {

@@ -12,8 +12,7 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
   import Justify._
 
   val artifact = {
-    import scalatags.JsDom.all._
-    val el = div().render
+    val el = tag[dom.html.Div]("div")
     el.style.setProperty("display", "flex")
     DOMWidgetArtifact(el)
   }

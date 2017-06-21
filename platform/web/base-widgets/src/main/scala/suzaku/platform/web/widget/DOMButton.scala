@@ -10,8 +10,10 @@ class DOMButton(widgetId: Int, context: ButtonProtocol.ChannelContext, widgetMan
   import ButtonProtocol._
 
   val artifact = {
-    import scalatags.JsDom.all._
-    DOMWidgetArtifact(button(context.label, onclick := onClick _).render)
+    val el = tag[dom.html.Button]("button")
+    el.addEventListener("click", onClick _)
+    el.appendChild(textNode(context.label))
+    DOMWidgetArtifact(el)
   }
 
   def onClick(e: dom.MouseEvent): Unit = {

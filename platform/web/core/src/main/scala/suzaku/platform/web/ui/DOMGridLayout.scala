@@ -11,8 +11,7 @@ class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, w
   import GridLayoutProtocol._
 
   val artifact = {
-    import scalatags.JsDom.all._
-    val el = div().render
+    val el = tag[dom.html.Div]("div")
     el.style.setProperty("display", "grid")
     DOMWidgetArtifact(el)
   }
@@ -51,7 +50,7 @@ class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, w
       if (slots.isEmpty)
         remove()
       else
-        set(slots.map(row => row.map(lid => s"_L${lid.id}").mkString(" ")).mkString("\"", "\" \"", "\""))
+        set(slots.map(row => row.map(lid => s"_L${lid.id}").mkString(" ")).mkString("'", "' '", "'"))
     }
   ) _
 
