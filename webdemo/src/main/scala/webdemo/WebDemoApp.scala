@@ -63,7 +63,7 @@ object TestComp {
           s"Just some <script>${"text" * state.count} </script>",
           Button(s"${blueprint.label} ${state.time}").withKey(3)
         ) << (
-          if (state.checked) backgroundColor := rgb(0, 0, 0) else backgroundColor := rgb(255, 255, 255)
+          backgroundColor := (if (state.checked) rgb(0, 0, 0) else rgb(255, 255, 255))
         ),
         GridLayout(
           400.px ~ 400.px ~ 200.px ~ 200.px,
@@ -216,7 +216,7 @@ object StatelessTestComp {
 class WebDemoApp(transport: Transport) extends AppBase(transport) {
   override protected def main(): Unit = {
     val comp = TestComp("Testing")
-    uiManager.activateTheme(MyTheme.theme)
+    val themeId = uiManager.activateTheme(MyTheme.theme)
     uiManager.render(comp)
   }
 }

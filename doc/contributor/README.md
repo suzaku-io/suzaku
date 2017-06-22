@@ -21,26 +21,26 @@ improving the overall design. All contributions from all contributors are welcom
 
 This guide is divided into following sections to help you get around quickly.
 
-* [Getting started](#getting-started) - taking those first baby steps
-* [Background and motivation](#background-and-motivation) - tells you why Suzaku was created
-* [Design and Architecture](#design-and-architecture) - the core principles and ideas behind Suzaku
-* [Workflow](#workflow) - the actual workflow for contributing
-* [Style guide](#style-guide) - keeping up with the latest style
-* [Practical tips](#practical-tips) - making your life easier with some practical tips
+-   [Getting started](#getting-started) - taking those first baby steps
+-   [Background and motivation](#background-and-motivation) - tells you why Suzaku was created
+-   [Design and Architecture](#design-and-architecture) - the core principles and ideas behind Suzaku
+-   [Workflow](#workflow) - the actual workflow for contributing
+-   [Style guide](#style-guide) - keeping up with the latest style
+-   [Practical tips](#practical-tips) - making your life easier with some practical tips
 
 ## Getting started
 
 First of all make sure you have the necessary tools installed. You'll need the following:
 
-* Git ([downloads](https://git-scm.com/downloads) for all platforms)
-* Java 8 JDK ([downloads](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) for all
-  platforms)
-* SBT (setup for [Linux](http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Linux.html) |
-  [Windows](http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Windows.html) |
-  [Mac](http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Mac.html))
+-   Git ([downloads](https://git-scm.com/downloads) for all platforms)
+-   Java 8 JDK ([downloads](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) for all
+    platforms)
+-   SBT (setup for [Linux](http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Linux.html) \|
+    [Windows](http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Windows.html) \|
+    [Mac](http://www.scala-sbt.org/0.13/docs/Installing-sbt-on-Mac.html))
 
 To make contributions in the project you need to _fork_ your own copy of it first. Go to
-[https://github.com/suzaku-io/suzaku]() and click the _Fork_ button to do it.
+[https://github.com/suzaku-io/suzaku](<>) and click the _Fork_ button to do it.
 
 ![fork](image/fork.png)
 
@@ -62,9 +62,7 @@ HTTPS.
 
 Next you'll need to perform the actual cloning of the repo using your `git` client, for example on the command line with
 
-```
-$ git clone git@github.com:suzaku-io/suzaku.git
-```
+    $ git clone git@github.com:suzaku-io/suzaku.git
 
 This will create a `suzaku` directory under your current working directory and copy the contents of the repo (with all the
 branches and other metadata) there.
@@ -91,7 +89,7 @@ $ sbt
 ```
 
 You can now try out the demo app in your browser at URL
-[http://localhost:12345/webdemo/index.html](http://localhost:12345/webdemo/index.html), served by the wonderful
+<http://localhost:12345/webdemo/index.html>, served by the wonderful
 [Workbench plugin](https://github.com/lihaoyi/workbench).
 
 Now you're all set to play with the source code, make your modifications and test them locally. Before submitting your
@@ -174,7 +172,7 @@ how applications are built using Suzaku.
 Suzaku is a monorepo consisting of several interdependent projects. Here is a list of projects and what they are for:
 
 | Project                     | Description                                            |
-|:----------------------------|:-------------------------------------------------------|
+| :-------------------------- | :----------------------------------------------------- |
 | `core`                      | Platform independent core of Suzaku.                   |
 | `base-widgets`              | Platform independent definitions of base widgets.      |
 | `platform/web/core`         | Web specific implementation of the core.               |
@@ -412,9 +410,9 @@ object ButtonProtocol extends Protocol {
 
 A widget protocol is required to define three things:
 
-1. Valid messages for this protocol (and an implicit witness(es) to provide evidence)
-2. Initial channel context to be passed when the channel is created
-3. Picklers (serializers) for messages and the context
+1.  Valid messages for this protocol (and an implicit witness(es) to provide evidence)
+2.  Initial channel context to be passed when the channel is created
+3.  Picklers (serializers) for messages and the context
 
 In the case of button the only valid messages are `SetLabel`, which is used to update the button and `Click`, which is used
 to indicate that the button was clicked. Note that the channel is always bidirectional, so any message can be sent in either
@@ -444,8 +442,8 @@ Because Suzaku is based on declarative UI, we need to render the UI again with t
 stays the same, but the last button is now defined as `Button("Logout")`. When the call to `uiManager.render` completes,
 Suzaku will compare the cached blueprint tree to the new tree returned by `render`. It will walk the tree and check if
 
-1. widget type has changed
-2. widget type is the same, but blueprint has changed
+1.  widget type has changed
+2.  widget type is the same, but blueprint has changed
 
 In the latter case it will call `ButtonBlueprint`'s `sameAs` method, which by default calls `equals` and therefore will
 notice the change in the label. Next it will pass the new `ButtonBlueprint` to the current `ButtonProxy` instance using its
@@ -474,6 +472,228 @@ override def process = {
 
 Note how the widget is performing a direct DOM manipulation, as it has full control over its own DOM tree. This makes updates
 very efficient as the widget can decide the best update strategy.
+
+### Styling
+
+On the web the vast majority of styling is done using external CSS style sheets. While this approach worked well for the
+static HTML pages, it becomes cumbersome and hard to maintain in a component oriented application. Suzaku provides similar
+styling features to CSS, but the styles are always attached to widgets. There are, however, multiple ways to do styling in
+Suzaku so let's walk through them to understand how they work.
+
+#### Inline styling
+
+First level of styling is attaching style properties directly to individual widgets. You do this by importing
+`suzaku.ui.style._` and using the properties defined there.
+
+```scala
+import suzaku.ui.style._
+Button("OK") << (backgroundColor := Colors.blue)
+```
+
+The styles are attached to the widget using the `<<` method (or the `withStyle` alias), providing a list of properties. In
+this example we're setting the background color to `blue`. This syntax is an alternative to using the style property classes
+directly as below:
+
+```scala
+Button("OK") << BackgroundColor(Colors.blue)
+```
+
+The former syntax was chosen because it closely resembles CSS and is therefore easier to many frontend developers. For some
+style values, such as lengths, automatic conversions are provided allowing you to write things like `width := 10.px` instead
+of `Width(LengthPx(10))`.
+
+So, how does the style system actually work under the hood? How is the style information communicated to the actual widget
+since it's obviously external to the actual widget? Each `WidgetBlueprint` contains style information, which is built using
+the `<<` method. Every call to `<<` adds one or more style properties to the internal map.
+
+When the widget is instantiated and the `WidgetProxy` created, it sends a special `UpdateStyle` message automatically to the
+widget implementation, which will then do the necessary updates for the actual widget. In the case of DOM widgets, this means
+updating the `style` of the HTML element, resulting in something like:
+
+```html
+<button style="background-color: rgb(0, 0, 255);">OK</button>
+```
+
+Note how the color value is normalized into a standard RGB color, instead of the more familiar `#0000ff` format. Similar
+normalization happens to many other style properties as well, because Suzaku styles are not directly CSS styles but something
+a bit more abstract.
+
+When a style property is updated, added or removed, `WidgetProxy` calculates a difference and communicates only the changed
+styles over to the UI. This provides an efficient way to do style updates in the render code using conditionals:
+
+```scala
+backgroundColor := (if (state.checked) rgb(0, 0, 255) else rgb(255, 0, 0))
+```
+
+But declaring styles directly for each widget gets tedious and is not really the recommended practice. It works fine when you
+need to do dynamic styling, but otherwise you should use style classes.
+
+#### Style classes
+
+A style class is a static collection of style properties with a unique name. To create a style class, simply define an
+`object` extending the `StyleClass` class and override the `style` method:
+
+```scala
+object Red extends StyleClass {
+  def style = List(
+    color := 0xFF0000,
+    backgroundColor := Colors.white
+  )
+}
+```
+
+You can now use your style class to style a widget:
+
+```scala
+Button("OK") << Red
+```
+
+Although on the surface this looks similar to what you get with inline styles, internally it works quite differently. Suzaku
+takes advantage of `object`'s singleton behavior and registers the style class the first time it's used. The registration
+process allocates an internal identifier (just an integer) to the style class and passes the declared style properties to the
+UI. On the UI side (for DOM) a new CSS class is created and injected to the header of the page, for example:
+
+```html
+<style type="text/css">
+  ._S1 {color:rgb(255,0,0);background-color:rgb(255,255,255);}
+</style>
+```
+
+When the `Red` style class is used, only its identifier is passed, allowing the widget implementation to know which CSS class
+to use.
+
+```html
+<button class="_S1">OK</button>
+```
+
+Style classes can also inherit other style classes, allowing the developer to build complex style hierarchies easily. For
+example to define a large, red button with some custom fonts:
+
+```scala
+object Large extends StyleClass {
+  def style = List(
+    height := 100.px
+  )
+}
+
+object LargeRedButton extends StyleClass {
+  def style = List(
+    inheritClasses := (Large, Red),
+    fontFamily := ("Times New Roman", "Times", "serif"),
+    fontSize := xxlarge,
+    fontWeight := 600
+  )
+}
+```
+
+Although style classes make it easier to assign complex styles to widgets, they still require developer to do it explicitly.
+To automatically apply styles to widgets you need to use themes.
+
+#### Style themes
+
+A theme is simply an automatic application of given style classes to widgets. To create a theme, simply define the
+associations between widgets and style classes using `Theme`:
+
+```scala
+val theme = Theme(
+  Button -> LargeRedButton,
+  TextInput -> (Large :: InputStyle :: Nil)
+)
+```
+
+You can assign one or more styles to each widget and they will be applied in the correct order. Since themes are not automatically registered, you have to activate them explicitly.
+
+```scala
+val themeId = uiManager.activateTheme(theme)
+...
+uiManager.deactivateTheme(themeId)
+```
+
+There can be multiple active themes at the same time and you can deactivate and reactivate them at any time.
+
+Suzaku maintains a list of active themes and automatically applies style classes to widgets when they are created.
+
+#### Responsive styles
+
+What responsive design means in web-talk is a UI design that responds to changes in its environment, most notably the screen
+size and device type. The developer might want to use a certain set of styles on a desktop browser, but different set on a
+mobile device. Suzaku has a lot of features built specifically for responsive design and two of those are in the style
+system.
+
+First one is the dynamic use of themes. You can define a separate theme for desktop and mobile versions, and switch between
+them depending on the current situation.
+
+Second option is to _remap_ individual style classes. Unlike themes, remapping operates within the widget hierarchy and each
+mapping only affects the descendants of a widget. For example within a component, you might want to use a different style for
+buttons when on mobile.
+
+```scala
+LinearLayout()( ... ) << (
+  if(onMobile) remapClass := (RedButton -> LargeRedButton :: Nil) else EmptyStyle
+)
+```
+
+Internally Suzku keeps track of remappings and applies them to widgets automatically.
+
+### Layouts
+
+The layout system in Suzaku works very similarly to styles. Each widget can have layout properties that affect how it's laid
+out in the container. By default Suzaku supports two kinds of layout containers: linear and grid. If you're familiar with CSS
+layout system, a `LinearLayout` is like a flexbox (and implemented with that in the DOM) while the `GridLayout` is like CSS3
+grid (again, implemented with CSS grid in DOM UI).
+
+Layout widgets are widgets like others, but they manage their children directly. This means, for example, that a
+`LinearLayout` can change the CSS style of its child widget to apply an appropriate layout. You could have a `Button` in a
+vertical layout that wants to be positioned to the right by specifying:
+
+```scala
+Button("OK").withLayout(alignSelf := end)
+```
+
+Unlike styles, the button widget doesn't apply this layout parameter itself but when it's positioned inside a `LinearLayout`
+the layout widget goes and sets a CSS style property `align-self: flex-end;` for the button. In case it's positioned inside a
+`GridLayout`, the resulting style would be `align-self: end;`.
+
+The linear layout is pretty straight forward, but the `GridLayout` is more interesting. To define a grid layout, you need to
+define _columns_ and _rows_, and an optional list of slots:
+
+```scala
+GridLayout(
+  400.px ~ 400.px ~ 200.px ~ 200.px,
+  100.px ~ 300.px ~ 100.px,
+  List(
+    Layout1 :: Layout1 :: Layout1 :: Layout2 :: Nil,
+    Layout3 :: Layout3 :: Layout3 :: Layout2 :: Nil,
+    Layout3 :: Layout3 :: Layout3 :: Layout4 :: Nil
+  )
+)(...)
+```
+
+Columns and rows are defined via their widths, that can be absolute values like `100.px` or a relative value `1.fr`. See CSS3
+grid documentation on how it works in practice. The slots parameter gives names to areas in the grid that can be used to
+position the child elements into specific slots.
+
+|     |Col 1|Col 2|Col 3|Col 4|
+|-----|---------|---------|---------|---------|
+|**Row 1**| Layout1 | Layout1 | Layout1 | Layout2 |
+|**Row 2**| Layout3 | Layout3 | Layout3 | Layout2 |
+|**Row 3**| Layout3 | Layout3 | Layout3 | Layout4 |
+
+Each `LayoutX` is an instance of `LayoutId`, automatically registered and assigned an identifier. Once the layout has been
+defined, individual children will be positioned into the matching slots:
+
+```scala
+object Layout1 extends LayoutId
+object Layout2 extends LayoutId
+object Layout3 extends LayoutId
+object Layout4 extends LayoutId
+
+GridLayout(...)(
+Button("1").withLayout(slot := Layout1),
+Button("2").withLayout(slot := Layout2),
+Button("3").withLayout(slot := Layout3)
+)
+```
 
 ### Components
 
@@ -504,11 +724,11 @@ ready.
 
 After the component has been constructed, there are only three things that can happen to it:
 
-1. a blueprint change
-2. a state change
-3. destruction
+1.  a blueprint change
+2.  a state change
+3.  destruction
 
-A blueprint change means that the component was rendered again by some other component higher in the hieararchy, but with
+A blueprint change means that the component was rendered again by some other component higher in the hierarchy, but with
 different parameters, for example the label on a `Button` might have changed. Instead of building a new component, Suzaku
 informs the mounted component about the change through `willReceiveBlueprint` providing access to the upcoming blueprint so
 that the component can modify its internal state if necessary. This is followed by a call to `shouldUpdate` which is Suzaku's
@@ -549,7 +769,6 @@ case class MyState(user: String, password: String)
 modState(s => s.copy(user = newUser))
 ```
 
-
 ... to be continued ...
 
 ### UI testing
@@ -562,31 +781,30 @@ real UI.
 
 ... More coming soon! ...
 
-
 ## Workflow
 
 This is the general workflow for contributing to Suzaku (adapted from
 [Scala.js](https://github.com/scala-js/scala-js/blob/master/CONTRIBUTING.md))
 
-1. You should always perform your work in its own Git branch (a "topic branch"). The branch should be given a descriptive
-   name that explains its intent.
+1.  You should always perform your work in its own Git branch (a "topic branch"). The branch should be given a descriptive
+    name that explains its intent.
 
-2. When the feature or fix is completed you should [squash](https://help.github.com/articles/about-pull-request-merges/) your
-   commits into a one (per useful change), [rebase](https://help.github.com/articles/about-git-rebase/) it against the
-   original branch and open a [Pull Request](https://help.github.com/articles/about-pull-requests/) on GitHub. Squashing
-   commits keeps the version history clean and clutter free. Typically your PR should target the `master` branch, but there
-   may be other work-in-progress branches that you can also target in your PR. This is especially true if you have originally
-   branched from such a WIP branch.
+2.  When the feature or fix is completed you should [squash](https://help.github.com/articles/about-pull-request-merges/) your
+    commits into a one (per useful change), [rebase](https://help.github.com/articles/about-git-rebase/) it against the
+    original branch and open a [Pull Request](https://help.github.com/articles/about-pull-requests/) on GitHub. Squashing
+    commits keeps the version history clean and clutter free. Typically your PR should target the `master` branch, but there
+    may be other work-in-progress branches that you can also target in your PR. This is especially true if you have originally
+    branched from such a WIP branch.
 
-3. The Pull Request should be reviewed by the maintainers. Independent contributors can also participate in the review
-   process, and are encouraged to do so. There is also an automated CI build that checks that your PR is compiling ok and
-   tests run without errors.
+3.  The Pull Request should be reviewed by the maintainers. Independent contributors can also participate in the review
+    process, and are encouraged to do so. There is also an automated CI build that checks that your PR is compiling ok and
+    tests run without errors.
 
-4. After the review, you should resolve issues brought up by the reviewers as needed (amending or adding commits to address
-   reviewers' comments), iterating until the reviewers give their thumbs up, the "LGTM" (acronym for "Looks Good To Me").
-   While iterating, you can push (and squash) new commits to your topic branch and they will show up in the PR automatically.
+4.  After the review, you should resolve issues brought up by the reviewers as needed (amending or adding commits to address
+    reviewers' comments), iterating until the reviewers give their thumbs up, the "LGTM" (acronym for "Looks Good To Me").
+    While iterating, you can push (and squash) new commits to your topic branch and they will show up in the PR automatically.
 
-5. Once the code has passed review the Pull Request can be merged into the distribution.
+5.  Once the code has passed review the Pull Request can be merged into the distribution.
 
 ### Tests
 

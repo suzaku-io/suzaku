@@ -4,7 +4,7 @@ class StyleBuilder[S <: StyleProperty, V](build: V => S) {
   def :=(value: V): S = build(value)
 }
 class MultiStyleBuilder[S <: StyleProperty, V](build: List[V] => S) {
-  def :=(values: V*): S = build(values.toList)
+  def :=(value: V, values: V*): S = build(value :: values.toList)
 }
 
 abstract class TRBLBuilder[A](top: A => StyleBaseProperty,
@@ -30,7 +30,7 @@ trait StyleBuilders {
   val inheritClasses = stylesFor[InheritClasses, StyleClass](InheritClasses)
   val extendClass    = styleFor[ExtendClasses, StyleClass](styleClass => ExtendClasses(styleClass :: Nil))
   val extendClasses  = stylesFor[ExtendClasses, StyleClass](ExtendClasses)
-  val remapClass     = styleFor[RemapClasses, (StyleClass, StyleClass)](ct => RemapClasses(Map(ct._1 -> (ct._2 :: Nil))))
+  val remapClass     = styleFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(Map(ct._1 -> ct._2)))
   val remapClasses   = stylesFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(ct.toMap))
 
   // regular style definitions
