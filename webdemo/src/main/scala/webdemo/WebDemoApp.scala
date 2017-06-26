@@ -6,7 +6,7 @@ import suzaku.platform.Transport
 import suzaku.ui._
 import suzaku.ui.layout.LayoutId
 import suzaku.ui.style.StyleClass
-import suzaku.widget.{Button, Checkbox, TextInput}
+import suzaku.widget._
 
 object TestComp {
   import suzaku.ui.layout._
@@ -33,7 +33,7 @@ object TestComp {
           Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
             width := 10.em
           ),
-          TextInput(state.text, value => modState(s => s.copy(text = value))),
+          TextField(state.text, value => modState(s => s.copy(text = value))),
           Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
           Button(s"Remove button ${state.count}", () => dec())
             .withKey(1)
@@ -76,7 +76,12 @@ object TestComp {
         )(
           Button("1").withLayout(slot := Layout1) << (backgroundColor := Colors.blue),
           Button("2").withLayout(slot := Layout2) << (backgroundColor := Colors.green),
-          Button("3").withLayout(slot := Layout3) << (backgroundColor := Colors.red)
+          Table()
+            .header(TableHeader("ID", "Name", "Email"))
+            .body(TableBody(
+              TableRow(TableCell("123"), TableCell("John Dow"), TableCell("john@dow.com")),
+              TableRow(TableCell("456"), TableCell("Some Other"), TableCell("some@dow.com"))
+            ))
         ).withLayout(weight := 1)
       )
     }
@@ -215,7 +220,7 @@ object StatelessTestComp {
 
 class WebDemoApp(transport: Transport) extends AppBase(transport) {
   override protected def main(): Unit = {
-    val comp = TestComp("Testing")
+    val comp    = TestComp("Testing")
     val themeId = uiManager.activateTheme(MyTheme.theme)
     uiManager.render(comp)
   }

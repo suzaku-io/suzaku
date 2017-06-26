@@ -5,15 +5,15 @@ import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
 import suzaku.ui.{WidgetBlueprint, WidgetBlueprintProvider, WidgetProtocol, WidgetProxy}
 
-object TextInputProtocol extends Protocol {
+object TextFieldProtocol extends Protocol {
 
-  sealed trait TextInputMessage extends Message
+  sealed trait TextFieldMessage extends Message
 
-  case class SetValue(value: String) extends TextInputMessage
+  case class SetValue(value: String) extends TextFieldMessage
 
-  case class ValueChanged(value: String) extends TextInputMessage
+  case class ValueChanged(value: String) extends TextFieldMessage
 
-  val mPickler = compositePickler[TextInputMessage]
+  val mPickler = compositePickler[TextFieldMessage]
     .addConcreteType[SetValue]
     .addConcreteType[ValueChanged]
 
@@ -24,10 +24,10 @@ object TextInputProtocol extends Protocol {
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
-object TextInput extends WidgetBlueprintProvider {
-  class WProxy private[TextInput] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TextInputProtocol, bd, widgetId, uiChannel) {
-    import TextInputProtocol._
+object TextField extends WidgetBlueprintProvider {
+  class WProxy private[TextField] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(TextFieldProtocol, bd, widgetId, uiChannel) {
+    import TextFieldProtocol._
 
     override def process = {
       case ValueChanged(value) =>
@@ -45,9 +45,9 @@ object TextInput extends WidgetBlueprintProvider {
     }
   }
 
-  case class WBlueprint private[TextInput] (value: String, onChange: Option[String => Unit] = None)
+  case class WBlueprint private[TextField] (value: String, onChange: Option[String => Unit] = None)
       extends WidgetBlueprint {
-    type P     = TextInputProtocol.type
+    type P     = TextFieldProtocol.type
     type Proxy = WProxy
     type This  = WBlueprint
 

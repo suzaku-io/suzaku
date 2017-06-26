@@ -64,7 +64,7 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
     modifyDOM { el =>
       el.childNodes.foreach(el.removeChild)
       children.foreach { c =>
-        val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.Node]]
+        val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
         el.appendChild(widget.artifact.el)
         resolveLayout(widget, widget.layoutProperties)
       }

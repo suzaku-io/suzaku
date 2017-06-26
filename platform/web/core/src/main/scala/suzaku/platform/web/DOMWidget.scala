@@ -4,7 +4,7 @@ import arteria.core.Protocol
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
 import suzaku.ui.style.StyleBaseProperty
-import suzaku.ui.{WidgetArtifact, WidgetManager, WidgetWithProtocol}
+import suzaku.ui.{Widget, WidgetArtifact, WidgetManager, WidgetWithProtocol}
 
 case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
 
@@ -182,6 +182,21 @@ object DOMWidget {
       case OutlineColor(c) => ("outline-color", show(c))
 
       case EmptyStyle | RemapClasses(_) => ("", "")
+    }
+  }
+}
+
+abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: WidgetManager)
+    extends DOMWidget[P, E](widgetId, widgetManager) {
+  override def setChildren(children: Seq[Widget]) = {
+    import org.scalajs.dom.ext._
+    modifyDOM { el =>
+      el.childNodes.foreach(el.removeChild)
+      children.foreach { c =>
+        val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
+        el.appendChild(widget.artifact.el)
+        resolveLayout(widget, widget.layoutProperties)
+      }
     }
   }
 }

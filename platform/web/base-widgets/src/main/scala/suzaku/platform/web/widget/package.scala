@@ -12,6 +12,12 @@ package object widget {
     widgetManager.registerWidget(classOf[Button.WBlueprint], new DOMButtonBuilder(widgetManager))
     widgetManager.registerWidget(classOf[Checkbox.WBlueprint], new DOMCheckboxBuilder(widgetManager))
     widgetManager.registerWidget(classOf[Text.TextBlueprint], new DOMTextBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[TextInput.WBlueprint], new DOMTextInputBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TextField.WBlueprint], new DOMTextFieldBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.WBlueprint], new DOMTableBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TableHeader.WBlueprint], new DOMTableHeaderBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TableBody.WBlueprint], new DOMTableBodyBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TableFooter.WBlueprint], new DOMTableFooterBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TableRow.WBlueprint], new DOMTableRowBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[TableCell.WBlueprint], new DOMTableCellBuilder(widgetManager))
   }
 }
