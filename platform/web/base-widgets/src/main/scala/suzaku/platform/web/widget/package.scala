@@ -14,10 +14,11 @@ package object widget {
     widgetManager.registerWidget(classOf[Text.TextBlueprint], new DOMTextBuilder(widgetManager))
     widgetManager.registerWidget(classOf[TextField.WBlueprint], new DOMTextFieldBuilder(widgetManager))
     widgetManager.registerWidget(classOf[Table.WBlueprint], new DOMTableBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[TableHeader.WBlueprint], new DOMTableHeaderBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[TableBody.WBlueprint], new DOMTableBodyBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[TableFooter.WBlueprint], new DOMTableFooterBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[TableRow.WBlueprint], new DOMTableRowBuilder(widgetManager))
-    widgetManager.registerWidget(classOf[TableCell.WBlueprint], new DOMTableCellBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.Header.WBlueprint], new DOMTableHeaderBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.Body.WBlueprint], new DOMTableBodyBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.Footer.WBlueprint], new DOMTableFooterBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.Row.WBlueprint], new DOMTableRowBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.Cell.WBlueprint], new DOMTableCellBuilder(widgetManager))
+    widgetManager.registerWidget(classOf[Table.HeaderCell.WBlueprint], new DOMTableHeaderCellBuilder(widgetManager))
   }
 }

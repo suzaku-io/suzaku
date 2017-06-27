@@ -77,11 +77,12 @@ object TestComp {
           Button("1").withLayout(slot := Layout1) << (backgroundColor := Colors.blue),
           Button("2").withLayout(slot := Layout2) << (backgroundColor := Colors.green),
           Table()
-            .header(TableHeader("ID", "Name", "Email"))
-            .body(TableBody(
-              TableRow(TableCell("123"), TableCell("John Dow"), TableCell("john@dow.com")),
-              TableRow(TableCell("456"), TableCell("Some Other"), TableCell("some@dow.com"))
-            ))
+            .header("ID", "Name", "Email")
+            .body(
+              Table.Row(Table.Cell("123").rowSpan(2), Table.Cell("John Dow"), Table.Cell(Button("john@dow.com"))),
+              Table.Row(Table.Cell("Some Other").colSpan(2))
+            )
+            .footer("ID", "Name", "Email")
         ).withLayout(weight := 1)
       )
     }

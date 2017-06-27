@@ -194,11 +194,13 @@ abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widge
       el.childNodes.foreach(el.removeChild)
       children.foreach { c =>
         val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
-        el.appendChild(widget.artifact.el)
+        el.appendChild(wrapChild(widget.artifact.el))
         resolveLayout(widget, widget.layoutProperties)
       }
     }
   }
+
+  protected def wrapChild(el: dom.html.Element): dom.html.Element = el
 }
 
 class DOMEmptyWidget(widgetId: Int, widgetManager: WidgetManager)

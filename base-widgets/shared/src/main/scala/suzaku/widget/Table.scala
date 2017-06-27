@@ -18,71 +18,6 @@ object TableProtocol extends Protocol {
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
-object Table extends WidgetBlueprintProvider {
-  class WProxy private[Table] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TableProtocol, bd, widgetId, uiChannel) {
-    import TableProtocol._
-
-    override def process = {
-      case message =>
-        super.process(message)
-    }
-
-    override protected def initWidget = ChannelContext()
-
-    override def update(newBlueprint: WBlueprint) = {
-      super.update(newBlueprint)
-    }
-  }
-
-  case class WBlueprint private[Table] ()(body: TableBody.WBlueprint,
-                                          header: Option[TableHeader.WBlueprint],
-                                          footer: Option[TableFooter.WBlueprint])
-      extends WidgetBlueprint {
-    type P     = TableProtocol.type
-    type Proxy = WProxy
-    type This  = WBlueprint
-
-    override val children = header.getOrElse(EmptyBlueprint) :: body :: footer.getOrElse(EmptyBlueprint) :: Nil
-
-    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
-
-    def apply(footer: TableFooter.WBlueprint): WBlueprint = {
-      assert(body.children.size == footer.children.size)
-      this.copy()(body, header, Some(footer))
-    }
-
-    def footer(footer: TableFooter.WBlueprint): WBlueprint = {
-      assert(body.children.size == footer.children.size)
-      this.copy()(body, header, Some(footer))
-    }
-  }
-
-  override def blueprintClass = classOf[WBlueprint]
-
-  class TableBuilder {
-    def apply(header: TableHeader.WBlueprint): TableBuilderHeader  = new TableBuilderHeader(header)
-    def header(header: TableHeader.WBlueprint): TableBuilderHeader = new TableBuilderHeader(header)
-
-    def apply(body: TableBody.WBlueprint): WBlueprint = WBlueprint()(body, None, None)
-    def body(body: TableBody.WBlueprint): WBlueprint  = WBlueprint()(body, None, None)
-  }
-
-  class TableBuilderHeader(header: TableHeader.WBlueprint) {
-    def apply(body: TableBody.WBlueprint): WBlueprint = {
-      WBlueprint()(body, Some(header), None)
-    }
-
-    def body(body: TableBody.WBlueprint): WBlueprint = {
-      WBlueprint()(body, Some(header), None)
-    }
-  }
-
-  def apply(): TableBuilder                                     = new TableBuilder
-  def apply(header: TableHeader.WBlueprint): TableBuilderHeader = new TableBuilderHeader(header)
-  def apply(body: TableBody.WBlueprint): WBlueprint             = WBlueprint()(body, None, None)
-}
-
 object TableBaseProtocol extends Protocol {
 
   sealed trait TableMessage extends Message
@@ -96,49 +31,27 @@ object TableBaseProtocol extends Protocol {
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
-object TableHeader extends WidgetBlueprintProvider {
-  class WProxy private[TableHeader] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
-    import TableBaseProtocol._
+object TableCellProtocol extends Protocol {
 
-    override def process = {
-      case message =>
-        super.process(message)
-    }
+  sealed trait TableMessage extends Message
 
-    override protected def initWidget = ChannelContext()
+  case class SetSpans(colSpan: Int, rowSpan: Int) extends TableMessage
 
-    override def update(newBlueprint: WBlueprint) = {
-      super.update(newBlueprint)
-    }
-  }
+  val mPickler = compositePickler[TableMessage]
+    .addConcreteType[SetSpans]
 
-  case class WBlueprint private[TableHeader] ()(columns: List[Blueprint]) extends WidgetBlueprint {
-    type P     = TableBaseProtocol.type
-    type Proxy = WProxy
-    type This  = WBlueprint
+  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetProtocol.wmPickler)
 
-    override val children = columns
+  case class ChannelContext(colSpan: Int, rowSpan: Int)
 
-    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
-  }
-
-  override def blueprintClass = classOf[WBlueprint]
-
-  def apply(colName: String, colNames: String*) = WBlueprint()(Text(colName) :: colNames.map(Text(_)).toList)
-
-  def apply(col: Blueprint, cols: Blueprint*) = WBlueprint()(col :: cols.toList)
+  override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
 
-object TableBody extends WidgetBlueprintProvider {
-  class WProxy private[TableBody] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
-    import TableBaseProtocol._
+object Table extends WidgetBlueprintProvider {
 
-    override def process = {
-      case message =>
-        super.process(message)
-    }
+  class WProxy private[Table] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+      extends WidgetProxy(TableProtocol, bd, widgetId, uiChannel) {
+    import TableProtocol._
 
     override protected def initWidget = ChannelContext()
 
@@ -147,118 +60,266 @@ object TableBody extends WidgetBlueprintProvider {
     }
   }
 
-  case class WBlueprint private[TableBody] ()(rows: List[TableRow.WBlueprint]) extends WidgetBlueprint {
-    type P     = TableBaseProtocol.type
+  case class WBlueprint private[Table] ()(body: Body.WBlueprint,
+                                          header: Option[Header.WBlueprint],
+                                          footer: Option[Footer.WBlueprint])
+      extends WidgetBlueprint {
+    type P     = TableProtocol.type
     type Proxy = WProxy
     type This  = WBlueprint
 
-    override def children = rows
+    override val children = (header :: footer :: Some(body) :: Nil).flatten
 
     override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
 
+    def apply(footer: Footer.WBlueprint): WBlueprint = {
+      this.copy()(body, header, Some(footer))
+    }
+
+    def footer(footer: Footer.WBlueprint): WBlueprint = {
+      this.copy()(body, header, Some(footer))
+    }
+
+    def footer(colName: String, colNames: String*): WBlueprint = {
+      this.copy()(body, header, Some(Footer(colName, colNames: _*)))
+    }
   }
 
   override def blueprintClass = classOf[WBlueprint]
 
-  def apply(row: TableRow.WBlueprint, rows: TableRow.WBlueprint*): WBlueprint = WBlueprint()(row :: rows.toList)
+  class TableBuilder {
+    def apply(header: Header.WBlueprint): TableBuilderHeader =
+      new TableBuilderHeader(header)
+    def header(header: Header.WBlueprint): TableBuilderHeader =
+      new TableBuilderHeader(header)
+    def header(colName: String, colNames: String*) =
+      new TableBuilderHeader(Header(colName, colNames: _*))
 
-}
+    def apply(body: Body.WBlueprint): WBlueprint =
+      WBlueprint()(body, None, None)
+    def body(body: Body.WBlueprint): WBlueprint =
+      WBlueprint()(body, None, None)
 
-object TableFooter extends WidgetBlueprintProvider {
-  class WProxy private[TableFooter] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
-    import TableBaseProtocol._
-
-    override def process = {
-      case message =>
-        super.process(message)
-    }
-
-    override protected def initWidget = ChannelContext()
-
-    override def update(newBlueprint: WBlueprint) = {
-      super.update(newBlueprint)
-    }
+    def apply(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint =
+      WBlueprint()(Body(row, rows: _*), None, None)
+    def body(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint =
+      WBlueprint()(Body(row, rows: _*), None, None)
   }
 
-  case class WBlueprint private[TableFooter] ()(columns: List[Blueprint]) extends WidgetBlueprint {
-    type P     = TableBaseProtocol.type
-    type Proxy = WProxy
-    type This  = WBlueprint
+  class TableBuilderHeader(header: Header.WBlueprint) {
+    def apply(body: Body.WBlueprint): WBlueprint =
+      WBlueprint()(body, Some(header), None)
 
-    override def children = columns
+    def body(body: Body.WBlueprint): WBlueprint =
+      WBlueprint()(body, Some(header), None)
 
-    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+    def apply(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint =
+      WBlueprint()(Body(row, rows: _*), Some(header), None)
+
+    def body(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint =
+      WBlueprint()(Body(row, rows: _*), Some(header), None)
   }
 
-  override def blueprintClass = classOf[WBlueprint]
+  def apply(): TableBuilder                                = new TableBuilder
+  def apply(header: Header.WBlueprint): TableBuilderHeader = new TableBuilderHeader(header)
+  def apply(body: Body.WBlueprint): WBlueprint             = WBlueprint()(body, None, None)
 
-  def apply(colName: String, colNames: String*) = WBlueprint()(Text(colName) :: colNames.map(Text(_)).toList)
+  sealed trait TableCellBlueprint extends WidgetBlueprint
 
-  def apply(col: Blueprint, cols: Blueprint*) = WBlueprint()(col :: cols.toList)
-}
+  object Header extends WidgetBlueprintProvider {
 
-object TableRow extends WidgetBlueprintProvider {
-  class WProxy private[TableRow] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
-    import TableBaseProtocol._
+    class WProxy private[Header] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+        extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
+      import TableBaseProtocol._
 
-    override def process = {
-      case message =>
-        super.process(message)
+      override protected def initWidget = ChannelContext()
+
+      override def update(newBlueprint: WBlueprint) = {
+        super.update(newBlueprint)
+      }
     }
 
-    override protected def initWidget = ChannelContext()
+    case class WBlueprint private[Header] ()(rows: List[Row.WBlueprint]) extends WidgetBlueprint {
+      type P     = TableBaseProtocol.type
+      type Proxy = WProxy
+      type This  = WBlueprint
 
-    override def update(newBlueprint: WBlueprint) = {
-      super.update(newBlueprint)
-    }
-  }
+      override def children = rows
 
-  case class WBlueprint private[TableRow] ()(cells: List[TableCell.WBlueprint]) extends WidgetBlueprint {
-    type P     = TableBaseProtocol.type
-    type Proxy = WProxy
-    type This  = WBlueprint
-
-    override def children = cells
-
-    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
-  }
-
-  override def blueprintClass = classOf[WBlueprint]
-
-  def apply(cell: TableCell.WBlueprint, cells: TableCell.WBlueprint*) = WBlueprint()(cell :: cells.toList)
-
-}
-
-object TableCell extends WidgetBlueprintProvider {
-  class WProxy private[TableCell] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
-      extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
-    import TableBaseProtocol._
-
-    override def process = {
-      case message =>
-        super.process(message)
+      override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
     }
 
-    override protected def initWidget = ChannelContext()
+    override def blueprintClass = classOf[WBlueprint]
 
-    override def update(newBlueprint: WBlueprint) = {
-      super.update(newBlueprint)
+    def apply(colName: String, colNames: String*) =
+      WBlueprint()(Row(HeaderCell(Text(colName)), colNames.map(name => HeaderCell(Text(name))): _*) :: Nil)
+
+    def apply(col: TableCellBlueprint, cols: TableCellBlueprint*) = WBlueprint()(Row(col, cols: _*) :: Nil)
+
+    def apply(col: Blueprint, cols: Blueprint*) = WBlueprint()(Row(HeaderCell(col), cols.map(HeaderCell(_)): _*) :: Nil)
+
+    def apply(row: Row.WBlueprint, rows: Row.WBlueprint*) = WBlueprint()(row :: rows.toList)
+  }
+
+  object Footer extends WidgetBlueprintProvider {
+
+    class WProxy private[Footer] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+        extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
+      import TableBaseProtocol._
+
+      override protected def initWidget = ChannelContext()
+
+      override def update(newBlueprint: WBlueprint) = {
+        super.update(newBlueprint)
+      }
     }
+
+    case class WBlueprint private[Footer] ()(rows: List[Row.WBlueprint]) extends WidgetBlueprint {
+      type P     = TableBaseProtocol.type
+      type Proxy = WProxy
+      type This  = WBlueprint
+
+      override def children = rows
+
+      override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+    }
+
+    override def blueprintClass = classOf[WBlueprint]
+
+    def apply(colName: String, colNames: String*) =
+      WBlueprint()(Row(Cell(Text(colName)), colNames.map(name => Cell(Text(name))): _*) :: Nil)
+
+    def apply(col: TableCellBlueprint, cols: TableCellBlueprint*) = WBlueprint()(Row(col, cols: _*) :: Nil)
+
+    def apply(col: Blueprint, cols: Blueprint*) = WBlueprint()(Row(Cell(col), cols.map(Cell(_)): _*) :: Nil)
+
+    def apply(row: Row.WBlueprint, rows: Row.WBlueprint*) = WBlueprint()(row :: rows.toList)
   }
 
-  case class WBlueprint private[TableCell] ()(content: List[Blueprint]) extends WidgetBlueprint {
-    type P     = TableBaseProtocol.type
-    type Proxy = WProxy
-    type This  = WBlueprint
+  object Body extends WidgetBlueprintProvider {
 
-    override def children = content
+    class WProxy private[Body] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+        extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
+      import TableBaseProtocol._
 
-    override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+      override protected def initWidget = ChannelContext()
+
+      override def update(newBlueprint: WBlueprint) = {
+        super.update(newBlueprint)
+      }
+    }
+
+    case class WBlueprint private[Body] ()(rows: List[Row.WBlueprint]) extends WidgetBlueprint {
+      type P     = TableBaseProtocol.type
+      type Proxy = WProxy
+      type This  = WBlueprint
+
+      override def children = rows
+
+      override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+    }
+
+    override def blueprintClass = classOf[WBlueprint]
+
+    def apply(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint = WBlueprint()(row :: rows.toList)
   }
 
-  override def blueprintClass = classOf[WBlueprint]
+  object Row extends WidgetBlueprintProvider {
 
-  def apply(content: Blueprint*) = WBlueprint()(content.toList)
+    class WProxy private[Row] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+        extends WidgetProxy(TableBaseProtocol, bd, widgetId, uiChannel) {
+      import TableBaseProtocol._
+
+      override protected def initWidget = ChannelContext()
+
+      override def update(newBlueprint: WBlueprint) = {
+        super.update(newBlueprint)
+      }
+    }
+
+    case class WBlueprint private[Row] ()(cells: List[TableCellBlueprint]) extends WidgetBlueprint {
+      type P     = TableBaseProtocol.type
+      type Proxy = WProxy
+      type This  = WBlueprint
+
+      override def children = cells
+
+      override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+    }
+
+    override def blueprintClass = classOf[WBlueprint]
+
+    def apply(cell: TableCellBlueprint, cells: TableCellBlueprint*) = WBlueprint()(cell :: cells.toList)
+
+    def apply(cell: Blueprint, cells: Blueprint*) = WBlueprint()(Cell(cell) :: cells.map(Cell(_)).toList)
+  }
+
+  object Cell extends WidgetBlueprintProvider {
+
+    class WProxy private[Cell] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+        extends WidgetProxy(TableCellProtocol, bd, widgetId, uiChannel) {
+      import TableCellProtocol._
+
+      override protected def initWidget = ChannelContext(bd.colSpan, bd.rowSpan)
+
+      override def update(newBlueprint: WBlueprint) = {
+        if (bd.colSpan != newBlueprint.colSpan || bd.rowSpan != newBlueprint.rowSpan)
+          send(SetSpans(newBlueprint.colSpan, newBlueprint.rowSpan))
+        super.update(newBlueprint)
+      }
+    }
+
+    case class WBlueprint private[Cell] (colSpan: Int, rowSpan: Int)(content: List[Blueprint]) extends TableCellBlueprint {
+      type P     = TableCellProtocol.type
+      type Proxy = WProxy
+      type This  = WBlueprint
+
+      override def children = content
+
+      override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+
+      def colSpan(span: Int): This = WBlueprint(span, rowSpan)(content)
+
+      def rowSpan(span: Int): This = WBlueprint(colSpan, span)(content)
+    }
+
+    override def blueprintClass = classOf[WBlueprint]
+
+    def apply(content: Blueprint*) = WBlueprint(1, 1)(content.toList)
+  }
+
+  object HeaderCell extends WidgetBlueprintProvider {
+
+    class WProxy private[HeaderCell] (bd: WBlueprint)(widgetId: Int, uiChannel: UIChannel)
+        extends WidgetProxy(TableCellProtocol, bd, widgetId, uiChannel) {
+      import TableCellProtocol._
+
+      override protected def initWidget = ChannelContext(bd.colSpan, bd.rowSpan)
+
+      override def update(newBlueprint: WBlueprint) = {
+        if (bd.colSpan != newBlueprint.colSpan || bd.rowSpan != newBlueprint.rowSpan)
+          send(SetSpans(newBlueprint.colSpan, newBlueprint.rowSpan))
+        super.update(newBlueprint)
+      }
+    }
+
+    case class WBlueprint private[HeaderCell] (colSpan: Int, rowSpan: Int)(content: List[Blueprint])
+        extends TableCellBlueprint {
+      type P     = TableCellProtocol.type
+      type Proxy = WProxy
+      type This  = WBlueprint
+
+      override def children = content
+
+      override def createProxy(widgetId: Int, uiChannel: UIChannel) = new Proxy(this)(widgetId, uiChannel)
+
+      def colSpan(span: Int): This = WBlueprint(span, rowSpan)(content)
+
+      def rowSpan(span: Int): This = WBlueprint(colSpan, span)(content)
+    }
+
+    override def blueprintClass = classOf[WBlueprint]
+
+    def apply(content: Blueprint*) = WBlueprint(1, 1)(content.toList)
+  }
 }

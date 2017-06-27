@@ -1,19 +1,15 @@
 package suzaku.platform.web.widget
 
 import org.scalajs.dom
-import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact, DOMWidgetWithChildren}
-import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
-import suzaku.widget.{TableBaseProtocol, TableProtocol}
+import org.scalajs.dom.html.TableCell
+import suzaku.platform.web.{DOMWidgetArtifact, DOMWidgetWithChildren}
+import suzaku.ui.{WidgetBuilder, WidgetManager}
+import suzaku.widget.{TableBaseProtocol, TableCellProtocol, TableProtocol}
 
 class DOMTable(widgetId: Int, context: TableProtocol.ChannelContext, widgetManager: WidgetManager)
     extends DOMWidgetWithChildren[TableProtocol.type, dom.html.Table](widgetId, widgetManager) {
-  import TableProtocol._
 
-  val artifact = {
-    val el = tag[dom.html.Table]("table")
-    DOMWidgetArtifact(el)
-  }
-
+  val artifact = DOMWidgetArtifact(tag[dom.html.Table]("table"))
 }
 
 class DOMTableBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableProtocol) {
@@ -25,26 +21,8 @@ class DOMTableBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableP
 
 class DOMTableHeader(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
     extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableSection](widgetId, widgetManager) {
-  import TableBaseProtocol._
 
-  val artifact = {
-    val el = tag[dom.html.TableSection]("thead")
-    DOMWidgetArtifact(el)
-  }
-
-  override def setChildren(children: Seq[Widget]) = {
-    import org.scalajs.dom.ext._
-    modifyDOM { el =>
-      el.childNodes.foreach(el.removeChild)
-      children.foreach { c =>
-        val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
-        val th     = tag[dom.html.TableHeaderCell]("th")
-        th.appendChild(widget.artifact.el)
-        el.appendChild(th)
-        resolveLayout(widget, widget.layoutProperties)
-      }
-    }
-  }
+  val artifact = DOMWidgetArtifact(tag[dom.html.TableSection]("thead"))
 }
 
 class DOMTableHeaderBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableBaseProtocol) {
@@ -54,31 +32,10 @@ class DOMTableHeaderBuilder(widgetManager: WidgetManager) extends WidgetBuilder(
     new DOMTableHeader(widgetId, context, widgetManager)
 }
 
-class DOMTableBody(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
-    extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableSection](widgetId, widgetManager) {
-  import TableBaseProtocol._
-
-  val artifact = {
-    val el = tag[dom.html.TableSection]("tbody")
-    DOMWidgetArtifact(el)
-  }
-}
-
-class DOMTableBodyBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableBaseProtocol) {
-  import TableBaseProtocol._
-
-  override protected def create(widgetId: Int, context: ChannelContext) =
-    new DOMTableBody(widgetId, context, widgetManager)
-}
-
 class DOMTableFooter(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
     extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableSection](widgetId, widgetManager) {
-  import TableBaseProtocol._
 
-  val artifact = {
-    val el = tag[dom.html.TableSection]("tfooter")
-    DOMWidgetArtifact(el)
-  }
+  val artifact = DOMWidgetArtifact(tag[dom.html.TableSection]("tfoot"))
 }
 
 class DOMTableFooterBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableBaseProtocol) {
@@ -88,14 +45,23 @@ class DOMTableFooterBuilder(widgetManager: WidgetManager) extends WidgetBuilder(
     new DOMTableFooter(widgetId, context, widgetManager)
 }
 
-class DOMTableRow(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
-    extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableRow](widgetId, widgetManager) {
+class DOMTableBody(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableSection](widgetId, widgetManager) {
+
+  val artifact = DOMWidgetArtifact(tag[dom.html.TableSection]("tbody"))
+}
+
+class DOMTableBodyBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableBaseProtocol) {
   import TableBaseProtocol._
 
-  val artifact = {
-    val el = tag[dom.html.TableRow]("tr")
-    DOMWidgetArtifact(el)
-  }
+  override protected def create(widgetId: Int, context: ChannelContext) =
+    new DOMTableBody(widgetId, context, widgetManager)
+}
+
+class DOMTableRow(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableRow](widgetId, widgetManager) {
+
+  val artifact = DOMWidgetArtifact(tag[dom.html.TableRow]("tr"))
 }
 
 class DOMTableRowBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableBaseProtocol) {
@@ -105,19 +71,38 @@ class DOMTableRowBuilder(widgetManager: WidgetManager) extends WidgetBuilder(Tab
     new DOMTableRow(widgetId, context, widgetManager)
 }
 
-class DOMTableCell(widgetId: Int, context: TableBaseProtocol.ChannelContext, widgetManager: WidgetManager)
-    extends DOMWidgetWithChildren[TableBaseProtocol.type, dom.html.TableCell](widgetId, widgetManager) {
-  import TableBaseProtocol._
+class DOMTableCell(widgetId: Int, context: TableCellProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidgetWithChildren[TableCellProtocol.type, dom.html.TableCell](widgetId, widgetManager) {
 
   val artifact = {
-    val el = tag[dom.html.TableCell]("td")
+    val el = tag[TableCell]("td")
+    if (context.colSpan > 1) el.colSpan = context.colSpan
+    if (context.rowSpan > 1) el.rowSpan = context.rowSpan
     DOMWidgetArtifact(el)
   }
 }
 
-class DOMTableCellBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableBaseProtocol) {
-  import TableBaseProtocol._
+class DOMTableCellBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableCellProtocol) {
+  import TableCellProtocol._
 
   override protected def create(widgetId: Int, context: ChannelContext) =
     new DOMTableCell(widgetId, context, widgetManager)
+}
+
+class DOMTableHeaderCell(widgetId: Int, context: TableCellProtocol.ChannelContext, widgetManager: WidgetManager)
+    extends DOMWidgetWithChildren[TableCellProtocol.type, dom.html.TableCell](widgetId, widgetManager) {
+
+  val artifact = {
+    val el = tag[TableCell]("th")
+    if (context.colSpan > 1) el.colSpan = context.colSpan
+    if (context.rowSpan > 1) el.rowSpan = context.rowSpan
+    DOMWidgetArtifact(el)
+  }
+}
+
+class DOMTableHeaderCellBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TableCellProtocol) {
+  import TableCellProtocol._
+
+  override protected def create(widgetId: Int, context: ChannelContext) =
+    new DOMTableHeaderCell(widgetId, context, widgetManager)
 }

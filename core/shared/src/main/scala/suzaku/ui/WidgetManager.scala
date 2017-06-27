@@ -200,8 +200,8 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     import boopickle.Default._
     // read the component creation data
     val CreateWidget(widgetClass, widgetId) = channelReader.read[CreateWidget]
-
-    logger.debug(f"Building widget $widgetClass on channel [$channelId, $globalId%08x]")
+    val widgetClassName = widgetClassMap(widgetClass)
+    logger.debug(f"Building widget $widgetClassName on channel [$channelId, $globalId%08x]")
     try {
       buildWidget(widgetClass, widgetId, channelId, globalId, channelReader) match {
         case Some(widget) =>
@@ -209,11 +209,11 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
           nodes += widgetId -> WidgetNode(widget, Vector.empty, channelId)
           widget.channel
         case None =>
-          throw new IllegalAccessException(s"Unable to materialize a widget '$widgetClass'")
+          throw new IllegalAccessException(s"Unable to materialize a widget '$widgetClassName'")
       }
     } catch {
       case e: Exception =>
-        logger.error(s"Unhandled exception while building widget $widgetClass: $e")
+        logger.error(s"Unhandled exception while building widget $widgetClassName: $e")
         throw e
     }
   }
