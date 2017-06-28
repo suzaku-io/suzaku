@@ -21,7 +21,7 @@ trait WidgetBlueprint extends Blueprint {
 
   def sameAs(that: This): Boolean = equals(that) && _style == that._style && _layout == that._layout
 
-  final def <<(styleProperty: StylePropOrClass*): this.type = {
+  @noinline final def <<(styleProperty: StylePropOrClass*): this.type = {
     var styleClasses = List.empty[StyleClass]
     styleProperty.foreach {
       case StyleSeq(seq)        => _style ++= seq.map(p => (p.getClass, p))
@@ -38,7 +38,7 @@ trait WidgetBlueprint extends Blueprint {
 
   @inline final def withStyle(styleProperty: StylePropOrClass*): this.type = <<(styleProperty: _*)
 
-  @inline final def withLayout(layoutProperty: LayoutProperty*): this.type = {
+  @noinline final def withLayout(layoutProperty: LayoutProperty*): this.type = {
     _layout = _layout ::: layoutProperty.toList
     this
   }
