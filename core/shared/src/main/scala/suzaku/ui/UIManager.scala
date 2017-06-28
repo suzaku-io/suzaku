@@ -313,7 +313,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
 object UIManager {
 
-  private var internalUiChannel = null: MessageChannel[UIProtocol.type]
+  protected[suzaku] var internalUiChannel = null: MessageChannel[UIProtocol.type]
 
   sealed abstract class ShadowNode(val parent: Option[ShadowNode]) {
     type BP <: Blueprint

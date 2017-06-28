@@ -82,6 +82,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
 
   class TestUIManager(val uic: MessageChannel[UIProtocol.type]) extends UIManager(TestLogger, _ => (), () => ()) {
     uiChannel = uic
+    UIManager.internalUiChannel = uic
   }
 
   trait MockFixture {

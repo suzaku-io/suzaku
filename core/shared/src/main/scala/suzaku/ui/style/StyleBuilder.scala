@@ -5,6 +5,7 @@ import suzaku.ui.WidgetBlueprintProvider
 class StyleBuilder[S <: StyleProperty, V](build: V => S) {
   def :=(value: V): S = build(value)
 }
+
 class MultiStyleBuilder[S <: StyleProperty, V](build: List[V] => S) {
   def :=(value: V, values: V*): S = build(value :: values.toList)
 }

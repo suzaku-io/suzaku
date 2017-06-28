@@ -106,7 +106,7 @@ object DOMWidget {
     case WidthThin      => "thin"
     case WidthMedium    => "medium"
     case WidthThick     => "thick"
-    case WidthLength(l) => l.toString
+    case WidthLength(l) => show(l)
   }
 
   def show(size: FontDimension): String = size match {
@@ -119,7 +119,7 @@ object DOMWidget {
     case FontLarger    => "larger"
     case FontXLarge    => "x-large"
     case FontXXLarge   => "xx-large"
-    case FontLength(s) => s.toString
+    case FontLength(s) => show(s)
   }
 
   def show(weight: WeightDimension): String = weight match {

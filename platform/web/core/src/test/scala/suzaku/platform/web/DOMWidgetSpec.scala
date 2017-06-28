@@ -1,6 +1,7 @@
 package suzaku.platform.web
 
 import suzaku.UnitSpec
+import suzaku.ui.Keywords._
 
 class DOMWidgetSpec extends UnitSpec {
 
