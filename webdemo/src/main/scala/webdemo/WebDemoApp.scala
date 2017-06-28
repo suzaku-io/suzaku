@@ -82,7 +82,11 @@ object TestComp {
               Table.Row(Table.Cell("123").rowSpan(2), Table.Cell("John Dow"), Table.Cell(Button("john@dow.com"))),
               Table.Row(Table.Cell("Some Other").colSpan(2))
             )
-            .footer("ID", "Name", "Email")
+            .footer(
+              "ID",
+              "Name",
+              "Email"
+            ) << RedTable
         ).withLayout(weight := 1)
       )
     }
@@ -192,6 +196,27 @@ object Red extends StyleClass {
   )
 }
 
+object GreenBackground extends StyleClass {
+  def style = List(
+    nthChild(2) := (
+      backgroundColor := 0x00FF00
+    )
+  )
+}
+
+object BlueBackground extends StyleClass {
+  def style = List(
+    backgroundColor := 0x0000FF
+  )
+}
+
+object RedBackground extends StyleClass {
+  def style = List(
+    backgroundColor := 0xFF0000,
+    widgetClass := Table.Row -> List(GreenBackground)
+  )
+}
+
 object RedButton extends StyleClass {
   def style = List(
     inheritClasses := (Large, Red),
@@ -201,9 +226,22 @@ object RedButton extends StyleClass {
   )
 }
 
+object RedTable extends StyleClass {
+  def style = List(
+    widgetClass := Table.Body -> List(RedBackground)
+  )
+}
+
+object BlueTable extends StyleClass {
+  def style = List(
+    widgetClass := Table.Row -> List(BlueBackground)
+  )
+}
+
 object MyTheme {
   val theme = Theme(
-    Button -> ButtonStyle
+    Button -> List(ButtonStyle),
+    Table  -> List(BlueTable)
   )
 }
 

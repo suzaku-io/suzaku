@@ -1,5 +1,7 @@
 package suzaku.ui.style
 
+import suzaku.ui.{UIManager, WidgetBlueprintProvider}
+
 trait StylePropOrClass
 
 trait StyleDef extends StylePropOrClass
@@ -121,6 +123,8 @@ case class Hover(props: List[StyleBaseProperty]) extends StyleBaseProperty with 
 
 case class Active(props: List[StyleBaseProperty]) extends StyleBaseProperty with PseudoClass
 
+case class NthChild(a: Int, b: Int, props: List[StyleBaseProperty]) extends StyleBaseProperty with PseudoClass
+
 // style classes
 sealed trait StyleClassProperty extends StyleProperty
 
@@ -131,6 +135,17 @@ case class InheritClasses(styles: List[StyleClass]) extends StyleClassProperty
 case class ExtendClasses(styles: List[StyleClass]) extends StyleClassProperty
 
 case class RemapClasses(styleMap: Map[StyleClass, List[StyleClass]]) extends StyleBaseProperty
+
+case class WidgetClasses(styleMapping: Map[Int, List[StyleClass]]) extends StyleBaseProperty
+
+object WidgetClasses {
+  def apply(styleMapping: (WidgetBlueprintProvider, List[StyleClass])*): WidgetClasses = {
+    val mapping: Map[Int, List[StyleClass]] = styleMapping.map {
+      case (widget, styles) => (UIManager.getWidgetClass(widget.blueprintClass), styles)
+    }(collection.breakOut)
+    WidgetClasses(mapping)
+  }
+}
 
 object StyleProperty {
   import boopickle.Default._
@@ -183,8 +198,10 @@ object StyleProperty {
     .addConcreteType[MinWidth]
     .addConcreteType[MinHeight]
     .addConcreteType[RemapClasses]
+    .addConcreteType[WidgetClasses]
     .addConcreteType[Hover]
     .addConcreteType[Active]
+    .addConcreteType[NthChild]
 
   val stylePickler = compositePickler[StyleProperty]
     .join(styleBasePickler)

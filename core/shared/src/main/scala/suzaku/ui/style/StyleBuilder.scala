@@ -1,5 +1,7 @@
 package suzaku.ui.style
 
+import suzaku.ui.WidgetBlueprintProvider
+
 class StyleBuilder[S <: StyleProperty, V](build: V => S) {
   def :=(value: V): S = build(value)
 }
@@ -32,6 +34,10 @@ trait StyleBuilders {
   val extendClasses  = stylesFor[ExtendClasses, StyleClass](ExtendClasses)
   val remapClass     = styleFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(Map(ct._1 -> ct._2)))
   val remapClasses   = stylesFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(ct.toMap))
+  val widgetClass =
+    styleFor[WidgetClasses, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetClasses(ct._1 -> ct._2))
+  val widgetClasses =
+    stylesFor[WidgetClasses, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetClasses(ct: _*))
 
   // regular style definitions
   val color           = styleFor(Color)
@@ -114,6 +120,7 @@ trait StyleBuilders {
   val minHeight = styleFor(MinHeight)
 
   // pseudo classes
-  val hover  = stylesFor[Hover, StyleBaseProperty](Hover)
-  val active = stylesFor[Active, StyleBaseProperty](Active)
+  val hover                        = stylesFor[Hover, StyleBaseProperty](Hover)
+  val active                       = stylesFor[Active, StyleBaseProperty](Active)
+  def nthChild(a: Int, b: Int = 0) = stylesFor[NthChild, StyleBaseProperty](props => NthChild(a, b, props))
 }

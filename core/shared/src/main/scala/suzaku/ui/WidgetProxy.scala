@@ -19,7 +19,7 @@ abstract class WidgetProxy[P <: Protocol, BP <: WidgetBlueprint](protected val p
       this,
       initWidget,
       CreateWidget(
-        UIManager.getWidgetClass(blueprint.getClass, uiChannel),
+        UIManager.getWidgetClass(blueprint.getClass),
         widgetId
       )
     )

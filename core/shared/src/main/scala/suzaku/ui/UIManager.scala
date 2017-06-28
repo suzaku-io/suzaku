@@ -23,17 +23,6 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   def render(root: Blueprint): Unit = {
     val newRoot = updateBranch(currentRoot, root, None)
-    currentRoot match {
-      case Some(widget) if widget.getId == newRoot.getId =>
-      // no-op
-      case Some(widget) =>
-        logger.debug(s"Replacing root [${widget.getId}] with [${newRoot.getId}]")
-        widget.destroy()
-        send(MountRoot(newRoot.getId))
-      case None =>
-        logger.debug(s"Mounting [${newRoot.getId}] as root")
-        send(MountRoot(newRoot.getId))
-    }
     // check if styles have updated
     if (StyleClassRegistry.hasRegistrations) {
       val styles = StyleClassRegistry.dequeueRegistrations
@@ -46,6 +35,17 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       logger.debug(s"Adding ${layoutIds.size} layout identifiers")
       send(AddLayoutIds(layoutIds))
     }
+    currentRoot match {
+      case Some(widget) if widget.getId == newRoot.getId =>
+      // no-op
+      case Some(widget) =>
+        logger.debug(s"Replacing root [${widget.getId}] with [${newRoot.getId}]")
+        widget.destroy()
+        send(MountRoot(newRoot.getId))
+      case None =>
+        logger.debug(s"Mounting [${newRoot.getId}] as root")
+        send(MountRoot(newRoot.getId))
+    }
     currentRoot = Some(newRoot)
   }
 
@@ -57,7 +57,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       theme.styleMap
         .map {
           case (widgetClass, styleClasses) =>
-            UIManager.getWidgetClass(widgetClass.blueprintClass, uiChannel) -> styleClasses.map(_.id)
+            UIManager.getWidgetClass(widgetClass.blueprintClass) -> styleClasses.map(_.id)
         }
     )
     send(activateTheme)
@@ -94,6 +94,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   override def established(channel: MessageChannel[ChannelProtocol]) = {
     uiChannel = channel
+    internalUiChannel = channel
     channelEstablished(channel)
   }
 
@@ -136,7 +137,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
             EmptyNode
 
           case widgetBP: WidgetBlueprint =>
-            val widgetId   = allocateId
+            val widgetId     = allocateId
             val shadowWidget = new ShadowWidget(widgetBP, widgetId, parent, uiChannel)
             if (widgetBP.children.nonEmpty) {
               val children = widgetBP.children.map(c => updateBranch(None, c, Some(shadowWidget)))
@@ -174,7 +175,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
             EmptyNode
 
           case widgetBP: WidgetBlueprint if widgetBP.getClass eq node.blueprint.getClass =>
-            val (newChildren, ops) = updateChildren(node, node.children.flatMap(expand), widgetBP.children.flatMap(expandBP))
+            val (newChildren, ops) =
+              updateChildren(node, node.children.flatMap(expand), widgetBP.children.flatMap(expandBP))
             if (ops.nonEmpty)
               send(UpdateChildren(node.widgetId, ops))
             node.children = newChildren
@@ -311,6 +313,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
 object UIManager {
 
+  private var internalUiChannel = null: MessageChannel[UIProtocol.type]
+
   sealed abstract class ShadowNode(val parent: Option[ShadowNode]) {
     type BP <: Blueprint
     var blueprint: BP
@@ -327,10 +331,10 @@ object UIManager {
   private[suzaku] final object EmptyNode extends ShadowNode(None) {
     type BP = EmptyBlueprint.type
 
-    override var blueprint             = EmptyBlueprint
+    override var blueprint               = EmptyBlueprint
     override def getWidget: ShadowWidget = null
-    override def getId: Int            = -1
-    override def destroy(): Unit       = {}
+    override def getId: Int              = -1
+    override def destroy(): Unit         = {}
   }
 
   private[suzaku] final class ShadowNodeSeq(blueprints: List[Blueprint], parent: Option[ShadowNode])
@@ -420,7 +424,7 @@ object UIManager {
   private var widgetClasses = Map.empty[String, Int]
   private var widgetClassId = 0
 
-  def getWidgetClass(blueprint: Class[_ <: WidgetBlueprint], uiChannel: MessageChannel[UIProtocol.type]): Int = {
+  def getWidgetClass(blueprint: Class[_ <: WidgetBlueprint]): Int = {
     this.synchronized {
       val name = blueprint.getName
       widgetClasses.get(name) match {
@@ -430,7 +434,7 @@ object UIManager {
           val id = widgetClassId
           widgetClassId += 1
           widgetClasses += name -> id
-          uiChannel.send(RegisterWidgetClass(name, id))
+          internalUiChannel.send(RegisterWidgetClass(name, id))
           id
       }
     }

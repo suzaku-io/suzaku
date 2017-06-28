@@ -181,7 +181,7 @@ object DOMWidget {
       case OutlineStyle(s) => ("outline-style", show(s))
       case OutlineColor(c) => ("outline-color", show(c))
 
-      case EmptyStyle | RemapClasses(_) => ("", "")
+      case EmptyStyle | RemapClasses(_) | WidgetClasses(_) => ("", "")
     }
   }
 }

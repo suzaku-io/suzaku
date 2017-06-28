@@ -4,7 +4,7 @@ import boopickle.Default._
 import org.scalajs.dom
 import suzaku.platform.{Logger, Platform}
 import suzaku.ui._
-import suzaku.ui.style.{Active, Hover, PseudoClass, StyleBaseProperty}
+import suzaku.ui.style.{Active, Hover, NthChild, PseudoClass, StyleBaseProperty}
 
 class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager(logger, platform) {
   val root = DOMWidgetArtifact(dom.document.getElementById("root").asInstanceOf[dom.html.Div])
@@ -31,16 +31,18 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
             case ((regular, pseudo), pc: PseudoClass) =>
               val ps = pc.props.map { prop =>
                 val (name, value) = DOMWidget.extractStyle(prop)
-                s"$name:$value;"
+                if (name.nonEmpty) s"$name:$value;" else ""
               }
               val name = pc match {
-                case _: Hover  => "hover"
-                case _: Active => "active"
+                case _: Hover          => "hover"
+                case _: Active         => "active"
+                case NthChild(a, 0, _) => s"nth-child($a)"
+                case NthChild(a, b, _) => s"nth-child(${a}n+$b)"
               }
               (regular, pseudo.updated(name, ps ::: pseudo.getOrElse(name, Nil)))
             case ((regular, pseudo), prop) =>
               val (name, value) = DOMWidget.extractStyle(prop)
-              (s"$name:$value;" :: regular, pseudo)
+              if (name.nonEmpty) (s"$name:$value;" :: regular, pseudo) else (regular, pseudo)
           }
 
           val css = s".$className { ${regularStyles.mkString("")} }"
