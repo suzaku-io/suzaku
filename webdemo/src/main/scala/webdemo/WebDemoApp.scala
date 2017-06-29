@@ -79,14 +79,10 @@ object TestComp {
           Table()
             .header("ID", "Name", "Email")
             .body(
-              Table.Row(Table.Cell("123").rowSpan(2), Table.Cell("John Dow"), Table.Cell(Button("john@dow.com"))),
+              Table.Row(Table.Cell("123").rowSpan(2), "John Dow", Button("john@dow.com")),
               Table.Row(Table.Cell("Some Other").colSpan(2))
             )
-            .footer(
-              "ID",
-              "Name",
-              "Email"
-            ) << RedTable
+            .footer("ID", "Name", "Email") << RedTable
         ).withLayout(weight := 1)
       )
     }
@@ -213,7 +209,7 @@ object BlueBackground extends StyleClass {
 object RedBackground extends StyleClass {
   def style = List(
     backgroundColor := 0xFF0000,
-    widgetClass := Table.Row -> List(GreenBackground)
+    widgetStyle := Table.Row -> List(GreenBackground)
   )
 }
 
@@ -228,13 +224,13 @@ object RedButton extends StyleClass {
 
 object RedTable extends StyleClass {
   def style = List(
-    widgetClass := Table.Body -> List(RedBackground)
+    widgetStyle := Table.Body -> List(RedBackground)
   )
 }
 
 object BlueTable extends StyleClass {
   def style = List(
-    widgetClass := Table.Row -> List(BlueBackground)
+    widgetStyle := Table.Row -> List(BlueBackground)
   )
 }
 

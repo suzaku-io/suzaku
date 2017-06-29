@@ -5,7 +5,7 @@ import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
 import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
-import suzaku.ui.style.{ExtendClasses, InheritClasses, RemapClasses, StyleBaseProperty, WidgetClasses}
+import suzaku.ui.style.{ExtendClasses, InheritClasses, RemapClasses, StyleBaseProperty, WidgetStyles}
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
@@ -184,7 +184,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
             .foldLeft(IntMap.empty[List[Int]])(_ ++ _)
           val widgetClasses = props
             .collect {
-              case widgetClass: WidgetClasses =>
+              case widgetClass: WidgetStyles =>
                 widgetClass.styleMapping.map { case (key, value) => key -> value.map(_.id) }(collection.breakOut): IntMap[
                   List[Int]]
             }

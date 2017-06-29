@@ -191,8 +191,6 @@ object Table extends WidgetBlueprintProvider {
 
     def apply(col: TableCellBlueprint, cols: TableCellBlueprint*) = WBlueprint()(Row(col, cols: _*) :: Nil)
 
-    def apply(col: Blueprint, cols: Blueprint*) = WBlueprint()(Row(Cell(col), cols.map(Cell(_)): _*) :: Nil)
-
     def apply(row: Row.WBlueprint, rows: Row.WBlueprint*) = WBlueprint()(row :: rows.toList)
   }
 
@@ -250,8 +248,6 @@ object Table extends WidgetBlueprintProvider {
     override def blueprintClass = classOf[WBlueprint]
 
     def apply(cell: TableCellBlueprint, cells: TableCellBlueprint*) = WBlueprint()(cell :: cells.toList)
-
-    def apply(cell: Blueprint, cells: Blueprint*) = WBlueprint()(Cell(cell) :: cells.map(Cell(_)).toList)
   }
 
   object Cell extends WidgetBlueprintProvider {
@@ -286,6 +282,7 @@ object Table extends WidgetBlueprintProvider {
     override def blueprintClass = classOf[WBlueprint]
 
     def apply(content: Blueprint*) = WBlueprint(1, 1)(content.toList)
+
   }
 
   object HeaderCell extends WidgetBlueprintProvider {
@@ -321,5 +318,11 @@ object Table extends WidgetBlueprintProvider {
     override def blueprintClass = classOf[WBlueprint]
 
     def apply(content: Blueprint*) = WBlueprint(1, 1)(content.toList)
+  }
+
+  object TableCellBlueprint {
+    import scala.language.implicitConversions
+
+    implicit def a2cell[A](a: A)(implicit f: A => Blueprint): TableCellBlueprint = Cell(f(a))
   }
 }

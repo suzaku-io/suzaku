@@ -4,7 +4,7 @@ import arteria.core._
 import suzaku.ui.UIProtocol.ChildOp
 import suzaku.ui.WidgetProtocol.{UpdateLayout, UpdateStyle}
 import suzaku.ui.layout.LayoutProperty
-import suzaku.ui.style.{RemapClasses, StyleBaseProperty, StyleClasses, WidgetClasses}
+import suzaku.ui.style.{RemapClasses, StyleBaseProperty, StyleClasses, WidgetStyles}
 
 import scala.collection.immutable.IntMap
 
@@ -158,7 +158,7 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: W
               }(collection.breakOut): IntMap[List[Int]]
           // reapply styles to children as mappings might have changed
           widgetManager.reapplyStyles(widgetId)
-        case (WidgetClasses(styleMap), remove) =>
+        case (WidgetStyles(styleMap), remove) =>
           // println(s"Remapping styles: $styleMap (remove = $remove")
           directWidgetStyleMapping =
             if (remove)

@@ -35,10 +35,10 @@ trait StyleBuilders {
   val extendClasses  = stylesFor[ExtendClasses, StyleClass](ExtendClasses)
   val remapClass     = styleFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(Map(ct._1 -> ct._2)))
   val remapClasses   = stylesFor[RemapClasses, (StyleClass, List[StyleClass])](ct => RemapClasses(ct.toMap))
-  val widgetClass =
-    styleFor[WidgetClasses, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetClasses(ct._1 -> ct._2))
-  val widgetClasses =
-    stylesFor[WidgetClasses, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetClasses(ct: _*))
+  val widgetStyle =
+    styleFor[WidgetStyles, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetStyles(ct._1 -> ct._2))
+  val widgetStyles =
+    stylesFor[WidgetStyles, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetStyles(ct: _*))
 
   // regular style definitions
   val color           = styleFor(Color)

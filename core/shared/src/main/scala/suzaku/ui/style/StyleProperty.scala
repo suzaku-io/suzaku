@@ -136,14 +136,14 @@ case class ExtendClasses(styles: List[StyleClass]) extends StyleClassProperty
 
 case class RemapClasses(styleMap: Map[StyleClass, List[StyleClass]]) extends StyleBaseProperty
 
-case class WidgetClasses(styleMapping: Map[Int, List[StyleClass]]) extends StyleBaseProperty
+case class WidgetStyles(styleMapping: Map[Int, List[StyleClass]]) extends StyleBaseProperty
 
-object WidgetClasses {
-  def apply(styleMapping: (WidgetBlueprintProvider, List[StyleClass])*): WidgetClasses = {
+object WidgetStyles {
+  def apply(styleMapping: (WidgetBlueprintProvider, List[StyleClass])*): WidgetStyles = {
     val mapping: Map[Int, List[StyleClass]] = styleMapping.map {
       case (widget, styles) => (UIManager.getWidgetClass(widget.blueprintClass), styles)
     }(collection.breakOut)
-    WidgetClasses(mapping)
+    WidgetStyles(mapping)
   }
 }
 
@@ -156,6 +156,7 @@ object StyleProperty {
   implicit val styleClassPickler = new StyleClassPickler
 
   implicit val styleBasePickler = compositePickler[StyleBaseProperty]
+
   styleBasePickler
     .addConcreteType[EmptyStyle.type]
     .addConcreteType[Color]
@@ -198,7 +199,7 @@ object StyleProperty {
     .addConcreteType[MinWidth]
     .addConcreteType[MinHeight]
     .addConcreteType[RemapClasses]
-    .addConcreteType[WidgetClasses]
+    .addConcreteType[WidgetStyles]
     .addConcreteType[Hover]
     .addConcreteType[Active]
     .addConcreteType[NthChild]
