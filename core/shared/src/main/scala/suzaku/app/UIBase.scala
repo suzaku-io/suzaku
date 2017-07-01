@@ -36,7 +36,8 @@ abstract class UIBase(transport: Transport,
   val cancelFrameScheduler = scheduler.scheduleFrame(time => nextFrame(time))
 
   private def nextFrame(time: Long): Unit = {
-    if (router.hasPending || widgetRenderer.shouldRenderFrame) {
+    if (widgetRenderer.isFrameComplete && (router.hasPending || widgetRenderer.shouldRenderFrame)) {
+      widgetRenderer.nextFrame(time)
       uiManagerChannel.send(NextFrame(time))
       transport.send(router.flush())
     }

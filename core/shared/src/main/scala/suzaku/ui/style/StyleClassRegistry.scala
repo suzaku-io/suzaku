@@ -3,9 +3,10 @@ package suzaku.ui.style
 object StyleClassRegistry {
   case class StyleClassRegistration(id: Int, className: String, styleProps: List[StyleProperty])
 
-  private var styleClassId         = 1
-  private var registrations        = Map.empty[Class[_ <: StyleClass], Int]
-  private var pendingRegistrations = List.empty[StyleClassRegistration]
+  private var styleClassId          = 1
+  private var registrations         = Map.empty[Class[_ <: StyleClass], Int]
+  private var pendingRegistrations  = List.empty[StyleClassRegistration]
+  private var notificationCallbacks = List.empty[() => Unit]
 
   def register(styleClass: Class[_ <: StyleClass], style: List[StyleDef]): Int = {
     val styles = style.flatMap {
@@ -21,6 +22,7 @@ object StyleClassRegistry {
           styleClassId += 1
           pendingRegistrations ::= StyleClassRegistration(id, styleClass.getSimpleName, styles)
           registrations += styleClass -> id
+          notificationCallbacks.foreach(cb => cb())
           id
         case Some(id) =>
           id
@@ -36,5 +38,9 @@ object StyleClassRegistry {
       pendingRegistrations = Nil
       regs
     }
+  }
+
+  def onRegistration(callback: () => Unit): Unit = {
+    notificationCallbacks ::= callback
   }
 }

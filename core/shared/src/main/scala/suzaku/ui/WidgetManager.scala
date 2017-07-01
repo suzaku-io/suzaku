@@ -30,6 +30,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
   protected var themes             = Vector.empty[(Int, Map[Int, List[Int]])]
   protected var activeTheme        = IntMap.empty[List[Int]]
   protected var frameRequested     = false
+  protected var frameComplete      = true
 
   override def establishing(channel: MessageChannel[ChannelProtocol]) =
     uiChannel = channel
@@ -54,13 +55,13 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     builder.map(builder => builder.materialize(widgetId, widgetClass, channelId, globalId, uiChannel, channelReader))
   }
 
-  def shouldRenderFrame: Boolean = {
-    if (frameRequested) {
-      frameRequested = false
-      true
-    } else {
-      false
-    }
+  def shouldRenderFrame: Boolean = frameRequested
+
+  def isFrameComplete: Boolean = frameComplete
+
+  def nextFrame(time: Long): Unit = {
+    frameComplete = false
+    frameRequested = false
   }
 
   def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
@@ -119,6 +120,9 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
     case RequestFrame =>
       frameRequested = true
+
+    case FrameComplete =>
+      frameComplete = true
 
     case SetChildren(widgetId, children) =>
       logger.debug(s"Setting [$children] as children of [$widgetId]")

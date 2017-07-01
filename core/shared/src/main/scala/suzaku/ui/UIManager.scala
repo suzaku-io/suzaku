@@ -20,15 +20,17 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
   private var dirtyRoots       = List.empty[ShadowComponent]
   private var frameRequested   = false
   private var themeId          = 0
+  private val stateModQueue    = mutable.ArrayBuffer.empty[(ShadowComponent, () => Unit)]
+
+  // get notification when styles have updated
+  StyleClassRegistry.onRegistration(() => {
+    val styles = StyleClassRegistry.dequeueRegistrations
+    logger.debug(s"Adding ${styles.size} styles")
+    send(AddStyles(styles))
+  })
 
   def render(root: Blueprint): Unit = {
     val newRoot = updateBranch(currentRoot, root, None)
-    // check if styles have updated
-    if (StyleClassRegistry.hasRegistrations) {
-      val styles = StyleClassRegistry.dequeueRegistrations
-      logger.debug(s"Adding ${styles.size} styles")
-      send(AddStyles(styles))
-    }
     // check if layout identifiers updated
     if (LayoutIdRegistry.hasRegistrations) {
       val layoutIds = LayoutIdRegistry.dequeueRegistrations
@@ -46,6 +48,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
         logger.debug(s"Mounting [${newRoot.getId}] as root")
         send(MountRoot(newRoot.getId))
     }
+    dirtyRoots = Nil
+    processStateMods()
     currentRoot = Some(newRoot)
   }
 
@@ -75,21 +79,18 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
   override def process = {
     case NextFrame(time) =>
       lastFrame = time
-      frameRequested = false
       // update dirty component trees
-      if (dirtyRoots.nonEmpty)
-        logger.debug(s"Updating ${dirtyRoots.size} dirty components")
+      if (dirtyRoots.nonEmpty) {
+        //logger.debug(s"Updating ${dirtyRoots.size} dirty components")
+      }
 
       dirtyRoots.foreach { shadowComponent =>
         updateBranch(Some(shadowComponent), shadowComponent.blueprint, shadowComponent.parent)
       }
-      dirtyRoots = Nil
-      // check if styles have updated
-      if (StyleClassRegistry.hasRegistrations) {
-        val styles = StyleClassRegistry.dequeueRegistrations
-        logger.debug(s"Adding ${styles.size} styles")
-        send(AddStyles(styles))
-      }
+      // process state modifications
+      processStateMods()
+      send(FrameComplete)
+      flushMessages()
   }
 
   override def established(channel: MessageChannel[ChannelProtocol]) = {
@@ -98,14 +99,29 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     channelEstablished(channel)
   }
 
-  private def addDirtyRoot(component: ShadowComponent): Unit = {
-    dirtyRoots ::= component
-    // request a new frame to redraw UI
-    if (!frameRequested) {
-      frameRequested = true
-      send(RequestFrame)
-      flushMessages()
+  private def enqueueStateMod(component: ShadowComponent, runStateMod: () => Unit): Unit = {
+    stateModQueue.append(component -> runStateMod)
+  }
+
+  private def processStateMods(): Unit = {
+    frameRequested = false
+    dirtyRoots = Nil
+    stateModQueue.foreach {
+      case (component, runStateMod) =>
+        if(!component.isDestroyed) {
+          runStateMod()
+          if (!component.isDirty) {
+            component.isDirty = true
+            dirtyRoots ::= component
+            // request a new frame to redraw UI
+            frameRequested = true
+          }
+        }
     }
+    if (frameRequested) {
+      send(RequestFrame)
+    }
+    stateModQueue.clear()
   }
 
   private def expand(node: ShadowNode): immutable.Seq[ShadowNode] = node match {
@@ -149,7 +165,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
           case componentBP: ComponentBlueprint =>
             val shadowComponent =
-              new ShadowComponent(componentBP, rendered => updateBranch(None, rendered, parent), parent, addDirtyRoot)
+              new ShadowComponent(componentBP, rendered => updateBranch(None, rendered, parent), parent, enqueueStateMod)
             shadowComponent
 
           case BlueprintSeq(blueprints) =>
@@ -389,7 +405,7 @@ object UIManager {
   private[suzaku] final class ShadowComponent(var blueprint: ComponentBlueprint,
                                               innerBuilder: Blueprint => ShadowNode,
                                               parent: Option[ShadowNode],
-                                              addDirtyRoot: ShadowComponent => Unit)
+                                              enqueueStateMod: (ShadowComponent, () => Unit) => Unit)
       extends ShadowNode(parent)
       with StateProxy {
     type BP = ComponentBlueprint
@@ -400,22 +416,20 @@ object UIManager {
     var inner     = innerBuilder(rendered)
     var isDirty   = false
     var nextState = state
+    var isDestroyed = false
 
     component.didMount()
 
     override def getWidget: ShadowWidget = inner.getWidget
 
     override def modState[S](f: (S) => S): Unit = {
-      nextState = f(nextState.asInstanceOf[S])
-      if (!isDirty) {
-        addDirtyRoot(this)
-        isDirty = true
-      }
+      enqueueStateMod(this, () => nextState = f(nextState.asInstanceOf[S]))
     }
 
     override def destroy(): Unit = {
       inner.destroy()
       component.didUnmount()
+      isDestroyed = true
     }
 
     override def toString: String = s"ShadowComponent($blueprint)"

@@ -42,6 +42,8 @@ object UIProtocol extends Protocol {
 
   case object RequestFrame extends UIMessage
 
+  case object FrameComplete extends UIMessage
+
   case class MountRoot(widgetId: Int) extends UIMessage
 
   case class SetChildren(widgetId: Int, children: Seq[Int]) extends UIMessage
@@ -63,6 +65,7 @@ object UIProtocol extends Protocol {
   private val uiPickler = compositePickler[UIMessage]
     .addConcreteType[NextFrame]
     .addConcreteType[RequestFrame.type]
+    .addConcreteType[FrameComplete.type]
     .addConcreteType[MountRoot]
     .addConcreteType[SetChildren]
     .addConcreteType[UpdateChildren]
