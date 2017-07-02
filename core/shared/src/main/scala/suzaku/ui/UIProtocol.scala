@@ -46,9 +46,9 @@ object UIProtocol extends Protocol {
 
   case class MountRoot(widgetId: Int) extends UIMessage
 
-  case class SetChildren(widgetId: Int, children: Seq[Int]) extends UIMessage
+  case class SetChildren(widgetId: Int, children: List[Int]) extends UIMessage
 
-  case class UpdateChildren(widgetId: Int, ops: Seq[ChildOp]) extends UIMessage
+  case class UpdateChildren(widgetId: Int, ops: List[ChildOp]) extends UIMessage
 
   case class AddStyles(styles: List[StyleClassRegistration]) extends UIMessage
 

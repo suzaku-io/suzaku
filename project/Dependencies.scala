@@ -5,7 +5,7 @@ object Dependencies {
   private object versions {
     val scalaTest  = "3.0.1"
     val scalaMock  = "3.5.0"
-    val arteria    = "0.1.0"
+    val arteria    = "0.1.1-SNAPSHOT"
     val scalaJSDOM = "0.9.1"
   }
 

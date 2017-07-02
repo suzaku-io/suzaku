@@ -29,6 +29,8 @@ case class OutlineWidth(value: WidthDimension) extends StyleBaseProperty
 case class OutlineStyle(style: LineStyle)      extends StyleBaseProperty
 case class OutlineColor(color: RGBColor)       extends StyleBaseProperty
 
+case class TableLayout(layout: TableLayoutStyle) extends StyleBaseProperty
+
 trait LengthProperty extends StyleBaseProperty {
   def value: LengthDimension
 }
@@ -151,7 +153,8 @@ object StyleProperty {
   import boopickle.Default._
 
   // import specific picklers to prevent huge macro overhead
-  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, RGBColor._, LineStyle._
+  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, RGBColor._, LineStyle._,
+  TableLayoutStyle._
 
   implicit val styleClassPickler = new StyleClassPickler
 
@@ -200,6 +203,7 @@ object StyleProperty {
     .addConcreteType[MinHeight]
     .addConcreteType[RemapClasses]
     .addConcreteType[WidgetStyles]
+    .addConcreteType[TableLayout]
     .addConcreteType[Hover]
     .addConcreteType[Active]
     .addConcreteType[NthChild]

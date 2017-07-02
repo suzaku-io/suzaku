@@ -118,6 +118,12 @@ object Table extends WidgetBlueprintProvider {
 
     def body(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint =
       WBlueprint()(Body(row, rows: _*), Some(header), None)
+
+    def apply(rows: Seq[Row.WBlueprint]): WBlueprint =
+      WBlueprint()(Body(rows), Some(header), None)
+
+    def body(rows: Seq[Row.WBlueprint]): WBlueprint =
+      WBlueprint()(Body(rows), Some(header), None)
   }
 
   def apply(): TableBuilder                                = new TableBuilder
@@ -207,7 +213,7 @@ object Table extends WidgetBlueprintProvider {
       }
     }
 
-    case class WBlueprint private[Body] ()(rows: List[Row.WBlueprint]) extends WidgetBlueprint {
+    case class WBlueprint private[Body] ()(rows: Seq[Row.WBlueprint]) extends WidgetBlueprint {
       type P     = TableBaseProtocol.type
       type Proxy = WProxy
       type This  = WBlueprint
@@ -220,6 +226,8 @@ object Table extends WidgetBlueprintProvider {
     override def blueprintClass = classOf[WBlueprint]
 
     def apply(row: Row.WBlueprint, rows: Row.WBlueprint*): WBlueprint = WBlueprint()(row :: rows.toList)
+
+    def apply(rows: Seq[Row.WBlueprint]): WBlueprint = WBlueprint()(rows.toList)
   }
 
   object Row extends WidgetBlueprintProvider {

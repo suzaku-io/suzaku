@@ -18,7 +18,7 @@ trait DOMLayout extends WidgetParent { self: DOMWidget[_, _] =>
     val widget    = w.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
     val modWidget = (f: dom.html.Element => Unit) => widget.modifyDOM(f)
 
-    println(s"Resolving layout: $layoutProperties")
+    // println(s"Resolving layout: $layoutProperties")
     // only for real HTML elements
     if (!scalajs.js.isUndefined(widget.artifact.el.style)) {
       // first remove all layout properties

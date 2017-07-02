@@ -8,6 +8,7 @@ import suzaku.ui.style.{StyleClassRegistry, Theme}
 
 import scala.collection.mutable
 import scala.collection.immutable
+import scala.collection.mutable.ListBuffer
 
 class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMessages: () => Unit)
     extends MessageChannelHandler[UIProtocol.type] {
@@ -21,6 +22,8 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
   private var frameRequested   = false
   private var themeId          = 0
   private val stateModQueue    = mutable.ArrayBuffer.empty[(ShadowComponent, () => Unit)]
+  @volatile
+  private var isRendering = false
 
   // get notification when styles have updated
   StyleClassRegistry.onRegistration(() => {
@@ -30,6 +33,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
   })
 
   def render(root: Blueprint): Unit = {
+    isRendering = true
     val newRoot = updateBranch(currentRoot, root, None)
     // check if layout identifiers updated
     if (LayoutIdRegistry.hasRegistrations) {
@@ -51,6 +55,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     dirtyRoots = Nil
     processStateMods()
     currentRoot = Some(newRoot)
+    isRendering = false
   }
 
   def activateTheme(theme: Theme): Int = {
@@ -78,6 +83,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   override def process = {
     case NextFrame(time) =>
+      isRendering = true
       lastFrame = time
       // update dirty component trees
       if (dirtyRoots.nonEmpty) {
@@ -91,6 +97,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
       processStateMods()
       send(FrameComplete)
       flushMessages()
+      isRendering = false
   }
 
   override def established(channel: MessageChannel[ChannelProtocol]) = {
@@ -101,6 +108,11 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   private def enqueueStateMod(component: ShadowComponent, runStateMod: () => Unit): Unit = {
     stateModQueue.append(component -> runStateMod)
+    if (!isRendering && !frameRequested) {
+      frameRequested = true
+      send(RequestFrame)
+      flushMessages()
+    }
   }
 
   private def processStateMods(): Unit = {
@@ -108,7 +120,7 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     dirtyRoots = Nil
     stateModQueue.foreach {
       case (component, runStateMod) =>
-        if(!component.isDestroyed) {
+        if (!component.isDestroyed) {
           runStateMod()
           if (!component.isDirty) {
             component.isDirty = true
@@ -124,21 +136,25 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     stateModQueue.clear()
   }
 
-  private def expand(node: ShadowNode): immutable.Seq[ShadowNode] = node match {
+  private def expand(node: ShadowNode, lb: ListBuffer[ShadowNode]): ListBuffer[ShadowNode] = node match {
     case seq: ShadowNodeSeq =>
-      seq.children.flatMap(expand)
+      seq.children.foreach(c => expand(c, lb))
+      lb
     case _ =>
-      List(node)
+      lb += node
+      lb
   }
 
-  private def expandBP(bp: Blueprint): immutable.Seq[Blueprint] = bp match {
+  private def expandBP(bp: Blueprint, lb: ListBuffer[Blueprint]): ListBuffer[Blueprint] = bp match {
     case BlueprintSeq(blueprints) =>
-      blueprints.flatMap(expandBP)
+      blueprints.foreach(bp => expandBP(bp, lb))
+      lb
     case _ =>
-      List(bp)
+      lb += bp
+      lb
   }
 
-  private def allocateId: Int = {
+  @inline private def allocateId: Int = {
     val id = widgetId
     widgetId += 1
     id
@@ -157,7 +173,9 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
             val shadowWidget = new ShadowWidget(widgetBP, widgetId, parent, uiChannel)
             if (widgetBP.children.nonEmpty) {
               val children = widgetBP.children.map(c => updateBranch(None, c, Some(shadowWidget)))
-              send(SetChildren(widgetId, children.flatMap(expand).map(_.getId)))
+              val lb       = ListBuffer.empty[ShadowNode]
+              children.foreach(c => expand(c, lb))
+              send(SetChildren(widgetId, lb.map(_.getId).toList))
               shadowWidget.withChildren(children)
             } else {
               shadowWidget
@@ -191,10 +209,14 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
             EmptyNode
 
           case widgetBP: WidgetBlueprint if widgetBP.getClass eq node.blueprint.getClass =>
+            val lb   = ListBuffer.empty[ShadowNode]
+            val bplb = ListBuffer.empty[Blueprint]
+            node.children.foreach(c => expand(c, lb))
+            widgetBP.children.foreach(c => expandBP(c, bplb))
             val (newChildren, ops) =
-              updateChildren(node, node.children.flatMap(expand), widgetBP.children.flatMap(expandBP))
+              updateChildren(node, lb.toList, bplb.toList)
             if (ops.nonEmpty)
-              send(UpdateChildren(node.widgetId, ops))
+              send(UpdateChildren(node.widgetId, ops.toList))
             node.children = newChildren
             if (widgetBP sameAs node.blueprint.asInstanceOf[widgetBP.This]) {
               // no change, return current node
@@ -244,35 +266,60 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   def updateChildren(currentNode: ShadowNode,
                      previous: Seq[ShadowNode],
-                     next: List[Blueprint]): (Seq[ShadowNode], Seq[ChildOp]) = {
+                     next: Seq[Blueprint]): (Seq[ShadowNode], Seq[ChildOp]) = {
     // extract all keys only if needed
     lazy val prevKeys: mutable.Set[Any] = previous.flatMap(_.key)(collection.breakOut)
     lazy val nextKeys: mutable.Set[Any] = next.flatMap(_.key)(collection.breakOut)
-    val newNodes                        = mutable.ArrayBuffer[ShadowNode](previous: _*)
+    val newNodes                        = mutable.ListBuffer[ShadowNode](previous: _*)
 
     var pos = 0
-    val ops = mutable.ArrayBuffer.empty[ChildOp]
+    val ops = mutable.ListBuffer.empty[ChildOp]
 
     next.foreach { bp =>
       bp.key match {
         case _ if pos >= newNodes.size =>
           // we are past previous nodes, just insert new
           val newNode = updateBranch(None, bp, Some(currentNode))
-          newNodes.append(newNode)
-          ops.append(InsertOp(newNode.getId))
+          newNodes += newNode
+          ops += InsertOp(newNode.getId)
 
-        case Some(key) if prevKeys(key) =>
+        case Some(key) if prevKeys.contains(key) =>
           // find the matching node
-          var idx = pos
-          while (!newNodes(idx).blueprint.key.contains(key)) {
-            idx += 1
+          var idx         = pos
+          var found       = false
+          var removeCount = 0
+          var removed     = false
+          while (!found) {
+            newNodes(idx).blueprint.key match {
+              case Some(prevKey) if prevKey == key =>
+                found = true
+                if (removeCount > 0) {
+                  ops += RemoveOp(removeCount)
+                  newNodes.remove(pos, removeCount)
+                  removed = true
+                }
+              case Some(prevKey) if !nextKeys.contains(prevKey) && removeCount >= 0 =>
+                removeCount += 1
+                idx += 1
+              case _ =>
+                idx += 1
+                if (removeCount > 0) {
+                  ops += RemoveOp(removeCount)
+                  pos += removeCount
+                  newNodes.remove(pos, removeCount)
+                  removed = true
+                }
+                removeCount = -1
+            }
           }
-          // move and update the found node to current position
-          newNodes.insert(pos, updateBranch(Some(newNodes.remove(idx)), bp, Some(currentNode)))
-          if (pos == idx)
-            ops.append(NoOp())
-          else
-            ops.append(MoveOp(idx))
+          if (!removed) {
+            // move and update the found node to current position
+            newNodes.insert(pos, updateBranch(Some(newNodes.remove(idx)), bp, Some(currentNode)))
+            if (pos == idx)
+              ops += NoOp()
+            else
+              ops += MoveOp(idx)
+          }
 
         case _ =>
           // if current node has a key that is still upcoming, do not replace but insert
@@ -280,15 +327,15 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
           if (currentNode.blueprint.key.exists(nextKeys.contains)) {
             val newNode = updateBranch(None, bp, Some(currentNode))
             newNodes.insert(pos, newNode)
-            ops.append(InsertOp(newNode.getId))
+            ops += InsertOp(newNode.getId)
           } else {
             val newNode = updateBranch(Some(currentNode), bp, Some(currentNode))
             if (newNode eq currentNode) {
-              ops.append(NoOp())
+              ops += NoOp()
             } else {
               newNodes(pos).destroy()
               newNodes(pos) = newNode
-              ops.append(ReplaceOp(newNode.getId))
+              ops += ReplaceOp(newNode.getId)
             }
           }
       }
@@ -300,13 +347,13 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
     }
     // check if there are excess nodes left over
     if (pos < newNodes.size) {
-      ops.append(RemoveOp(newNodes.size - pos))
+      ops += RemoveOp(newNodes.size - pos)
       newNodes.drop(pos).foreach(_.destroy())
       newNodes.remove(pos, newNodes.size - pos)
     }
     // compress NoOps
     val finalOps: Seq[ChildOp] = if (ops.size > 1) {
-      val compressed = ops.tail.foldLeft(mutable.ArrayBuffer[ChildOp](ops.head)) { (res, op) =>
+      val compressed = ops.tail.foldLeft(mutable.ListBuffer[ChildOp](ops.head)) { (res, op) =>
         (res.last, op) match {
           case (NoOp(a), NoOp(b)) =>
             res(res.size - 1) = NoOp(a + b)
@@ -394,7 +441,7 @@ object UIManager {
       proxy.destroyWidget()
     }
 
-    def withChildren(c: List[ShadowNode]): ShadowWidget = {
+    def withChildren(c: Seq[ShadowNode]): ShadowWidget = {
       children = c
       this
     }
@@ -410,12 +457,12 @@ object UIManager {
       with StateProxy {
     type BP = ComponentBlueprint
 
-    val component = blueprint.create(this).asInstanceOf[Component[ComponentBlueprint, Any]]
-    var state     = component.initialState
-    var rendered  = component.render(state)
-    var inner     = innerBuilder(rendered)
-    var isDirty   = false
-    var nextState = state
+    val component   = blueprint.create(this).asInstanceOf[Component[ComponentBlueprint, Any]]
+    var state       = component.initialState
+    var rendered    = component.render(state)
+    var inner       = innerBuilder(rendered)
+    var isDirty     = false
+    var nextState   = state
     var isDestroyed = false
 
     component.didMount()

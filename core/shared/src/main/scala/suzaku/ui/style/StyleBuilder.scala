@@ -112,6 +112,8 @@ trait StyleBuilders {
   }
   val outline = new OutlineBuilder
 
+  val tableLayout = styleFor(TableLayout)
+
   // layout and dimensions
   val width     = styleFor(Width)
   val height    = styleFor(Height)

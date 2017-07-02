@@ -5,19 +5,19 @@ import suzaku.ui.UIProtocol.UIChannel
 import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.{StyleBaseProperty, StyleClass, StyleClasses, StylePropOrClass, StyleProperty, StyleSeq}
 
-import scala.collection.mutable
+import scala.collection.immutable
 
 trait WidgetBlueprint extends Blueprint {
   type P <: Protocol
   type This <: WidgetBlueprint
   type Proxy <: WidgetProxy[P, This]
 
-  private[suzaku] val _style  = mutable.Map.empty[Class[_], StyleProperty]
+  private[suzaku] var _style  = immutable.Map.empty[Class[_], StyleProperty]
   private[suzaku] var _layout = List.empty[LayoutProperty]
 
   def createProxy(widgetId: Int, uiChannel: UIChannel): Proxy
 
-  def children: List[Blueprint] = Nil
+  def children: Seq[Blueprint] = Seq.empty
 
   def sameAs(that: This): Boolean = equals(that) && _style == that._style && _layout == that._layout
 

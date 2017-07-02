@@ -126,7 +126,9 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
     case SetChildren(widgetId, children) =>
       logger.debug(s"Setting [$children] as children of [$widgetId]")
-      val childNodes = children.flatMap(nodes.get(_))
+      val lb = new mutable.ListBuffer[WidgetNode]
+      children.foreach(c => lb += nodes(c))
+      val childNodes = lb
       nodes.get(widgetId).foreach { node =>
         node.widget.setChildren(childNodes.map(_.widget).asInstanceOf[Seq[node.widget.W]])
         childNodes.foreach(c => setParent(c, node.widget))

@@ -142,6 +142,11 @@ object DOMWidget {
     case LengthAuto       => "auto"
   }
 
+  def show(layout: TableLayoutStyle): String = layout match {
+    case TableLayoutAuto  => "auto"
+    case TableLayoutFixed => "fixed"
+  }
+
   def expand[A <: Direction](prop: A)(show: A => String, name: String, ext: String = ""): (String, String) = {
     val extStr = if (ext.isEmpty) "" else "-" + ext
     prop match {
@@ -181,6 +186,8 @@ object DOMWidget {
       case OutlineStyle(s) => ("outline-style", show(s))
       case OutlineColor(c) => ("outline-color", show(c))
 
+      case TableLayout(layout) => ("table-layout", show(layout))
+
       case EmptyStyle | RemapClasses(_) | WidgetStyles(_) => ("", "")
     }
   }
@@ -189,9 +196,13 @@ object DOMWidget {
 abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: WidgetManager)
     extends DOMWidget[P, E](widgetId, widgetManager) {
   override def setChildren(children: Seq[Widget]) = {
-    import org.scalajs.dom.ext._
     modifyDOM { el =>
-      el.childNodes.foreach(el.removeChild)
+      val prevChildren = el.childNodes
+      var l            = prevChildren.length - 1
+      while (l >= 0) {
+        el.removeChild(prevChildren(l))
+        l -= 1
+      }
       children.foreach { c =>
         val widget = c.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]
         el.appendChild(wrapChild(widget.artifact.el))
