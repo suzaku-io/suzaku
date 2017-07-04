@@ -4,7 +4,7 @@ import arteria.core._
 import boopickle.Default._
 import suzaku.ui.layout.LayoutId
 import suzaku.ui.layout.LayoutIdRegistry.LayoutIdRegistration
-import suzaku.ui.style.StyleProperty
+import suzaku.ui.style.{Color, Palette, StyleProperty}
 import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
 
 object UIProtocol extends Protocol {
@@ -60,7 +60,10 @@ object UIProtocol extends Protocol {
 
   case class RegisterWidgetClass(className: String, classId: Int) extends UIMessage
 
-  implicit val stylePickler = StyleProperty.stylePickler
+  case class SetPalette(palette: Palette) extends UIMessage
+
+  implicit private val stylePickler = StyleProperty.stylePickler
+  implicit private val palettePickler = Color.palettePickler
 
   private val uiPickler = compositePickler[UIMessage]
     .addConcreteType[NextFrame]
@@ -74,6 +77,7 @@ object UIProtocol extends Protocol {
     .addConcreteType[ActivateTheme]
     .addConcreteType[DeactivateTheme]
     .addConcreteType[RegisterWidgetClass]
+    .addConcreteType[SetPalette]
 
   implicit val (messagePickler, uiMsgWitness) = defineProtocol(uiPickler)
 

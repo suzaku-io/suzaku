@@ -4,10 +4,9 @@ import arteria.core._
 import suzaku.platform.Logger
 import suzaku.ui.UIProtocol._
 import suzaku.ui.layout.LayoutIdRegistry
-import suzaku.ui.style.{StyleClassRegistry, Theme}
+import suzaku.ui.style.{Palette, StyleClassRegistry, Theme}
 
 import scala.collection.mutable
-import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
 
 class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMessages: () => Unit)
@@ -75,6 +74,10 @@ class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMess
 
   def deactivateTheme(themeId: Int): Unit = {
     send(DeactivateTheme(themeId))
+  }
+
+  def setPalette(palette: Palette): Unit = {
+    send(SetPalette(palette))
   }
 
   @inline final protected def send[A <: Message](message: A)(implicit ev: MessageWitness[A, ChannelProtocol]) = {

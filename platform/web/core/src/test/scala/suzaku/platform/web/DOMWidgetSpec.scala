@@ -12,8 +12,8 @@ class DOMWidgetSpec extends UnitSpec {
     }
 
     "create correct CSS from basic styles" in {
-      test(Color(0))("color", "rgb(0,0,0)")
-      test(Color(RGBA(0x808080, 0.5)))("color", "rgba(128,128,128,0.5)")
+      test(ForegroundColor(0))("color", "rgb(0,0,0)")
+      test(ForegroundColor(RGBAlpha(0x808080, 0.5)))("color", "rgba(128,128,128,0.5)")
     }
 
     "create correct font styles" in {

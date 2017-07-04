@@ -2,33 +2,313 @@ package suzaku.ui.style
 
 import scala.language.implicitConversions
 
-sealed trait RGBColor {
+sealed trait Color
+
+trait ColorObject {
+  @inline def clamp(value: Double, lower: Double, upper: Double): Double =
+    lower max value min upper
+}
+
+sealed trait AbsoluteColor extends Color {
+  def alpha: Double
+
+  private def interpolate(v1: Double, v2: Double, t: Double): Double =
+    v1 + (v2 - v1) * t
+
+  def interpolate(other: AbsoluteColor, t: Double): AbsoluteColor = {
+    val c1 = toLAB
+    val c2 = other.toLAB
+    LAB.validated(interpolate(c1.l, c2.l, t),
+                  interpolate(c1.a, c2.a, t),
+                  interpolate(c1.b, c2.b, t),
+                  interpolate(c1.alpha, c2.alpha, t))
+  }
+
+  def interpolateRGB(other: AbsoluteColor, t: Double): AbsoluteColor = {
+    val c1 = toRGB
+    val c2 = other.toRGB
+    RGB.validated(interpolate(c1.r, c2.r, t),
+                  interpolate(c1.g, c2.g, t),
+                  interpolate(c1.b, c2.b, t),
+                  interpolate(c1.alpha, c2.alpha, t))
+  }
+
+  def toLAB = {
+    var XYZ(x, y, z, alpha) = toXYZ
+
+    x /= 95.047
+    y /= 100
+    z /= 108.883
+
+    x = if (x > 0.008856) math.pow(x, 1.0 / 3) else (7.787 * x) + (16 / 116)
+    y = if (y > 0.008856) math.pow(y, 1.0 / 3) else (7.787 * y) + (16 / 116)
+    z = if (z > 0.008856) math.pow(z, 1.0 / 3) else (7.787 * z) + (16 / 116)
+
+    val l = (116 * y) - 16
+    val a = 500 * (x - y)
+    val b = 200 * (y - z)
+    LAB(l, a, b, alpha)
+  }
+
+  def toXYZ: XYZ
+
+  def toRGBA: RGBAlpha
+
+  def toRGB: RGB = RGB(toRGBA.rgb)
+
+  def toHSL: HSL = toRGBA.toHSL
+}
+
+sealed trait RGBColor extends AbsoluteColor {
   val rgb: Int
   def r: Int = (rgb >> 16) & 0xFF
   def g: Int = (rgb >> 8) & 0xFF
   def b: Int = rgb & 0xFF
+  def alpha: Double
+
+  override def toXYZ = {
+    var r = this.r / 255.0
+    var g = this.g / 255.0
+    var b = this.b / 255.0
+
+    r = if (r > 0.04045) math.pow((r + 0.055) / 1.055, 2.4) else r / 12.92
+    g = if (g > 0.04045) math.pow((g + 0.055) / 1.055, 2.4) else g / 12.92
+    b = if (b > 0.04045) math.pow((b + 0.055) / 1.055, 2.4) else b / 12.92
+
+    val x = (r * 0.4124) + (g * 0.3576) + (b * 0.1805)
+    val y = (r * 0.2126) + (g * 0.7152) + (b * 0.0722)
+    val z = (r * 0.0193) + (g * 0.1192) + (b * 0.9505)
+
+    XYZ(x * 100, y * 100, z * 100, alpha)
+  }
+
+  override def toHSL = {
+    val rr = this.r / 255.0
+    val gg = this.g / 255.0
+    val bb = this.b / 255.0
+
+    val max = rr max gg max bb
+    val min = rr min gg min bb
+
+    val l = (max + min) / 2.0
+
+    val (h, s) =
+      if (max == min) (0.0, 0.0)
+      else {
+        val d = max - min
+        val s = if (l > 0.5) d / (2.0 - max - min) else d / (max + min)
+        val h =
+          if (rr > gg && rr > bb) (gg - bb) / d + (if (gg < bb) 6.0 else 0.0)
+          else if (gg > bb) (bb - rr) / d + 2.0
+          else (rr - gg) / d + 4.0
+        (h / 6, s)
+      }
+    HSL(h, s, l, alpha)
+  }
 }
 
-case class RGB(rgb: Int) extends RGBColor
+case class RGB(rgb: Int) extends RGBColor {
+  override def alpha  = 1.0
+  override def toRGBA = RGBAlpha(rgb, alpha)
 
-case class RGBA(rgb: Int, a: Double) extends RGBColor
+  override def toString = s"RGB($r, $g, $b)"
+}
 
-object RGBColor {
+case class RGBAlpha(rgb: Int, alpha: Double = 1.0) extends RGBColor {
+  override def toRGBA = this
+
+  override def toString = s"RGBAlpha($r, $g, $b, $alpha)"
+}
+
+object RGB extends ColorObject {
+  def validated(r: Double, g: Double, b: Double, alpha: Double = 1.0): RGBAlpha =
+    Colors.rgba(clamp(r, 0, 1), clamp(g, 0, 1), clamp(b, 0, 1), clamp(alpha, 0, 1))
+}
+
+case class LAB(l: Double, a: Double, b: Double, alpha: Double = 1.0) extends AbsoluteColor {
+  override def toLAB = this
+
+  override def toXYZ = {
+    var y = (l + 16) / 116
+    var x = a / 500 + y
+    var z = y - b / 200
+
+    val y2 = math.pow(y, 3)
+    val x2 = math.pow(x, 3)
+    val z2 = math.pow(z, 3)
+    y = if (y2 > 0.008856) y2 else (y - 16 / 116) / 7.787
+    x = if (x2 > 0.008856) x2 else (x - 16 / 116) / 7.787
+    z = if (z2 > 0.008856) z2 else (z - 16 / 116) / 7.787
+
+    x *= 95.047
+    y *= 100
+    z *= 108.883
+    XYZ(x, y, z, alpha)
+  }
+
+  override def toRGBA = toXYZ.toRGBA
+}
+
+object LAB extends ColorObject {
+  def validated(l: Double, a: Double, b: Double, alpha: Double = 1.0): LAB =
+    LAB(clamp(l, 0.0, 100.0), clamp(a, -86.185, 98.254), clamp(b, -107.863, 94.482), clamp(alpha, 0, 1))
+}
+
+case class XYZ(x: Double, y: Double, z: Double, alpha: Double = 1.0) extends AbsoluteColor {
+  override def toXYZ = this
+
+  override def toRGBA = {
+    var XYZ(x, y, z, alpha) = this
+    x /= 100
+    y /= 100
+    z /= 100
+
+    var r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986)
+    var g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415)
+    var b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570)
+
+    // assume sRGB
+    r = if (r > 0.0031308) (1.055 * math.pow(r, 1.0 / 2.4)) - 0.055 else r * 12.92
+    g = if (g > 0.0031308) (1.055 * math.pow(g, 1.0 / 2.4)) - 0.055 else g * 12.92
+    b = if (b > 0.0031308) (1.055 * math.pow(b, 1.0 / 2.4)) - 0.055 else b * 12.92
+
+    r = math.min(math.max(0, r), 1)
+    g = math.min(math.max(0, g), 1)
+    b = math.min(math.max(0, b), 1)
+
+    Colors.rgba(r, g, b, alpha)
+  }
+}
+
+case class HSL(h: Double, s: Double, l: Double, alpha: Double = 1.0) extends AbsoluteColor {
+  override def toRGBA = {
+    val c = (1 - math.abs(2 * l - 1)) * s
+    val x = c * (1 - math.abs((h * 6) % 2 - 1))
+    val m = l - c / 2
+    val (r, g, b) =
+      if (h < 60 / 360.0) (c, x, 0.0)
+      else if (h < 120 / 360.0) (x, c, 0.0)
+      else if (h < 180 / 360.0) (0.0, c, x)
+      else if (h < 240 / 360.0) (0.0, x, c)
+      else if (h < 300 / 360.0) (x, 0.0, c)
+      else (c, 0.0, x)
+    Colors.rgba(r + m, g + m, b + m, alpha)
+  }
+
+  override def toXYZ = toRGBA.toXYZ
+}
+
+sealed trait PaletteVariant
+case object ColorRegular                  extends PaletteVariant
+case object ColorLight                    extends PaletteVariant
+case object ColorDark                     extends PaletteVariant
+case class ColorLightness(lightness: Int) extends PaletteVariant
+
+case class PaletteRef(idx: Int, variant: PaletteVariant = ColorRegular) extends Color {
+  def light                 = PaletteRef(idx, ColorLight)
+  def lighter               = PaletteRef(idx, ColorLightness(25))
+  def lightest              = PaletteRef(idx, ColorLightness(75))
+  def dark                  = PaletteRef(idx, ColorDark)
+  def darker                = PaletteRef(idx, ColorLightness(-25))
+  def darkest               = PaletteRef(idx, ColorLightness(-75))
+  def lightness(value: Int) = PaletteRef(idx, ColorLightness(value min 100 max -100))
+}
+
+case class PaletteColor(color: AbsoluteColor, textColor: AbsoluteColor)
+
+case class PaletteEntry(color: PaletteColor, light: PaletteColor, dark: PaletteColor) {
+  def variant(v: PaletteVariant): AbsoluteColor = v match {
+    case ColorRegular => color.color
+    case ColorLight   => light.color
+    case ColorDark    => dark.color
+    case ColorLightness(value) =>
+      if (value >= 0)
+        color.color.interpolate(light.color, value / 50.0)
+      else
+        color.color.interpolate(dark.color, -value / 50.0)
+  }
+}
+
+case class Palette(entries: Array[PaletteEntry]) {
+  def apply(idx: Int): PaletteEntry = {
+    if (idx < 0 || idx >= entries.length)
+      Palette.failureColor
+    else
+      entries(idx)
+  }
+}
+
+object Palette {
+  val failureColor = PaletteEntry(
+    PaletteColor(Colors.fuchsia, Colors.black),
+    PaletteColor(Colors.fuchsia, Colors.black),
+    PaletteColor(Colors.fuchsia, Colors.black)
+  )
+
+  def empty: Palette = Palette(Array.fill(10)(failureColor))
+
+  final val Base       = 0
+  final val Primary    = Base + 1
+  final val Secondary  = Primary + 1
+  final val Tertiary   = Secondary + 1
+  final val Error      = Tertiary + 1
+  final val Warning    = Error + 1
+  final val Success    = Warning + 1
+  final val UserColors = 16
+
+  def userColor(idx: Int) = idx + UserColors
+}
+
+object Color {
   import boopickle.Default._
-  implicit val colorPickler = compositePickler[RGBColor]
+  implicit val paletteVariantPickler = compositePickler[PaletteVariant]
+    .addConcreteType[ColorRegular.type]
+    .addConcreteType[ColorLight.type]
+    .addConcreteType[ColorDark.type]
+    .addConcreteType[ColorLightness]
+
+  implicit val rgbColorPickler = compositePickler[RGBColor]
     .addConcreteType[RGB]
-    .addConcreteType[RGBA]
+    .addConcreteType[RGBAlpha]
+
+  implicit val absoluteColorPickler = compositePickler[AbsoluteColor]
+    .join(rgbColorPickler)
+    .addConcreteType[HSL]
+
+  implicit val colorPickler = compositePickler[Color]
+    .join(absoluteColorPickler)
+    .addConcreteType[PaletteRef]
+
+  implicit val palettePickler = generatePickler[Palette]
 }
 
 trait Colors {
-  @inline def rgb(r: Int, g: Int, b: Int) = RGB(((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF))
+  @inline def rgb(r: Int, g: Int, b: Int): RGB =
+    RGB(((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF))
 
-  @inline def rgba(r: Int, g: Int, b: Int, a: Double) = RGBA(((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF), a)
+  @inline def rgba(r: Int, g: Int, b: Int, alpha: Double): RGBAlpha =
+    RGBAlpha(((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF), alpha)
+
+  def rgba(r: Double, g: Double, b: Double, alpha: Double): RGBAlpha =
+    rgba(math.round(r * 255).toInt, math.round(g * 255).toInt, math.round(b * 255).toInt, alpha)
+
+  @inline def hsla(h: Double, s: Double, l: Double, a: Double): HSL =
+    HSL(h, s, l, a)
 
   implicit def int2color(i: Int): RGB = RGB(i & 0xFFFFFF)
 }
 
-object Colors {
+object Colors extends Colors {
+  val base      = PaletteRef(Palette.Base)
+  val primary   = PaletteRef(Palette.Primary)
+  val secondary = PaletteRef(Palette.Secondary)
+  val tertiary  = PaletteRef(Palette.Tertiary)
+  val error     = PaletteRef(Palette.Error)
+  val warning   = PaletteRef(Palette.Warning)
+  val success   = PaletteRef(Palette.Success)
+
+  def fromPalette(idx: Int) = PaletteRef(idx)
+
   val aliceblue            = RGB(0xF0F8FF)
   val antiquewhite         = RGB(0xFAEBD7)
   val aqua                 = RGB(0x00FFFF)

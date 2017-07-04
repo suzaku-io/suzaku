@@ -41,7 +41,7 @@ trait StyleBuilders {
     stylesFor[WidgetStyles, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetStyles(ct: _*))
 
   // regular style definitions
-  val color           = styleFor(Color)
+  val color           = styleFor(ForegroundColor)
   val backgroundColor = styleFor(BackgroundColor)
 
   // font

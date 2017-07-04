@@ -5,6 +5,7 @@ import suzaku.ui.UIProtocol.ChildOp
 import suzaku.ui.WidgetProtocol.{UpdateLayout, UpdateStyle}
 import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.{RemapClasses, StyleBaseProperty, StyleClasses, WidgetStyles}
+import suzaku.util.DenseIntMap
 
 import scala.collection.immutable.IntMap
 
@@ -17,12 +18,12 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
   private var messageChannel             = null: MessageChannel[CP]
   private var widgetClassId              = -1
   protected var styleClasses             = List.empty[Int]
-  protected var directStyleMapping       = IntMap.empty[List[Int]]
-  protected var parentStyleMapping       = IntMap.empty[List[Int]]
-  protected var styleMapping             = IntMap.empty[List[Int]]
-  protected var directWidgetStyleMapping = IntMap.empty[List[Int]]
-  protected var parentWidgetStyleMapping = IntMap.empty[List[Int]]
-  protected var widgetStyleMapping       = IntMap.empty[List[Int]]
+  protected var directStyleMapping       = DenseIntMap.empty[List[Int]]
+  protected var parentStyleMapping       = DenseIntMap.empty[List[Int]]
+  protected var styleMapping             = DenseIntMap.empty[List[Int]]
+  protected var directWidgetStyleMapping = DenseIntMap.empty[List[Int]]
+  protected var parentWidgetStyleMapping = DenseIntMap.empty[List[Int]]
+  protected var widgetStyleMapping       = DenseIntMap.empty[List[Int]]
   protected var layoutProps              = List.empty[LayoutProperty]
 
   protected[suzaku] def withChannel(channel: MessageChannel[CP]): this.type = {
@@ -86,21 +87,10 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
 
     // join all widget style mappings
     widgetStyleMapping =
-      styles.foldLeft(joinMaps(parentWidgetStyleMapping, directWidgetStyleMapping))((a, b) => joinMaps(a, b.widgetClasses))
+      styles.foldLeft(parentWidgetStyleMapping ++ directWidgetStyleMapping)((a, b) => a.join(b.widgetClasses, _ ::: _))
     // join all style remappings
-    styleMapping = styles.foldLeft(joinMaps(parentStyleMapping, directStyleMapping))((a, b) => joinMaps(a, b.remaps))
+    styleMapping = styles.foldLeft(parentStyleMapping ++ directStyleMapping)((a, b) => a.join(b.remaps, _ ::: _))
     inheritedStyles
-  }
-
-  private def joinMaps(map1: IntMap[List[Int]], map2: IntMap[List[Int]]): IntMap[List[Int]] = {
-    if (map1.isEmpty)
-      map2
-    else if (map2.isEmpty)
-      map1
-    else
-      map2.foldLeft(map1) {
-        case (map, (key, value)) => map.updated(key, if (map.contains(key)) map(key) ::: value else value)
-      }
   }
 
   override def hasParent: Boolean = parent.isDefined
@@ -115,17 +105,17 @@ abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends W
 
   override def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit = {}
 
-  override def getStyleMapping: IntMap[List[Int]] = styleMapping
+  override def getStyleMapping: DenseIntMap[List[Int]] = styleMapping
 
-  override def getWidgetStyleMapping: IntMap[List[Int]] = widgetStyleMapping
+  override def getWidgetStyleMapping: DenseIntMap[List[Int]] = widgetStyleMapping
 }
 
 trait WidgetParent {
   def hasParent: Boolean
 
-  def getStyleMapping: IntMap[List[Int]]
+  def getStyleMapping: DenseIntMap[List[Int]]
 
-  def getWidgetStyleMapping: IntMap[List[Int]]
+  def getWidgetStyleMapping: DenseIntMap[List[Int]]
 
   def resolveStyleMapping(wClsId: Int, styles: List[Int]): List[Int]
 
@@ -151,22 +141,28 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: W
           // println(s"Remapping styles: $styleMap (remove = $remove")
           directStyleMapping =
             if (remove)
-              IntMap.empty
-            else
-              styleMap.map {
-                case (style, mappedTo) => (style.id, resolveStyleInheritance(mappedTo.map(_.id)))
-              }(collection.breakOut): IntMap[List[Int]]
+              DenseIntMap.empty
+            else {
+              var m = DenseIntMap.empty[List[Int]]
+              styleMap.foreach {
+                case (style, mappedTo) => m = m.updated(style.id, resolveStyleInheritance(mappedTo.map(_.id)))
+              }
+              m
+            }
           // reapply styles to children as mappings might have changed
           widgetManager.reapplyStyles(widgetId)
         case (WidgetStyles(styleMap), remove) =>
           // println(s"Remapping styles: $styleMap (remove = $remove")
           directWidgetStyleMapping =
             if (remove)
-              IntMap.empty
-            else
-              styleMap.map {
-                case (wClsId, mappedTo) => (wClsId, resolveStyleInheritance(mappedTo.map(_.id)))
-              }(collection.breakOut): IntMap[List[Int]]
+              DenseIntMap.empty
+            else {
+              var m = DenseIntMap.empty[List[Int]]
+              styleMap.foreach {
+                case (wClsId, mappedTo) => m = m.updated(wClsId, resolveStyleInheritance(mappedTo.map(_.id)))
+              }
+              m
+            }
           // reapply styles to children as mappings might have changed
           widgetManager.reapplyStyles(widgetId)
         case (prop: StyleBaseProperty, remove) =>

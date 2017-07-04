@@ -86,9 +86,14 @@ object DOMWidget {
     "_S" + Integer.toString(id, 10)
   }
 
-  def show(c: RGBColor): String = c match {
-    case RGB(_)     => s"rgb(${c.r},${c.g},${c.b})"
-    case RGBA(_, a) => s"rgba(${c.r},${c.g},${c.b},$a)"
+  def show(c: Color): String = c match {
+    case rgb: RGB                 => s"rgb(${rgb.r},${rgb.g},${rgb.b})"
+    case rgba: RGBAlpha           => s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
+    case HSL(h, s, l, alpha)      => s"hsl(${(h * 360).toInt},${(s * 100).toInt}%,${(l * 100).toInt}%,$alpha)"
+    case PaletteRef(idx, variant) => s"fuchsia"
+    case ac: AbsoluteColor =>
+      val rgba = ac.toRGBA
+      s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
   }
 
   def show(l: LineStyle): String = l match {
@@ -159,7 +164,7 @@ object DOMWidget {
 
   def extractStyle(prop: StyleBaseProperty): (String, String) = {
     prop match {
-      case Color(c)           => ("color", show(c))
+      case ForegroundColor(c) => ("color", show(c))
       case BackgroundColor(c) => ("background-color", show(c))
 
       case FontFamily(family) => ("font-family", family.mkString("\"", "\",\"", "\""))

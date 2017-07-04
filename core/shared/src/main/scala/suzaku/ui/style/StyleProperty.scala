@@ -22,12 +22,12 @@ object StyleSeq {
 // normal style properties
 case object EmptyStyle extends StyleBaseProperty
 
-case class Color(color: RGBColor)           extends StyleBaseProperty
-case class BackgroundColor(color: RGBColor) extends StyleBaseProperty
+case class ForegroundColor(color: Color)           extends StyleBaseProperty
+case class BackgroundColor(color: Color) extends StyleBaseProperty
 
 case class OutlineWidth(value: WidthDimension) extends StyleBaseProperty
 case class OutlineStyle(style: LineStyle)      extends StyleBaseProperty
-case class OutlineColor(color: RGBColor)       extends StyleBaseProperty
+case class OutlineColor(color: Color)       extends StyleBaseProperty
 
 case class TableLayout(layout: TableLayoutStyle) extends StyleBaseProperty
 
@@ -44,7 +44,7 @@ trait LineStyleProperty extends StyleBaseProperty {
 }
 
 trait ColorProperty extends StyleBaseProperty {
-  def color: RGBColor
+  def color: Color
 }
 
 // font and text
@@ -101,10 +101,10 @@ case class BorderStyleLeft(style: LineStyle)   extends BorderStyle with Directio
 
 sealed trait BorderColor extends Direction with ColorProperty
 
-case class BorderColorTop(color: RGBColor)    extends BorderColor with DirectionTop
-case class BorderColorRight(color: RGBColor)  extends BorderColor with DirectionRight
-case class BorderColorBottom(color: RGBColor) extends BorderColor with DirectionBottom
-case class BorderColorLeft(color: RGBColor)   extends BorderColor with DirectionLeft
+case class BorderColorTop(color: Color)    extends BorderColor with DirectionTop
+case class BorderColorRight(color: Color)  extends BorderColor with DirectionRight
+case class BorderColorBottom(color: Color) extends BorderColor with DirectionBottom
+case class BorderColorLeft(color: Color)   extends BorderColor with DirectionLeft
 
 // dimension styles
 case class Width(value: LengthUnit)  extends StyleBaseProperty
@@ -153,7 +153,7 @@ object StyleProperty {
   import boopickle.Default._
 
   // import specific picklers to prevent huge macro overhead
-  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, RGBColor._, LineStyle._,
+  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, Color._, LineStyle._,
   TableLayoutStyle._
 
   implicit val styleClassPickler = new StyleClassPickler
@@ -162,7 +162,7 @@ object StyleProperty {
 
   styleBasePickler
     .addConcreteType[EmptyStyle.type]
-    .addConcreteType[Color]
+    .addConcreteType[ForegroundColor]
     .addConcreteType[BackgroundColor]
     .addConcreteType[FontFamily]
     .addConcreteType[FontSize]

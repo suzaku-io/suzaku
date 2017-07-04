@@ -58,9 +58,13 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
       }
       .mkString("\n", "\n", "\n")
 
-    val style = dom.document.createElement("style").asInstanceOf[dom.html.Style]
-    style.`type` = "text/css"
+    var style: dom.html.Style = dom.document.querySelector("style#suzaku-style").asInstanceOf[dom.html.Style]
+    if (style == null) {
+      style = dom.document.createElement("style").asInstanceOf[dom.html.Style]
+      style.`type` = "text/css"
+      style.id = "suzaku-style"
+      dom.document.head.appendChild(style)
+    }
     style.appendChild(dom.document.createTextNode(styleDef))
-    dom.document.head.appendChild(style)
   }
 }

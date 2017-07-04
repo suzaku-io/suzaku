@@ -5,9 +5,9 @@ import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
 import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
-import suzaku.ui.style.{ExtendClasses, InheritClasses, RemapClasses, StyleBaseProperty, WidgetStyles}
+import suzaku.ui.style.{ExtendClasses, InheritClasses, Palette, PaletteEntry, RemapClasses, StyleBaseProperty, WidgetStyles}
+import suzaku.util.DenseIntMap
 
-import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 abstract class WidgetManager(logger: Logger, platform: Platform)
@@ -17,18 +17,19 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
   case class RegisteredStyle(props: List[StyleBaseProperty],
                              inherited: List[Int],
-                             remaps: IntMap[List[Int]],
-                             widgetClasses: IntMap[List[Int]])
+                             remaps: DenseIntMap[List[Int]],
+                             widgetClasses: DenseIntMap[List[Int]])
 
-  private var widgetClassMap       = IntMap.empty[String]
+  private var widgetClassMap       = DenseIntMap.empty[String]
   private var registeredWidgets    = Map.empty[String, WidgetBuilder[_ <: Protocol]]
-  private var builders             = IntMap.empty[WidgetBuilder[_ <: Protocol]]
+  private var builders             = DenseIntMap.empty[WidgetBuilder[_ <: Protocol]]
   private var uiChannel: UIChannel = _
   protected val nodes              = mutable.LongMap[WidgetNode](-1L -> WidgetNode(emptyWidget(-1), Nil, -1))
   protected var rootNode           = Option.empty[WidgetNode]
-  protected val registeredStyles   = mutable.LongMap.empty[RegisteredStyle]
+  protected var registeredStyles   = DenseIntMap.empty[RegisteredStyle]
   protected var themes             = Vector.empty[(Int, Map[Int, List[Int]])]
-  protected var activeTheme        = IntMap.empty[List[Int]]
+  protected var activeTheme        = DenseIntMap.empty[List[Int]]
+  protected var activePalette      = Palette.empty
   protected var frameRequested     = false
   protected var frameComplete      = true
 
@@ -49,7 +50,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     val builder = builders.get(widgetClass) orElse {
       // update builder map from registered widgets
       val b = widgetClassMap.get(widgetClass).flatMap(registeredWidgets.get)
-      b.foreach(v => builders += widgetClass -> v)
+      b.foreach(v => builders = builders.updated(widgetClass -> v))
       b
     }
     builder.map(builder => builder.materialize(widgetId, widgetClass, channelId, globalId, uiChannel, channelReader))
@@ -64,14 +65,6 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     frameRequested = false
   }
 
-  def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
-    // only set parent if the parent has a parent
-    if (parent.hasParent) {
-      node.widget.setParent(parent)
-      node.children.foreach(c => setParent(nodes(c), node.widget))
-    }
-  }
-
   def reapplyStyles(id: Int): Unit = {
     nodes.get(id) match {
       case Some(node) =>
@@ -82,30 +75,32 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     }
   }
 
-  def rebuildThemes(themes: Seq[(Int, Map[Int, List[Int]])]): Unit = {
+  def getStyle(styleId: Int): Option[RegisteredStyle] =
+    registeredStyles.get(styleId)
+
+  def getColor(idx: Int): PaletteEntry =
+    activePalette(idx)
+
+  private def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
+    // only set parent if the parent has a parent
+    if (parent.hasParent) {
+      node.widget.setParent(parent)
+      node.children.foreach(c => setParent(nodes(c), node.widget))
+    }
+  }
+
+  private def rebuildThemes(themes: Seq[(Int, Map[Int, List[Int]])]): Unit = {
     // join themes to form the active theme
-    activeTheme = themes.foldLeft(IntMap.empty[List[Int]]) {
+    activeTheme = themes.foldLeft(DenseIntMap.empty[List[Int]]) {
       case (act, (_, styleMap)) =>
         styleMap.foldLeft(act) {
-          case (current, (widget, styleClasses)) =>
-            current.updated(widget, (current.getOrElse(widget, Nil) ++ styleClasses).distinct)
+          case (current, (widgetClassId, styleClasses)) =>
+            current.updated(widgetClassId, (current.getOrElse(widgetClassId, Nil) ++ styleClasses).distinct)
         }
     }
     // reapply styles as theme changes may affect them
     rootNode.foreach(n => reapplyStyles(n.widget.widgetId))
   }
-
-  def applyTheme(widgetClassId: Int): List[Int] =
-    activeTheme.getOrElse(widgetClassId, Nil)
-
-  def getStyle(styleId: Int): Option[RegisteredStyle] =
-    registeredStyles.get(styleId)
-
-  def getStyleRemaps(styleId: Int): Option[Map[Int, List[Int]]] =
-    registeredStyles.get(styleId).map(_.remaps)
-
-  def getStyleWidgetClasses(styleId: Int): Option[Map[Int, List[Int]]] =
-    registeredStyles.get(styleId).map(_.widgetClasses)
 
   override def process = {
     case MountRoot(widgetId) =>
@@ -184,17 +179,19 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
           val remaps = props
             .collect {
               case remap: RemapClasses =>
-                remap.styleMap.map { case (key, value) => key.id -> value.map(_.id) }(collection.breakOut): IntMap[
-                  List[Int]]
+                var m = DenseIntMap.empty[List[Int]]
+                remap.styleMap.foreach { case (key, value) => m = m.updated(key.id, value.map(_.id)) }
+                m
             }
-            .foldLeft(IntMap.empty[List[Int]])(_ ++ _)
+            .foldLeft(DenseIntMap.empty[List[Int]])(_ join _)
           val widgetClasses = props
             .collect {
               case widgetClass: WidgetStyles =>
-                widgetClass.styleMapping.map { case (key, value) => key -> value.map(_.id) }(collection.breakOut): IntMap[
-                  List[Int]]
+                var m = DenseIntMap.empty[List[Int]]
+                widgetClass.styleMapping.foreach { case (key, value) => m = m.updated(key, value.map(_.id)) }
+                m
             }
-            .foldLeft(IntMap.empty[List[Int]])(_ ++ _)
+            .foldLeft(DenseIntMap.empty[List[Int]])(_ join _)
 
           val extProps = extend.flatMap(_.styles.flatMap(sc => registeredStyles(sc.id).props))
           val inherited = if (inherits.nonEmpty) {
@@ -203,7 +200,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
             resolved :+ styleId
           } else styleId :: Nil
           val allProps = extProps ::: baseProps
-          registeredStyles.update(styleId, RegisteredStyle(allProps, inherited, remaps, widgetClasses))
+          registeredStyles = registeredStyles.updated(styleId, RegisteredStyle(allProps, inherited, remaps, widgetClasses))
 
           (styleId, styleName, allProps)
       }
@@ -227,7 +224,12 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
       rebuildThemes(themes)
 
     case RegisterWidgetClass(className, classId) =>
-      widgetClassMap += classId -> className
+      logger.debug(s"Register widget class $className as $classId")
+      widgetClassMap = widgetClassMap.updated(classId -> className)
+
+    case SetPalette(palette) =>
+      activePalette = palette
+      // TODO rebuild styles
   }
 
   override def materializeChildChannel(channelId: Int,
@@ -237,8 +239,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     import boopickle.Default._
     // read the component creation data
     val CreateWidget(widgetClass, widgetId) = channelReader.read[CreateWidget]
-    val widgetClassName                     = widgetClassMap(widgetClass)
-    logger.debug(f"Building widget $widgetClassName on channel [$channelId, $globalId%08x]")
+    logger.debug(f"Building widget ${widgetClassMap(widgetClass)} on channel [$channelId, $globalId%08x]")
     try {
       buildWidget(widgetClass, widgetId, channelId, globalId, channelReader) match {
         case Some(widget) =>
@@ -246,11 +247,11 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
           nodes.update(widgetId, WidgetNode(widget, Vector.empty, channelId))
           widget.channel
         case None =>
-          throw new IllegalAccessException(s"Unable to materialize a widget '$widgetClassName'")
+          throw new IllegalAccessException(s"Unable to materialize a widget '${widgetClassMap(widgetClass)}'")
       }
     } catch {
       case e: Exception =>
-        logger.error(s"Unhandled exception while building widget $widgetClassName: $e")
+        logger.error(s"Unhandled exception while building widget ${widgetClassMap(widgetClass)}: $e")
         throw e
     }
   }
@@ -263,7 +264,7 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
   override def hasParent: Boolean = true
 
   override def resolveStyleMapping(wClsId: Int, ids: List[Int]): List[Int] = {
-    applyTheme(wClsId) ::: ids
+    activeTheme.getOrElse(wClsId, Nil) ::: ids
   }
 
   override def resolveStyleInheritance(ids: List[Int]): List[Int] = {
@@ -273,9 +274,9 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
   override def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit = {}
 
-  override def getStyleMapping: IntMap[List[Int]] = IntMap.empty
+  override def getStyleMapping: DenseIntMap[List[Int]] = DenseIntMap.empty
 
-  override def getWidgetStyleMapping: IntMap[List[Int]] = activeTheme
+  override def getWidgetStyleMapping: DenseIntMap[List[Int]] = activeTheme
 
   protected def emptyWidget(widgetId: Int): Widget
 
