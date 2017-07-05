@@ -91,13 +91,12 @@ trait StyleBuilders {
   val borderColorTop    = styleFor(BorderColorTop)
   val borderColorRight  = styleFor(BorderColorRight)
   val borderColorBottom = styleFor(BorderColorBottom)
-  class BorderColorBuilder
-      extends TRBLBuilder[RGBColor](BorderColorTop, BorderColorRight, BorderColorBottom, BorderColorLeft)
+  class BorderColorBuilder extends TRBLBuilder[Color](BorderColorTop, BorderColorRight, BorderColorBottom, BorderColorLeft)
   val borderColor = new BorderColorBuilder
   class BorderBuilder {
-    def :=(w: WidthDimension)                            = borderWidth := w
-    def :=(w: WidthDimension, s: LineStyle)              = (borderWidth := w) ++ (borderStyle := s)
-    def :=(w: WidthDimension, s: LineStyle, c: RGBColor) = (borderWidth := w) ++ (borderStyle := s) ++ (borderColor := c)
+    def :=(w: WidthDimension)                         = borderWidth := w
+    def :=(w: WidthDimension, s: LineStyle)           = (borderWidth := w) ++ (borderStyle := s)
+    def :=(w: WidthDimension, s: LineStyle, c: Color) = (borderWidth := w) ++ (borderStyle := s) ++ (borderColor := c)
   }
   val border = new BorderBuilder
 
@@ -106,9 +105,9 @@ trait StyleBuilders {
   val outlineColor = styleFor(OutlineColor)
 
   class OutlineBuilder {
-    def :=(w: WidthDimension)                            = outlineWidth := w
-    def :=(w: WidthDimension, s: LineStyle)              = StyleSeq(outlineWidth := w, outlineStyle := s)
-    def :=(w: WidthDimension, s: LineStyle, c: RGBColor) = StyleSeq(outlineWidth := w, outlineStyle := s, outlineColor := c)
+    def :=(w: WidthDimension)                         = outlineWidth := w
+    def :=(w: WidthDimension, s: LineStyle)           = StyleSeq(outlineWidth := w, outlineStyle := s)
+    def :=(w: WidthDimension, s: LineStyle, c: Color) = StyleSeq(outlineWidth := w, outlineStyle := s, outlineColor := c)
   }
   val outline = new OutlineBuilder
 

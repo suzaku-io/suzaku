@@ -54,7 +54,7 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, wi
   }
 
   override def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit = {
-    DOMWidget.extractStyle(prop) match {
+    DOMWidget.extractStyle(prop)(widgetManager) match {
       case ("", _) => // ignore
       case (name, value) =>
         updateStyleProperty(name, remove, value)
@@ -86,14 +86,21 @@ object DOMWidget {
     "_S" + Integer.toString(id, 10)
   }
 
-  def show(c: Color): String = c match {
+  def show(c: AbsoluteColor): String = c match {
     case rgb: RGB                 => s"rgb(${rgb.r},${rgb.g},${rgb.b})"
     case rgba: RGBAlpha           => s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
     case HSL(h, s, l, alpha)      => s"hsl(${(h * 360).toInt},${(s * 100).toInt}%,${(l * 100).toInt}%,$alpha)"
-    case PaletteRef(idx, variant) => s"fuchsia"
-    case ac: AbsoluteColor =>
-      val rgba = ac.toRGBA
+    case _: AbsoluteColor =>
+      val rgba = c.toRGBA
       s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
+  }
+
+  def show(c: Color)(implicit colorProvider: ColorProvider): String = c match {
+    case ac: AbsoluteColor =>
+      show(ac)
+    case PaletteRef(idx, variant) =>
+      val entry = colorProvider.getColor(idx)
+      show(entry.variant(variant))
   }
 
   def show(l: LineStyle): String = l match {
@@ -162,7 +169,7 @@ object DOMWidget {
     }
   }
 
-  def extractStyle(prop: StyleBaseProperty): (String, String) = {
+  def extractStyle(prop: StyleBaseProperty)(implicit colorProvider: ColorProvider): (String, String) = {
     prop match {
       case ForegroundColor(c) => ("color", show(c))
       case BackgroundColor(c) => ("background-color", show(c))

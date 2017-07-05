@@ -126,6 +126,8 @@ object RGB extends ColorObject {
 }
 
 case class LAB(l: Double, a: Double, b: Double, alpha: Double = 1.0) extends AbsoluteColor {
+  def brightness(amount: Int) = LAB.validated(l + amount, a, b, alpha)
+
   override def toLAB = this
 
   override def toXYZ = {
@@ -151,7 +153,7 @@ case class LAB(l: Double, a: Double, b: Double, alpha: Double = 1.0) extends Abs
 
 object LAB extends ColorObject {
   def validated(l: Double, a: Double, b: Double, alpha: Double = 1.0): LAB =
-    LAB(clamp(l, 0.0, 100.0), clamp(a, -86.185, 98.254), clamp(b, -107.863, 94.482), clamp(alpha, 0, 1))
+    LAB(clamp(l, -16.0, 100.0), clamp(a, -86.185, 98.254), clamp(b, -107.863, 94.482), clamp(alpha, 0, 1))
 }
 
 case class XYZ(x: Double, y: Double, z: Double, alpha: Double = 1.0) extends AbsoluteColor {
@@ -229,6 +231,26 @@ case class PaletteEntry(color: PaletteColor, light: PaletteColor, dark: PaletteC
   }
 }
 
+object PaletteEntry {
+  def textColorOn(color: LAB): AbsoluteColor = {
+    if (color.l > 50)
+      RGB.validated(0.0, 0.0, 0.0, 0.87)
+    else
+      RGB.validated(1.0, 1.0, 1.0, 0.95)
+  }
+
+  def apply(color: AbsoluteColor): PaletteEntry = {
+    // calculate light and dark variants
+    val normal = color.toLAB
+    val light  = normal.brightness(+20)
+    val dark   = normal.brightness(-20)
+    PaletteEntry(
+      PaletteColor(normal, textColorOn(normal)),
+      PaletteColor(light, textColorOn(light)),
+      PaletteColor(dark, textColorOn(dark))
+    )
+  }
+}
 case class Palette(entries: Array[PaletteEntry]) {
   def apply(idx: Int): PaletteEntry = {
     if (idx < 0 || idx >= entries.length)
@@ -245,8 +267,6 @@ object Palette {
     PaletteColor(Colors.fuchsia, Colors.black)
   )
 
-  def empty: Palette = Palette(Array.fill(10)(failureColor))
-
   final val Base       = 0
   final val Primary    = Base + 1
   final val Secondary  = Primary + 1
@@ -257,6 +277,30 @@ object Palette {
   final val UserColors = 16
 
   def userColor(idx: Int) = idx + UserColors
+
+  def empty: Palette = Palette(Array.fill(UserColors)(failureColor))
+
+  def apply(
+      base: PaletteEntry,
+      primary: PaletteEntry,
+      secondary: PaletteEntry,
+      tertiary: PaletteEntry,
+      error: PaletteEntry,
+      warning: PaletteEntry,
+      success: PaletteEntry,
+      userDefined: Seq[PaletteEntry] = Nil
+  ): Palette = {
+    val entries = Array.ofDim[PaletteEntry](UserColors + userDefined.size)
+    entries(Base) = base
+    entries(Primary) = primary
+    entries(Secondary) = secondary
+    entries(Tertiary) = tertiary
+    entries(Error) = error
+    entries(Warning) = warning
+    entries(Success) = success
+    userDefined.zipWithIndex.foreach { case (e, i) => entries(UserColors + i) = e }
+    Palette(entries)
+  }
 }
 
 object Color {
@@ -274,12 +318,18 @@ object Color {
   implicit val absoluteColorPickler = compositePickler[AbsoluteColor]
     .join(rgbColorPickler)
     .addConcreteType[HSL]
+    .addConcreteType[LAB]
+    .addConcreteType[XYZ]
 
   implicit val colorPickler = compositePickler[Color]
     .join(absoluteColorPickler)
     .addConcreteType[PaletteRef]
 
   implicit val palettePickler = generatePickler[Palette]
+}
+
+trait ColorProvider {
+  def getColor(idx: Int): PaletteEntry
 }
 
 trait Colors {
@@ -308,6 +358,7 @@ object Colors extends Colors {
   val success   = PaletteRef(Palette.Success)
 
   def fromPalette(idx: Int) = PaletteRef(idx)
+  def alpha(a: Double)      = RGBAlpha(0, a)
 
   val aliceblue            = RGB(0xF0F8FF)
   val antiquewhite         = RGB(0xFAEBD7)

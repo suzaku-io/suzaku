@@ -195,14 +195,14 @@ object Red extends StyleClass {
 object GreenBackground extends StyleClass {
   def style = List(
     nthChild(2) := (
-      backgroundColor := 0x00FF00
+      backgroundColor := Colors.secondary
     )
   )
 }
 
 object BlueBackground extends StyleClass {
   def style = List(
-    backgroundColor := 0x0000FF
+    backgroundColor := Colors.primary
   )
 }
 
@@ -239,6 +239,16 @@ object MyTheme {
     Button -> List(ButtonStyle),
     Table  -> List(BlueTable)
   )
+
+  val palette = Palette(
+    PaletteEntry(0xFEFEFE),
+    PaletteEntry(Colors.blue),
+    PaletteEntry(Colors.green),
+    PaletteEntry(Colors.red),
+    PaletteEntry(Colors.red),
+    PaletteEntry(Colors.red),
+    PaletteEntry(Colors.red)
+  )
 }
 
 object StatelessTestComp {
@@ -256,6 +266,7 @@ object StatelessTestComp {
 class WebDemoApp(transport: Transport) extends AppBase(transport) {
   override protected def main(): Unit = {
     val comp    = TestComp("Testing")
+    uiManager.setPalette(MyTheme.palette)
     val themeId = uiManager.activateTheme(MyTheme.theme)
     uiManager.render(comp)
   }

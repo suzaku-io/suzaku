@@ -21,16 +21,16 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
     root.el.appendChild(domElement)
   }
 
-  override def addStyles(styles: List[(Int, String, List[StyleBaseProperty])]): Unit = {
-    // create CSS block for all styles
+  override def addStyles(styles: Seq[RegisteredStyle]): Unit = {
+    // create CSS block for given styles
     val styleDef = styles
       .map {
-        case (styleId, styleName, styleProps) =>
+        case RegisteredStyle(styleId, styleName, styleProps, _, _, _) =>
           val className = DOMWidget.getClassName(styleId)
           val (regularStyles, pseudoStyles) = styleProps.foldLeft((List.empty[String], Map.empty[String, List[String]])) {
             case ((regular, pseudo), pc: PseudoClass) =>
               val ps = pc.props.map { prop =>
-                val (name, value) = DOMWidget.extractStyle(prop)
+                val (name, value) = DOMWidget.extractStyle(prop)(this)
                 if (name.nonEmpty) s"$name:$value;" else ""
               }
               val name = pc match {
@@ -41,7 +41,7 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
               }
               (regular, pseudo.updated(name, ps ::: pseudo.getOrElse(name, Nil)))
             case ((regular, pseudo), prop) =>
-              val (name, value) = DOMWidget.extractStyle(prop)
+              val (name, value) = DOMWidget.extractStyle(prop)(this)
               if (name.nonEmpty) (s"$name:$value;" :: regular, pseudo) else (regular, pseudo)
           }
 
@@ -58,7 +58,8 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
       }
       .mkString("\n", "\n", "\n")
 
-    var style: dom.html.Style = dom.document.querySelector("style#suzaku-style").asInstanceOf[dom.html.Style]
+    // update a single <style> node with the CSS definitions
+    var style = dom.document.querySelector("style#suzaku-style").asInstanceOf[dom.html.Style]
     if (style == null) {
       style = dom.document.createElement("style").asInstanceOf[dom.html.Style]
       style.`type` = "text/css"
@@ -66,5 +67,14 @@ class DOMWidgetManager(logger: Logger, platform: Platform) extends WidgetManager
       dom.document.head.appendChild(style)
     }
     style.appendChild(dom.document.createTextNode(styleDef))
+  }
+
+  override def resetStyles(): Unit = {
+    dom.document.querySelector("style#suzaku-style").asInstanceOf[dom.html.Style] match {
+      case null => // nothing to reset
+      case style =>
+        // remove all definitions
+        style.innerHTML = ""
+    }
   }
 }

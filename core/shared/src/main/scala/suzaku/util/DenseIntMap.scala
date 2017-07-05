@@ -32,6 +32,8 @@ sealed abstract class DenseIntMap[A <: AnyRef] {
   def isEmpty: Boolean = size == 0
 
   def nonEmpty: Boolean = !isEmpty
+
+  def values: Seq[A]
 }
 
 object DenseIntMap {
@@ -65,6 +67,8 @@ object DenseIntMap {
     override def ++(other: DenseIntMap[AnyRef]): DenseIntMap[AnyRef] = other.duplicate
 
     override def duplicate: DenseIntMap[AnyRef] = this
+
+    override def values: Seq[AnyRef] = Nil
 
     override def toString = "DenseIntMap()"
   }
@@ -112,6 +116,8 @@ object DenseIntMap {
     override def ++(other: DenseIntMap[A]): DenseIntMap[A] = join(other)
 
     override def duplicate: DenseIntMap[A] = this
+
+    override def values: Seq[A] = value1 :: Nil
 
     override def toString = s"DenseIntMap($key1 -> $value1)"
   }
@@ -173,6 +179,8 @@ object DenseIntMap {
     override def ++(other: DenseIntMap[A]): DenseIntMap[A] = join(other)
 
     override def duplicate: DenseIntMap[A] = this
+
+    override def values: Seq[A] = value1 :: value2 :: Nil
 
     override def toString = s"DenseIntMap($key1 -> $value1,$key2 -> $value2)"
   }
@@ -243,70 +251,72 @@ object DenseIntMap {
 
     override def duplicate: DenseIntMap[A] = this
 
+    override def values: Seq[A] = value1 :: value2 :: value3 :: Nil
+
     override def toString = s"DenseIntMap($key1 -> $value1,$key2 -> $value2,$key3 -> $value3)"
   }
 
-  class Map4Plus[A <: AnyRef](var offset: Int, var maxIdx: Int, var values: Array[A], var _size: Int)
+  class Map4Plus[A <: AnyRef](var offset: Int, var maxIdx: Int, var valueArray: Array[A], var _size: Int)
       extends DenseIntMap[A] {
     private def ensureCapacity(key: Int): Unit = {
       if (key < offset) {
         val newOffset = key
-        val newValues = Array.ofDim[AnyRef](values.length + offset - newOffset)
-        System.arraycopy(values, 0, newValues, offset - newOffset, values.length)
+        val newValues = Array.ofDim[AnyRef](valueArray.length + offset - newOffset)
+        System.arraycopy(valueArray, 0, newValues, offset - newOffset, valueArray.length)
         offset = newOffset
-        values = newValues.asInstanceOf[Array[A]]
+        valueArray = newValues.asInstanceOf[Array[A]]
       } else if (key > maxIdx) {
         val newSize   = (key - offset) * 3 / 2
         val newValues = Array.ofDim[AnyRef](newSize)
-        System.arraycopy(values, 0, newValues, 0, values.length)
+        System.arraycopy(valueArray, 0, newValues, 0, valueArray.length)
         maxIdx = newSize + offset - 1
-        values = newValues.asInstanceOf[Array[A]]
+        valueArray = newValues.asInstanceOf[Array[A]]
       }
     }
 
     override def apply(key: Int): A = {
       if (key < offset || key > maxIdx) throw new NoSuchElementException
-      val a = values(key - offset)
+      val a = valueArray(key - offset)
       if (a == null) throw new NoSuchElementException
       a
     }
 
     override def get(key: Int): Option[A] =
-      if (key < offset || key > maxIdx) None else Option(values(key - offset))
+      if (key < offset || key > maxIdx) None else Option(valueArray(key - offset))
 
     override def getOrElse(key: Int, other: => A) =
-      if (key < offset || key > maxIdx || values(key - offset) == null) other else values(key - offset)
+      if (key < offset || key > maxIdx || valueArray(key - offset) == null) other else valueArray(key - offset)
 
     override def updated(key: Int, value: A): DenseIntMap[A] = {
       if (key < 0) throw new IndexOutOfBoundsException("Key cannot be negative")
       ensureCapacity(key)
-      if (values(key - offset) == null) _size += 1
-      values(key - offset) = value.asInstanceOf[A]
+      if (valueArray(key - offset) == null) _size += 1
+      valueArray(key - offset) = value.asInstanceOf[A]
       this
     }
 
     override def updated(key: Int, value: A, join: (A, A) => A): DenseIntMap[A] = {
       if (key < 0) throw new IndexOutOfBoundsException("Key cannot be negative")
       ensureCapacity(key)
-      if (values(key - offset) == null) {
+      if (valueArray(key - offset) == null) {
         _size += 1
-        values(key - offset) = value
+        valueArray(key - offset) = value
       } else {
-        values(key - offset) = join(values(key - offset), value)
+        valueArray(key - offset) = join(valueArray(key - offset), value)
       }
       this
     }
 
     override def removed(key: Int): DenseIntMap[A] = {
       if (key >= offset && key <= maxIdx) {
-        if (values(key - offset) != null) _size -= 1
-        values(key - offset) = null.asInstanceOf[A]
+        if (valueArray(key - offset) != null) _size -= 1
+        valueArray(key - offset) = null.asInstanceOf[A]
       }
       this
     }
 
     override def contains(key: Int): Boolean =
-      if (key < offset || key > maxIdx) false else values(key - offset) == null
+      if (key < offset || key > maxIdx) false else valueArray(key - offset) == null
 
     override def size: Int = _size
 
@@ -318,21 +328,21 @@ object DenseIntMap {
       case m: Map4Plus[A] =>
         val newOffset = offset min m.offset
         val newMaxIdx = maxIdx max m.maxIdx
-        values = if (newOffset < offset || newMaxIdx > maxIdx) {
+        valueArray = if (newOffset < offset || newMaxIdx > maxIdx) {
           // reallocate space
           val newArray = Array.ofDim[AnyRef](newMaxIdx - newOffset + 1).asInstanceOf[Array[A]]
-          System.arraycopy(values, 0, newArray, offset - newOffset, values.length)
+          System.arraycopy(valueArray, 0, newArray, offset - newOffset, valueArray.length)
           newArray
-        } else values
+        } else valueArray
         // copy values from the other map
-        for (i <- m.values.indices) {
-          val a = m.values(i)
+        for (i <- m.valueArray.indices) {
+          val a = m.valueArray(i)
           if (a != null) {
-            if (values(i + m.offset - newOffset) == null) {
+            if (valueArray(i + m.offset - newOffset) == null) {
               _size += 1
-              values(i + m.offset - newOffset) = a
+              valueArray(i + m.offset - newOffset) = a
             } else {
-              values(i + m.offset - newOffset) = f(values(i + m.offset - newOffset), a)
+              valueArray(i + m.offset - newOffset) = f(valueArray(i + m.offset - newOffset), a)
             }
           }
         }
@@ -344,10 +354,12 @@ object DenseIntMap {
     override def ++(other: DenseIntMap[A]): DenseIntMap[A] = duplicate.join(other)
 
     override def duplicate: DenseIntMap[A] =
-      new Map4Plus[A](offset, maxIdx, util.Arrays.copyOf[A](values, values.length), _size)
+      new Map4Plus[A](offset, maxIdx, util.Arrays.copyOf[A](valueArray, valueArray.length), _size)
+
+    override def values: Seq[A] = valueArray.filter(_ != null)
 
     override def toString =
-      s"DenseIntMap(${values.indices.collect { case i if values(i) != null => s"$i -> ${values(i)}" }.mkString(",")})"
+      s"DenseIntMap(${valueArray.indices.collect { case i if valueArray(i) != null => s"$i -> ${valueArray(i)}" }.mkString(",")})"
   }
 
   object Map4Plus {

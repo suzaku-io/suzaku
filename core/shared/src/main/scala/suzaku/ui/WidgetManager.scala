@@ -5,17 +5,29 @@ import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
 import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
-import suzaku.ui.style.{ExtendClasses, InheritClasses, Palette, PaletteEntry, RemapClasses, StyleBaseProperty, WidgetStyles}
+import suzaku.ui.style.{
+  ColorProvider,
+  ExtendClasses,
+  InheritClasses,
+  Palette,
+  PaletteEntry,
+  RemapClasses,
+  StyleBaseProperty,
+  WidgetStyles
+}
 import suzaku.util.DenseIntMap
 
 import scala.collection.mutable
 
 abstract class WidgetManager(logger: Logger, platform: Platform)
     extends MessageChannelHandler[UIProtocol.type]
-    with WidgetParent {
+    with WidgetParent
+    with ColorProvider {
   import WidgetManager._
 
-  case class RegisteredStyle(props: List[StyleBaseProperty],
+  case class RegisteredStyle(id: Int,
+                             name: String,
+                             props: List[StyleBaseProperty],
                              inherited: List[Int],
                              remaps: DenseIntMap[List[Int]],
                              widgetClasses: DenseIntMap[List[Int]])
@@ -77,9 +89,6 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
   def getStyle(styleId: Int): Option[RegisteredStyle] =
     registeredStyles.get(styleId)
-
-  def getColor(idx: Int): PaletteEntry =
-    activePalette(idx)
 
   private def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
     // only set parent if the parent has a parent
@@ -200,9 +209,10 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
             resolved :+ styleId
           } else styleId :: Nil
           val allProps = extProps ::: baseProps
-          registeredStyles = registeredStyles.updated(styleId, RegisteredStyle(allProps, inherited, remaps, widgetClasses))
+          val regStyle = RegisteredStyle(styleId, styleName, allProps, inherited, remaps, widgetClasses)
+          registeredStyles = registeredStyles.updated(styleId, regStyle)
 
-          (styleId, styleName, allProps)
+          regStyle
       }
       (dirtyStyles, rootNode) match {
         case (true, Some(node)) =>
@@ -229,7 +239,8 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
 
     case SetPalette(palette) =>
       activePalette = palette
-      // TODO rebuild styles
+      resetStyles()
+      addStyles(registeredStyles.values)
   }
 
   override def materializeChildChannel(channelId: Int,
@@ -261,28 +272,33 @@ abstract class WidgetManager(logger: Logger, platform: Platform)
     nodes -= id
   }
 
-  override def hasParent: Boolean = true
+  override def hasParent: Boolean =
+    true
 
-  override def resolveStyleMapping(wClsId: Int, ids: List[Int]): List[Int] = {
+  override def resolveStyleMapping(wClsId: Int, ids: List[Int]): List[Int] =
     activeTheme.getOrElse(wClsId, Nil) ::: ids
-  }
 
-  override def resolveStyleInheritance(ids: List[Int]): List[Int] = {
-    val res = ids.flatMap(id => registeredStyles(id).inherited)
-    res
-  }
+  override def resolveStyleInheritance(ids: List[Int]): List[Int] =
+    ids.flatMap(id => registeredStyles(id).inherited)
 
   override def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit = {}
 
-  override def getStyleMapping: DenseIntMap[List[Int]] = DenseIntMap.empty
+  override def getStyleMapping: DenseIntMap[List[Int]] =
+    DenseIntMap.empty
 
-  override def getWidgetStyleMapping: DenseIntMap[List[Int]] = activeTheme
+  override def getWidgetStyleMapping: DenseIntMap[List[Int]] =
+    activeTheme
+
+  override def getColor(idx: Int): PaletteEntry =
+    activePalette(idx)
 
   protected def emptyWidget(widgetId: Int): Widget
 
   protected def mountRoot(node: WidgetArtifact): Unit
 
-  protected def addStyles(styles: List[(Int, String, List[StyleBaseProperty])]): Unit
+  protected def addStyles(styles: Seq[RegisteredStyle]): Unit
+
+  protected def resetStyles(): Unit
 }
 
 object WidgetManager {
