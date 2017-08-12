@@ -1,11 +1,11 @@
 package suzaku.platform.web.ui
 
 import org.scalajs.dom
-import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
+import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact, DOMUIManager}
 import suzaku.ui.layout._
-import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
+import suzaku.ui.{Widget, WidgetBuilder, UIManager}
 
-class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContext, widgetManager: WidgetManager)
+class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContext, widgetManager: DOMUIManager)
     extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) with DOMLayout {
   import LinearLayoutProtocol._
   import Direction._
@@ -126,7 +126,7 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
   }
 }
 
-class DOMLinearLayoutBuilder(widgetManager: WidgetManager) extends WidgetBuilder(LinearLayoutProtocol) {
+class DOMLinearLayoutBuilder(widgetManager: DOMUIManager) extends WidgetBuilder(LinearLayoutProtocol) {
   import LinearLayoutProtocol._
 
   override protected def create(widgetId: Int, context: ChannelContext) = {

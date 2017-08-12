@@ -6,7 +6,7 @@ import arteria.core._
 import boopickle.DefaultBasic._
 import suzaku.platform.{Logger, Transport}
 import suzaku.ui.UIProtocol.UIChannel
-import suzaku.ui.{Blueprint, UIManager, UIProtocol, WidgetBlueprint}
+import suzaku.ui.{Blueprint, UIManagerProxy, UIProtocol, WidgetBlueprint}
 import suzaku.util.LoggerProtocol
 
 abstract class AppBase(transport: Transport,
@@ -23,7 +23,7 @@ abstract class AppBase(transport: Transport,
     override def warn(message: => String): Unit  = if (logLevel <= LogLevelWarn) println(message)
     override def error(message: => String): Unit = if (logLevel <= LogLevelError) println(message)
   }
-  protected val uiManager = new UIManager(logger, channelEstablished, flushMessages _)
+  protected val uiManager = new UIManagerProxy(logger, channelEstablished, flushMessages _)
   protected val router    = new MessageRouter[RouterMessage](createHandler(uiManager), false)
 
   // constructor
@@ -50,7 +50,9 @@ abstract class AppBase(transport: Transport,
   }
 
   protected def flushMessages(): Unit = {
-    transport.send(router.flush())
+    if (router.hasPending) {
+      transport.send(router.flush())
+    }
   }
 
   protected def channelEstablished(channel: UIChannel): Unit = {

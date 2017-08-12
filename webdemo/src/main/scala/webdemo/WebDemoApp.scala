@@ -5,6 +5,7 @@ import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
 import suzaku.ui.layout.LayoutId
+import suzaku.ui.resource.{Base64ImageResource, SVGImageResource}
 import suzaku.ui.style.StyleClass
 import suzaku.widget._
 
@@ -35,7 +36,7 @@ object TestComp {
           ),
           TextField(state.text, value => modState(s => s.copy(text = value))),
           Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
-          Button(s"Remove button ${state.count}", () => dec())
+          Button(s"Remove button ${state.count}", EmbeddedTest.icon2, () => dec())
             .withKey(1)
             .withLayout(alignSelf := start)
             .withStyle(
@@ -151,8 +152,21 @@ object Layout2 extends LayoutId
 object Layout3 extends LayoutId
 object Layout4 extends LayoutId
 
+object EmbeddedTest {
+  lazy val icon = SVGImageResource(
+    """<path d="M224 387.814V512L32 320l192-192v126.912C447.375 260.152 437.794 103.016 380.93 0 521.287 151.707 491.48 394.785 224 387.814z"/>""",
+    (0, 0, 512, 512)
+  )
+  lazy val icon2 = Base64ImageResource(
+    "R0lGODlhEAAQAMQAAORHHOVSKudfOulrSOp3WOyDZu6QdvCchPGolfO0o/XBs/fNwfjZ0frl3/zy7////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAABAALAAAAAAQABAAAAVVICSOZGlCQAosJ6mu7fiyZeKqNKToQGDsM8hBADgUXoGAiqhSvp5QAnQKGIgUhwFUYLCVDFCrKUE1lBavAViFIDlTImbKC5Gm2hB0SlBCBMQiB0UjIQA7",
+    16,
+    16,
+    Some("image/gif")
+  )
+}
+
 object BaseStyle extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     height := auto,
     backgroundColor := 0x0060FF,
     hover := (
@@ -162,7 +176,7 @@ object BaseStyle extends StyleClass {
 }
 
 object ButtonStyle extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     extendClass := BaseStyle,
     backgroundColor := 0x006000,
     padding := (10.px, 20.px),
@@ -175,25 +189,25 @@ object ButtonStyle extends StyleClass {
 }
 
 object GreenButton extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     color := 0x00FF00
   )
 }
 
 object Large extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     height := 100.px
   )
 }
 
 object Red extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     color := 0xFF0000
   )
 }
 
 object GreenBackground extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     nthChild(2) := (
       backgroundColor := Colors.secondary
     )
@@ -201,20 +215,20 @@ object GreenBackground extends StyleClass {
 }
 
 object BlueBackground extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     backgroundColor := Colors.primary
   )
 }
 
 object RedBackground extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     backgroundColor := 0xFF0000,
     widgetStyle := Table.Row -> List(GreenBackground)
   )
 }
 
 object RedButton extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     inheritClasses := (Large, Red),
     fontFamily := ("Times New Roman", "Times", "serif"),
     fontSize := xxlarge,
@@ -223,13 +237,13 @@ object RedButton extends StyleClass {
 }
 
 object RedTable extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     widgetStyle := Table.Body -> List(RedBackground)
   )
 }
 
 object BlueTable extends StyleClass {
-  def style = List(
+  def styleDefs = List(
     widgetStyle := Table.Row -> List(BlueBackground)
   )
 }
@@ -251,21 +265,9 @@ object MyTheme {
   )
 }
 
-object StatelessTestComp {
-  case class CBP private (label: String) extends ComponentBlueprint {
-    override def create(proxy: StateProxy) = new ComponentImpl(this)
-  }
-
-  class ComponentImpl(initialBlueprint: CBP) extends StatelessComponent[CBP](initialBlueprint) {
-    def render = ???
-  }
-
-  def apply(label: String = ""): CBP = CBP(label)
-}
-
 class WebDemoApp(transport: Transport) extends AppBase(transport) {
   override protected def main(): Unit = {
-    val comp    = TestComp("Testing")
+    val comp = TestComp("Testing")
     uiManager.setPalette(MyTheme.palette)
     val themeId = uiManager.activateTheme(MyTheme.theme)
     uiManager.render(comp)

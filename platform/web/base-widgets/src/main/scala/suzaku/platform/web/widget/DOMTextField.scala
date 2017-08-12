@@ -1,11 +1,11 @@
 package suzaku.platform.web.widget
 
-import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.{WidgetBuilder, WidgetManager}
+import suzaku.platform.web.{DOMWidget, DOMUIManager, DOMWidgetArtifact}
+import suzaku.ui.{WidgetBuilder, UIManager}
 import suzaku.widget.TextFieldProtocol
 import org.scalajs.dom
 
-class DOMTextField(widgetId: Int, context: TextFieldProtocol.ChannelContext, widgetManager: WidgetManager)
+class DOMTextField(widgetId: Int, context: TextFieldProtocol.ChannelContext, widgetManager: DOMUIManager)
     extends DOMWidget[TextFieldProtocol.type, dom.html.Input](widgetId, widgetManager) {
   import TextFieldProtocol._
 
@@ -37,7 +37,7 @@ class DOMTextField(widgetId: Int, context: TextFieldProtocol.ChannelContext, wid
 
 }
 
-class DOMTextFieldBuilder(widgetManager: WidgetManager) extends WidgetBuilder(TextFieldProtocol) {
+class DOMTextFieldBuilder(widgetManager: DOMUIManager) extends WidgetBuilder(TextFieldProtocol) {
   import TextFieldProtocol._
 
   override protected def create(widgetId: Int, context: ChannelContext) =

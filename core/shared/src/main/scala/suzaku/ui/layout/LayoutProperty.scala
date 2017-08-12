@@ -5,7 +5,7 @@ import boopickle.{PickleState, Pickler, UnpickleState}
 trait LayoutProperty
 
 abstract class LayoutId {
-  val id = LayoutIdRegistry.register(getClass)
+  val id = LayoutIdRegistry.register(this, getClass)
 }
 
 case class AlignSelf(align: Alignment)   extends LayoutProperty

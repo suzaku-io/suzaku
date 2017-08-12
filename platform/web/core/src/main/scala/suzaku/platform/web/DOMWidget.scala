@@ -3,12 +3,13 @@ package suzaku.platform.web
 import arteria.core.Protocol
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
+import suzaku.ui.resource._
 import suzaku.ui.style.StyleBaseProperty
-import suzaku.ui.{Widget, WidgetArtifact, WidgetManager, WidgetWithProtocol}
+import suzaku.ui.{Widget, WidgetArtifact, WidgetWithProtocol}
 
 case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
 
-abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: WidgetManager)
+abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: DOMUIManager)
     extends WidgetWithProtocol[P](widgetId, widgetManager) {
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
@@ -63,16 +64,55 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, wi
 
   // helpers
 
-  protected def tag[T <: dom.html.Element](name: String) = dom.document.createElement(name).asInstanceOf[T]
+  protected def tag[T <: dom.html.Element](name: String): T = dom.document.createElement(name).asInstanceOf[T]
 
   protected def textNode(text: String): dom.Text = dom.document.createTextNode(text)
 
+  protected def imageNode(res: ImageResource, width: Option[String], height: Option[String], fill: Option[String]): dom.Element = {
+    res match {
+      case embedded: EmbeddedResource =>
+        widgetManager.getResource(embedded.resourceId) match {
+          case Some(SVGImageResource(_, (x0,y0,x1,y1))) =>
+            val svg = dom.document.createElementNS("http://www.w3.org/2000/svg", "svg").asInstanceOf[dom.svg.SVG]
+            svg.setAttribute("viewBox", s"$x0 $y0 $x1 $y1")
+            val use = dom.document.createElementNS("http://www.w3.org/2000/svg", "use").asInstanceOf[dom.svg.Use]
+            use.setAttributeNS("http://www.w3.org/1999/xlink","href",s"#suzaku-svg-${embedded.resourceId}")
+            svg.appendChild(use)
+            width.foreach(svg.style.width = _)
+            height.foreach(svg.style.height = _)
+            fill.foreach(svg.style.fill = _)
+            svg
+          case Some(Base64ImageResource(_, imgWidth, imgHeight, _)) =>
+            val img = dom.document.createElement("span").asInstanceOf[dom.html.Span]
+            img.classList.add(s"suzaku-image-${embedded.resourceId}")
+            img.style.display = "inline-block"
+            img.style.width = width.getOrElse(s"${imgWidth}px")
+            img.style.height = height.getOrElse(s"${imgHeight}px")
+            img
+          case Some(_) =>
+            val img = dom.document.createElement("img").asInstanceOf[dom.html.Image]
+            img.alt = "unknown type"
+            img
+          case None =>
+            val img = dom.document.createElement("img").asInstanceOf[dom.html.Image]
+            img.alt = "not found"
+            img
+        }
+      case URIImageResource(uri, _) =>
+        val img = dom.document.createElement("img").asInstanceOf[dom.html.Image]
+        width.foreach(img.style.width = _)
+        height.foreach(img.style.height = _)
+        img.src = uri
+        img
+    }
+  }
+
   protected def updateStyleProperty[A](el: dom.html.Element, property: String, f: (A, String => Unit, () => Unit) => Unit)(
-      value: A) = {
+      value: A): Unit = {
     f(value, el.style.setProperty(property, _), () => el.style.removeProperty(property))
   }
 
-  protected def updateStyleProperty(property: String, remove: Boolean, value: String) =
+  protected def updateStyleProperty(property: String, remove: Boolean, value: String): Unit =
     if (remove)
       artifact.el.style.removeProperty(property)
     else
@@ -205,7 +245,7 @@ object DOMWidget {
   }
 }
 
-abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: WidgetManager)
+abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: DOMUIManager)
     extends DOMWidget[P, E](widgetId, widgetManager) {
   override def setChildren(children: Seq[Widget]) = {
     modifyDOM { el =>
@@ -226,7 +266,7 @@ abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widge
   protected def wrapChild(el: dom.html.Element): dom.html.Element = el
 }
 
-class DOMEmptyWidget(widgetId: Int, widgetManager: WidgetManager)
+class DOMEmptyWidget(widgetId: Int, widgetManager: DOMUIManager)
     extends DOMWidget[Protocol, dom.html.Element](widgetId, widgetManager) {
 
   // a Comment is not really an HTMLElement, but we will mark it as such to make it compile :)

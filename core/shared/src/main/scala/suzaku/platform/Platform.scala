@@ -1,11 +1,11 @@
 package suzaku.platform
 
-import suzaku.ui.WidgetManager
+import suzaku.ui.UIManager
 
 trait Platform {
   def logger: Logger
 
   def scheduler: Scheduler
 
-  def widgetRenderer(logger: Logger): WidgetManager
+  def widgetManager(logger: Logger): UIManager
 }

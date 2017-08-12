@@ -6,7 +6,7 @@ import boopickle.Default._
 import org.scalamock.scalatest.MockFactory
 import suzaku.ui.AnotherView.AnotherBlueprint
 import suzaku.ui.TestView.{TestBlueprint, TestProxy}
-import suzaku.ui.UIManager._
+import suzaku.ui.UIManagerProxy._
 import suzaku.ui.UIProtocol._
 
 object TestProtocol extends Protocol {
@@ -71,7 +71,7 @@ object AnotherView {
   }
 }
 
-class UIManagerSpec extends UnitSpec with MockFactory {
+class UIManagerProxySpec extends UnitSpec with MockFactory {
   class MockUIHandler extends MessageChannelHandler[UIProtocol.type]
 
   class MockUIChannel extends MessageChannel(UIProtocol)(0, 0, null, new MockUIHandler, null) {}
@@ -80,9 +80,9 @@ class UIManagerSpec extends UnitSpec with MockFactory {
 
   class MockWidgetChannel extends MessageChannel(TestProtocol)(0, 0, null, new MockWidgetHandler, ()) {}
 
-  class TestUIManager(val uic: MessageChannel[UIProtocol.type]) extends UIManager(TestLogger, _ => (), () => ()) {
+  class TestUIManagerProxy(val uic: MessageChannel[UIProtocol.type]) extends UIManagerProxy(TestLogger, _ => (), () => ()) {
     uiChannel = uic
-    UIManager.internalUiChannel = uic
+    UIManagerProxy.internalUiChannel = uic
   }
 
   trait MockFixture {
@@ -103,7 +103,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
 
   "View manager child update" should {
     "update nothing" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
       (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
 
       val current = List(
@@ -121,7 +121,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "update one child with same type" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
       )
@@ -137,7 +137,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "replace with empty" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
       )
@@ -152,7 +152,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "add one child" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
       val current = List(
         )
       val next = List(
@@ -166,7 +166,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "remove only child" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)
@@ -181,7 +181,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "remove first child" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
@@ -202,7 +202,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "remove last child" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
@@ -221,7 +221,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "insert child to front" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel),
@@ -240,7 +240,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "replace with another widget" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
       (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
 
       val current = List(
@@ -257,7 +257,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "insert child to front using keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -279,7 +279,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "insert child to middle using keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -301,7 +301,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "remove from front using keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -323,7 +323,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "remove from middle using keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -345,7 +345,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "remove from end using keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -367,7 +367,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "reorder using keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -393,7 +393,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "manage invalid duplicate keys" in new MockFixture {
-      val vm = new TestUIManager(uiChannel)
+      val vm = new TestUIManagerProxy(uiChannel)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0).withKey(0), 1, None, uiChannel),
@@ -419,7 +419,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "reorder reversed" in new MockFixture {
-      val vm      = new TestUIManager(uiChannel)
+      val vm      = new TestUIManagerProxy(uiChannel)
       val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
       val next    = 99.to(0, -1).map(i => TestBlueprint(i).withKey(i)).toList
       vm.widgetId = current.map(_.widgetId).max + 1
@@ -431,7 +431,7 @@ class UIManagerSpec extends UnitSpec with MockFactory {
     }
 
     "reorder reversed with different widget" in new MockFixture {
-      val vm      = new TestUIManager(uiChannel)
+      val vm      = new TestUIManagerProxy(uiChannel)
       val current = (0 until 100).map(i => new ShadowWidget(TestBlueprint(i).withKey(i), i + 1, None, uiChannel))
       val next    = 99.to(0, -1).map(i => AnotherBlueprint(s"$i").withKey(i)).toList
       vm.widgetId = current.map(_.widgetId).max + 1

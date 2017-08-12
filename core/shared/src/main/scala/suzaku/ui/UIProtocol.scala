@@ -2,10 +2,9 @@ package suzaku.ui
 
 import arteria.core._
 import boopickle.Default._
-import suzaku.ui.layout.LayoutId
-import suzaku.ui.layout.LayoutIdRegistry.LayoutIdRegistration
-import suzaku.ui.style.{Color, Palette, StyleProperty}
-import suzaku.ui.style.StyleClassRegistry.StyleClassRegistration
+import suzaku.ui.layout.LayoutIdRegistration
+import suzaku.ui.resource.{EmbeddedImageResource, EmbeddedResource, ResourceRegistration}
+import suzaku.ui.style.{Color, Palette, StyleClassRegistration, StyleProperty}
 
 object UIProtocol extends Protocol {
 
@@ -54,6 +53,8 @@ object UIProtocol extends Protocol {
 
   case class AddLayoutIds(ids: List[LayoutIdRegistration]) extends UIMessage
 
+  case class AddResources(resources: List[ResourceRegistration]) extends UIMessage
+
   case class ActivateTheme(themeId: Int, theme: Map[Int, List[Int]]) extends UIMessage
 
   case class DeactivateTheme(themeId: Int) extends UIMessage
@@ -64,7 +65,9 @@ object UIProtocol extends Protocol {
 
   implicit private val stylePickler = StyleProperty.stylePickler
   implicit private val palettePickler = Color.palettePickler
+  implicit private val embeddedResourcePickler = EmbeddedResource.pickler
 
+  
   private val uiPickler = compositePickler[UIMessage]
     .addConcreteType[NextFrame]
     .addConcreteType[RequestFrame.type]
@@ -74,6 +77,7 @@ object UIProtocol extends Protocol {
     .addConcreteType[UpdateChildren]
     .addConcreteType[AddStyles]
     .addConcreteType[AddLayoutIds]
+    .addConcreteType[AddResources]
     .addConcreteType[ActivateTheme]
     .addConcreteType[DeactivateTheme]
     .addConcreteType[RegisterWidgetClass]

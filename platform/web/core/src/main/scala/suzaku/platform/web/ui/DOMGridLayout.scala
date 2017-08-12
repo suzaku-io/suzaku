@@ -1,11 +1,11 @@
 package suzaku.platform.web.ui
 
 import org.scalajs.dom
-import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
+import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact, DOMUIManager}
 import suzaku.ui.layout._
-import suzaku.ui.{Widget, WidgetBuilder, WidgetManager}
+import suzaku.ui.{Widget, WidgetBuilder, UIManager}
 
-class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, widgetManager: WidgetManager)
+class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, widgetManager: DOMUIManager)
     extends DOMWidget[GridLayoutProtocol.type, dom.html.Div](widgetId, widgetManager)
     with DOMLayout {
   import GridLayoutProtocol._
@@ -118,7 +118,7 @@ class DOMGridLayout(widgetId: Int, context: GridLayoutProtocol.ChannelContext, w
   }
 }
 
-class DOMGridLayoutBuilder(widgetManager: WidgetManager) extends WidgetBuilder(GridLayoutProtocol) {
+class DOMGridLayoutBuilder(widgetManager: DOMUIManager) extends WidgetBuilder(GridLayoutProtocol) {
   import GridLayoutProtocol._
 
   override protected def create(widgetId: Int, context: ChannelContext) = {

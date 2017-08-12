@@ -1,11 +1,11 @@
 package suzaku.platform.web.widget
 
-import suzaku.platform.web.{DOMWidget, DOMWidgetArtifact}
-import suzaku.ui.{WidgetBuilder, WidgetManager}
+import suzaku.platform.web.{DOMWidget, DOMUIManager, DOMWidgetArtifact}
+import suzaku.ui.{WidgetBuilder, UIManager}
 import suzaku.widget.CheckboxProtocol
 import org.scalajs.dom
 
-class DOMCheckbox(widgetId: Int, context: CheckboxProtocol.ChannelContext, widgetManager: WidgetManager)
+class DOMCheckbox(widgetId: Int, context: CheckboxProtocol.ChannelContext, widgetManager: DOMUIManager)
     extends DOMWidget[CheckboxProtocol.type, dom.html.Input](widgetId, widgetManager) {
   import CheckboxProtocol._
 
@@ -29,7 +29,7 @@ class DOMCheckbox(widgetId: Int, context: CheckboxProtocol.ChannelContext, widge
   }
 }
 
-class DOMCheckboxBuilder(widgetManager: WidgetManager) extends WidgetBuilder(CheckboxProtocol) {
+class DOMCheckboxBuilder(widgetManager: DOMUIManager) extends WidgetBuilder(CheckboxProtocol) {
   import CheckboxProtocol._
 
   override protected def create(widgetId: Int, context: ChannelContext) =

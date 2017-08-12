@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Suzaku Web Demo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style>
+        html {
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        table {
+            border-collapse: collapse;
+        }
+        #root {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/javascript" src="../target/scala-2.12/suzaku-webdemo-opt.js"></script>
+<script type="text/javascript">
+TodosUIEntry.entry("worker-opt.js");
+</script>
+
+</body>
+</html>

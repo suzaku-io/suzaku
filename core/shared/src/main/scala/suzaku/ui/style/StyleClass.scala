@@ -4,14 +4,14 @@ import boopickle.{PickleState, Pickler, UnpickleState}
 
 // Style classes
 abstract class StyleClass extends StylePropOrClass {
-  def style: List[StyleDef]
+  def styleDefs: List[StyleDef]
 
   // register at initialization time
-  val id = StyleClassRegistry.register(getClass, style)
+  val id = StyleClassRegistry.register(this, getClass)
 }
 
 case class PureStyleClass(override val id: Int) extends StyleClass {
-  def style: List[StyleDef] = Nil
+  def styleDefs: List[StyleDef] = Nil
 }
 
 class StyleClassPickler extends Pickler[StyleClass] {

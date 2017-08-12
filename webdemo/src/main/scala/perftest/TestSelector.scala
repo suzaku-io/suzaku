@@ -11,6 +11,7 @@ case class TestInstance(name: String, component: ComponentBlueprint)
 object TestSelector {
   final case class State private (isRunning: Boolean, currentTest: Int) {
     def selectTest(idx: Int): State = {
+      println(s"Selecting test $idx")
       State(isRunning = !(isRunning && idx == currentTest), currentTest = idx)
     }
   }
@@ -50,7 +51,7 @@ object TestSelector {
 object TestPanelStyle extends StyleClass {
   import suzaku.ui.style._
 
-  def style = List(
+  def styleDefs = List(
     padding := 20.px
   )
 }
@@ -58,7 +59,7 @@ object TestPanelStyle extends StyleClass {
 object ButtonStyle extends StyleClass {
   import suzaku.ui.style._
 
-  def style = List(
+  def styleDefs = List(
     padding := 5.px,
     margin := 10.px
   )
@@ -67,7 +68,7 @@ object ButtonStyle extends StyleClass {
 object TestListStyle extends StyleClass {
   import suzaku.ui.style._
 
-  def style = List(
+  def styleDefs = List(
     widgetStyle := (Button -> List(ButtonStyle))
   )
 }

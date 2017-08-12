@@ -100,7 +100,7 @@ object TableTest {
 
 object FixedWidthCell extends StyleClass {
   import suzaku.ui.style._
-  def style = List(
+  def styleDefs = List(
     width := 100.px
   )
 }

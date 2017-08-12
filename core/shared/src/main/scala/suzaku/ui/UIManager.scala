@@ -1,506 +1,309 @@
 package suzaku.ui
 
 import arteria.core._
-import suzaku.platform.Logger
+import suzaku.platform.{Logger, Platform}
 import suzaku.ui.UIProtocol._
-import suzaku.ui.layout.LayoutIdRegistry
-import suzaku.ui.style.{Palette, StyleClassRegistry, Theme}
+import suzaku.ui.layout.LayoutProperty
+import suzaku.ui.resource.{EmbeddedResource, ResourceRegistration}
+import suzaku.ui.style.{ColorProvider, ExtendClasses, InheritClasses, Palette, PaletteEntry, RemapClasses, StyleBaseProperty, StyleClassRegistration, WidgetStyles}
+import suzaku.util.DenseIntMap
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
-class UIManager(logger: Logger, channelEstablished: UIChannel => Unit, flushMessages: () => Unit)
-    extends MessageChannelHandler[UIProtocol.type] {
+abstract class UIManager(logger: Logger, platform: Platform)
+    extends MessageChannelHandler[UIProtocol.type]
+    with WidgetParent
+    with ColorProvider {
   import UIManager._
 
-  private var lastFrame        = 0L
-  protected var uiChannel      = null: MessageChannel[ChannelProtocol]
-  private var currentRoot      = Option.empty[ShadowNode]
-  private[suzaku] var widgetId = 1
-  private var dirtyRoots       = List.empty[ShadowComponent]
-  private var frameRequested   = false
-  private var themeId          = 0
-  private val stateModQueue    = mutable.ArrayBuffer.empty[(ShadowComponent, () => Unit)]
-  @volatile
-  private var isRendering = false
+  case class RegisteredStyle(id: Int,
+                             name: String,
+                             props: List[StyleBaseProperty],
+                             inherited: List[Int],
+                             remaps: DenseIntMap[List[Int]],
+                             widgetClasses: DenseIntMap[List[Int]])
 
-  // get notification when styles have updated
-  StyleClassRegistry.onRegistration(() => {
-    val styles = StyleClassRegistry.dequeueRegistrations
-    logger.debug(s"Adding ${styles.size} styles")
-    send(AddStyles(styles))
-  })
+  private var widgetClassMap        = DenseIntMap.empty[String]
+  private var registeredWidgets     = Map.empty[String, WidgetBuilder[_ <: Protocol]]
+  private var builders              = DenseIntMap.empty[WidgetBuilder[_ <: Protocol]]
+  private var uiChannel: UIChannel  = _
+  protected val nodes               = mutable.LongMap[WidgetNode](-1L -> WidgetNode(emptyWidget(-1), Nil, -1))
+  protected var rootNode            = Option.empty[WidgetNode]
+  protected var registeredStyles    = DenseIntMap.empty[RegisteredStyle]
+  protected var registeredResources = DenseIntMap.empty[ResourceRegistration]
+  protected var themes              = Vector.empty[(Int, Map[Int, List[Int]])]
+  protected var activeTheme         = DenseIntMap.empty[List[Int]]
+  protected var activePalette       = Palette.empty
+  protected var frameRequested      = false
+  protected var frameComplete       = true
 
-  def render(root: Blueprint): Unit = {
-    isRendering = true
-    val newRoot = updateBranch(currentRoot, root, None)
-    // check if layout identifiers updated
-    if (LayoutIdRegistry.hasRegistrations) {
-      val layoutIds = LayoutIdRegistry.dequeueRegistrations
-      logger.debug(s"Adding ${layoutIds.size} layout identifiers")
-      send(AddLayoutIds(layoutIds))
+  override def establishing(channel: MessageChannel[ChannelProtocol]) =
+    uiChannel = channel
+
+  def registerWidget(id: String, builder: WidgetBuilder[_ <: Protocol]): Unit =
+    registeredWidgets += id -> builder
+
+  def registerWidget(clazz: Class[_], builder: WidgetBuilder[_ <: Protocol]): Unit =
+    registeredWidgets += clazz.getName -> builder
+
+  def buildWidget(widgetClass: Int,
+                  widgetId: Int,
+                  channelId: Int,
+                  globalId: Int,
+                  channelReader: ChannelReader): Option[Widget] = {
+    val builder = builders.get(widgetClass) orElse {
+      // update builder map from registered widgets
+      val b = widgetClassMap.get(widgetClass).flatMap(registeredWidgets.get)
+      b.foreach(v => builders = builders.updated(widgetClass -> v))
+      b
     }
-    currentRoot match {
-      case Some(widget) if widget.getId == newRoot.getId =>
-      // no-op
-      case Some(widget) =>
-        logger.debug(s"Replacing root [${widget.getId}] with [${newRoot.getId}]")
-        widget.destroy()
-        send(MountRoot(newRoot.getId))
+    builder.map(builder => builder.materialize(widgetId, widgetClass, channelId, globalId, uiChannel, channelReader))
+  }
+
+  def shouldRenderFrame: Boolean = frameRequested
+
+  def isFrameComplete: Boolean = frameComplete
+
+  def nextFrame(time: Long): Unit = {
+    frameComplete = false
+    frameRequested = false
+  }
+
+  def reapplyStyles(id: Int): Unit = {
+    nodes.get(id) match {
+      case Some(node) =>
+        node.widget.reapplyStyles()
+        node.children.foreach(reapplyStyles)
       case None =>
-        logger.debug(s"Mounting [${newRoot.getId}] as root")
-        send(MountRoot(newRoot.getId))
+      // no action
     }
-    dirtyRoots = Nil
-    processStateMods()
-    currentRoot = Some(newRoot)
-    isRendering = false
   }
 
-  def activateTheme(theme: Theme): Int = {
-    val id = themeId
-    themeId += 1
-    val activateTheme = ActivateTheme(
-      id,
-      theme.styleMap
-        .map {
-          case (widgetClass, styleClasses) =>
-            UIManager.getWidgetClass(widgetClass.blueprintClass) -> styleClasses.map(_.id)
+  def getStyle(styleId: Int): Option[RegisteredStyle] =
+    registeredStyles.get(styleId)
+
+  def getResource(resourceId: Int): Option[EmbeddedResource] =
+    registeredResources.get(resourceId).map(_.resource)
+
+  private def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
+    // only set parent if the parent has a parent
+    if (parent.hasParent) {
+      node.widget.setParent(parent)
+      node.children.foreach(c => setParent(nodes(c), node.widget))
+    }
+  }
+
+  private def rebuildThemes(themes: Seq[(Int, Map[Int, List[Int]])]): Unit = {
+    // join themes to form the active theme
+    activeTheme = themes.foldLeft(DenseIntMap.empty[List[Int]]) {
+      case (act, (_, styleMap)) =>
+        styleMap.foldLeft(act) {
+          case (current, (widgetClassId, styleClasses)) =>
+            current.updated(widgetClassId, (current.getOrElse(widgetClassId, Nil) ++ styleClasses).distinct)
         }
-    )
-    send(activateTheme)
-    id
-  }
-
-  def deactivateTheme(themeId: Int): Unit = {
-    send(DeactivateTheme(themeId))
-  }
-
-  def setPalette(palette: Palette): Unit = {
-    send(SetPalette(palette))
-  }
-
-  @inline final protected def send[A <: Message](message: A)(implicit ev: MessageWitness[A, ChannelProtocol]) = {
-    uiChannel.send(message)
+    }
+    // reapply styles as theme changes may affect them
+    rootNode.foreach(n => reapplyStyles(n.widget.widgetId))
   }
 
   override def process = {
-    case NextFrame(time) =>
-      isRendering = true
-      lastFrame = time
-      // update dirty component trees
-      if (dirtyRoots.nonEmpty) {
-        //logger.debug(s"Updating ${dirtyRoots.size} dirty components")
+    case MountRoot(widgetId) =>
+      nodes.get(widgetId) match {
+        case Some(node) =>
+          rootNode = Some(node)
+          setParent(node, this)
+          mountRoot(node.widget.artifact)
+        case None =>
+          throw new IllegalArgumentException(s"Widget with id $widgetId has no node")
       }
 
-      dirtyRoots.foreach { shadowComponent =>
-        updateBranch(Some(shadowComponent), shadowComponent.blueprint, shadowComponent.parent)
-      }
-      // process state modifications
-      processStateMods()
-      send(FrameComplete)
-      flushMessages()
-      isRendering = false
-  }
-
-  override def established(channel: MessageChannel[ChannelProtocol]) = {
-    uiChannel = channel
-    internalUiChannel = channel
-    channelEstablished(channel)
-  }
-
-  private def enqueueStateMod(component: ShadowComponent, runStateMod: () => Unit): Unit = {
-    stateModQueue.append(component -> runStateMod)
-    if (!isRendering && !frameRequested) {
+    case RequestFrame =>
       frameRequested = true
-      send(RequestFrame)
-      flushMessages()
-    }
-  }
 
-  private def processStateMods(): Unit = {
-    frameRequested = false
-    dirtyRoots = Nil
-    stateModQueue.foreach {
-      case (component, runStateMod) =>
-        if (!component.isDestroyed) {
-          runStateMod()
-          if (!component.isDirty) {
-            component.isDirty = true
-            dirtyRoots ::= component
-            // request a new frame to redraw UI
-            frameRequested = true
-          }
-        }
-    }
-    if (frameRequested) {
-      send(RequestFrame)
-    }
-    stateModQueue.clear()
-  }
+    case FrameComplete =>
+      frameComplete = true
 
-  private def expand(node: ShadowNode, lb: ListBuffer[ShadowNode]): ListBuffer[ShadowNode] = node match {
-    case seq: ShadowNodeSeq =>
-      seq.children.foreach(c => expand(c, lb))
-      lb
-    case _ =>
-      lb += node
-      lb
-  }
-
-  private def expandBP(bp: Blueprint, lb: ListBuffer[Blueprint]): ListBuffer[Blueprint] = bp match {
-    case BlueprintSeq(blueprints) =>
-      blueprints.foreach(bp => expandBP(bp, lb))
-      lb
-    case _ =>
-      lb += bp
-      lb
-  }
-
-  @inline private def allocateId: Int = {
-    val id = widgetId
-    widgetId += 1
-    id
-  }
-
-  private def updateBranch(current: Option[ShadowNode], blueprint: Blueprint, parent: Option[ShadowNode]): ShadowNode = {
-    current match {
-      case None =>
-        // nothing to compare to, just keep rendering
-        blueprint match {
-          case EmptyBlueprint =>
-            EmptyNode
-
-          case widgetBP: WidgetBlueprint =>
-            val widgetId     = allocateId
-            val shadowWidget = new ShadowWidget(widgetBP, widgetId, parent, uiChannel)
-            if (widgetBP.children.nonEmpty) {
-              val children = widgetBP.children.map(c => updateBranch(None, c, Some(shadowWidget)))
-              val lb       = ListBuffer.empty[ShadowNode]
-              children.foreach(c => expand(c, lb))
-              send(SetChildren(widgetId, lb.map(_.getId).toList))
-              shadowWidget.withChildren(children)
-            } else {
-              shadowWidget
-            }
-
-          case componentBP: ComponentBlueprint =>
-            val shadowComponent =
-              new ShadowComponent(componentBP, rendered => updateBranch(None, rendered, parent), parent, enqueueStateMod)
-            shadowComponent
-
-          case BlueprintSeq(blueprints) =>
-            val shadowSeq = new ShadowNodeSeq(blueprints, parent)
-            shadowSeq.withChildren(blueprints.map(bp => updateBranch(None, bp, Some(shadowSeq))))
-
-        }
-
-      case Some(EmptyNode) =>
-        // there's an empty node here that should be replaced
-        blueprint match {
-          case EmptyBlueprint =>
-            EmptyNode
-
-          case _ =>
-            updateBranch(None, blueprint, parent)
-        }
-
-      case Some(node: ShadowWidget) =>
-        // there's an existing widget node here that should be updated/replaced
-        blueprint match {
-          case EmptyBlueprint =>
-            EmptyNode
-
-          case widgetBP: WidgetBlueprint if widgetBP.getClass eq node.blueprint.getClass =>
-            val lb   = ListBuffer.empty[ShadowNode]
-            val bplb = ListBuffer.empty[Blueprint]
-            node.children.foreach(c => expand(c, lb))
-            widgetBP.children.foreach(c => expandBP(c, bplb))
-            val (newChildren, ops) =
-              updateChildren(node, lb.toList, bplb.toList)
-            if (ops.nonEmpty)
-              send(UpdateChildren(node.widgetId, ops.toList))
-            node.children = newChildren
-            if (widgetBP sameAs node.blueprint.asInstanceOf[widgetBP.This]) {
-              // no change, return current node
-              node
-            } else {
-              // update node
-              node.proxy.update(widgetBP)
-              node.blueprint = widgetBP
-              node
-            }
-
-          case _ =>
-            // always replace when different widget or component
-            updateBranch(None, blueprint, parent)
-        }
-
-      case Some(node: ShadowComponent) =>
-        blueprint match {
-          case EmptyBlueprint =>
-            EmptyNode
-          case nextBlueprint: ComponentBlueprint if nextBlueprint.getClass eq node.blueprint.getClass =>
-            val bpChange = !(nextBlueprint sameAs node.blueprint.asInstanceOf[nextBlueprint.type])
-            if (bpChange) {
-              node.component.willReceiveBlueprint(nextBlueprint)
-            }
-            if (node.isDirty || bpChange) {
-              if (node.component.shouldUpdate(nextBlueprint, node.state, node.nextState)) {
-                node.blueprint = nextBlueprint
-                node.component._blueprint = nextBlueprint
-                node.rendered = node.component.render(node.nextState)
-                node.inner = updateBranch(Some(node.inner), node.rendered, parent)
-                node.component.didUpdate(nextBlueprint, node.nextState)
-              }
-              node.isDirty = false
-              node.state = node.nextState
-            }
-            node
-          case _ =>
-            // always replace when different widget or component
-            updateBranch(None, blueprint, parent)
-        }
-
-      case Some(seq: ShadowNodeSeq) =>
-        throw new IllegalStateException("ShadowNodeSeq cannot be updated directly")
-    }
-  }
-
-  def updateChildren(currentNode: ShadowNode,
-                     previous: Seq[ShadowNode],
-                     next: Seq[Blueprint]): (Seq[ShadowNode], Seq[ChildOp]) = {
-    // extract all keys only if needed
-    lazy val prevKeys: mutable.Set[Any] = previous.flatMap(_.key)(collection.breakOut)
-    lazy val nextKeys: mutable.Set[Any] = next.flatMap(_.key)(collection.breakOut)
-    val newNodes                        = mutable.ListBuffer[ShadowNode](previous: _*)
-
-    var pos = 0
-    val ops = mutable.ListBuffer.empty[ChildOp]
-
-    next.foreach { bp =>
-      bp.key match {
-        case _ if pos >= newNodes.size =>
-          // we are past previous nodes, just insert new
-          val newNode = updateBranch(None, bp, Some(currentNode))
-          newNodes += newNode
-          ops += InsertOp(newNode.getId)
-
-        case Some(key) if prevKeys.contains(key) =>
-          // find the matching node
-          var idx         = pos
-          var found       = false
-          var removeCount = 0
-          var removed     = false
-          while (!found) {
-            newNodes(idx).blueprint.key match {
-              case Some(prevKey) if prevKey == key =>
-                found = true
-                if (removeCount > 0) {
-                  ops += RemoveOp(removeCount)
-                  newNodes.remove(pos, removeCount)
-                  removed = true
-                }
-              case Some(prevKey) if !nextKeys.contains(prevKey) && removeCount >= 0 =>
-                removeCount += 1
-                idx += 1
-              case _ =>
-                idx += 1
-                if (removeCount > 0) {
-                  ops += RemoveOp(removeCount)
-                  pos += removeCount
-                  newNodes.remove(pos, removeCount)
-                  removed = true
-                }
-                removeCount = -1
-            }
-          }
-          if (!removed) {
-            // move and update the found node to current position
-            newNodes.insert(pos, updateBranch(Some(newNodes.remove(idx)), bp, Some(currentNode)))
-            if (pos == idx)
-              ops += NoOp()
-            else
-              ops += MoveOp(idx)
-          }
-
-        case _ =>
-          // if current node has a key that is still upcoming, do not replace but insert
-          val currentNode = newNodes(pos)
-          if (currentNode.blueprint.key.exists(nextKeys.contains)) {
-            val newNode = updateBranch(None, bp, Some(currentNode))
-            newNodes.insert(pos, newNode)
-            ops += InsertOp(newNode.getId)
-          } else {
-            val newNode = updateBranch(Some(currentNode), bp, Some(currentNode))
-            if (newNode eq currentNode) {
-              ops += NoOp()
-            } else {
-              newNodes(pos).destroy()
-              newNodes(pos) = newNode
-              ops += ReplaceOp(newNode.getId)
-            }
-          }
+    case SetChildren(widgetId, children) =>
+      logger.debug(s"Setting [$children] as children of [$widgetId]")
+      val lb = new mutable.ListBuffer[WidgetNode]
+      children.foreach(c => lb += nodes(c))
+      val childNodes = lb
+      nodes.get(widgetId).foreach { node =>
+        node.widget.setChildren(childNodes.map(_.widget).asInstanceOf[Seq[node.widget.W]])
+        childNodes.foreach(c => setParent(c, node.widget))
+        nodes.update(widgetId, node.copy(children = children))
       }
-      bp.key.foreach { key =>
-        prevKeys.remove(key)
-        nextKeys.remove(key)
-      }
-      pos += 1
-    }
-    // check if there are excess nodes left over
-    if (pos < newNodes.size) {
-      ops += RemoveOp(newNodes.size - pos)
-      newNodes.drop(pos).foreach(_.destroy())
-      newNodes.remove(pos, newNodes.size - pos)
-    }
-    // compress NoOps
-    val finalOps: Seq[ChildOp] = if (ops.size > 1) {
-      val compressed = ops.tail.foldLeft(mutable.ListBuffer[ChildOp](ops.head)) { (res, op) =>
-        (res.last, op) match {
-          case (NoOp(a), NoOp(b)) =>
-            res(res.size - 1) = NoOp(a + b)
-            res
-          case _ =>
-            res.append(op)
-            res
+
+    case UpdateChildren(widgetId, ops) =>
+      logger.debug(s"Updating children of [$widgetId] with [$ops]")
+      nodes.get(widgetId).foreach { node =>
+        // play operations on node children sequence first
+        val cur    = node.children.toBuffer
+        var curIdx = 0
+        ops.foreach {
+          case NoOp(n) =>
+            curIdx += n
+          case InsertOp(id) =>
+            val widget = nodes(id).widget
+            widget.setParent(node.widget)
+            cur.insert(curIdx, id)
+            curIdx += 1
+          case RemoveOp(n) =>
+            cur.remove(curIdx, n)
+          case MoveOp(idx) =>
+            cur.insert(curIdx, cur.remove(idx))
+            curIdx += 1
+          case ReplaceOp(id) =>
+            val widget = nodes(id).widget
+            widget.setParent(node.widget)
+            cur(curIdx) = id
+            curIdx += 1
         }
+        // let widget update its child structure
+        node.widget.updateChildren(ops, widgetId => nodes(widgetId).widget.asInstanceOf[node.widget.W])
+        // update the widget node
+        nodes.update(widgetId, node.copy(children = cur))
       }
-      if (compressed.last.isInstanceOf[NoOp])
-        compressed.init
-      else
-        compressed
-    } else {
-      ops.filterNot(_.isInstanceOf[NoOp])
-    }
-    (newNodes, finalOps)
+
+    case AddStyles(styles) =>
+      logger.debug(s"Received styles ${styles.reverse}")
+      var dirtyStyles = false
+      val baseStyles = styles.reverse.map {
+        case StyleClassRegistration(styleId, styleName, props) =>
+          // extract inheritance information
+          val inherits = props.collect {
+            case i: InheritClasses => i
+          }
+          val extend = props.collect {
+            case e: ExtendClasses => e
+          }
+          val baseProps = props.collect {
+            case prop: StyleBaseProperty => prop
+          }
+          val remaps = props
+            .collect {
+              case remap: RemapClasses =>
+                var m = DenseIntMap.empty[List[Int]]
+                remap.styleMap.foreach { case (key, value) => m = m.updated(key.id, value.map(_.id)) }
+                m
+            }
+            .foldLeft(DenseIntMap.empty[List[Int]])(_ join _)
+          val widgetClasses = props
+            .collect {
+              case widgetClass: WidgetStyles =>
+                var m = DenseIntMap.empty[List[Int]]
+                widgetClass.styleMapping.foreach { case (key, value) => m = m.updated(key, value.map(_.id)) }
+                m
+            }
+            .foldLeft(DenseIntMap.empty[List[Int]])(_ join _)
+
+          val extProps = extend.flatMap(_.styles.flatMap(sc => registeredStyles(sc.id).props))
+          val inherited = if (inherits.nonEmpty) {
+            dirtyStyles = true
+            val resolved = inherits.flatMap(_.styles.flatMap(s => registeredStyles(s.id).inherited)).distinct
+            resolved :+ styleId
+          } else styleId :: Nil
+          val allProps = extProps ::: baseProps
+          val regStyle = RegisteredStyle(styleId, styleName, allProps, inherited, remaps, widgetClasses)
+          registeredStyles = registeredStyles.updated(styleId, regStyle)
+
+          regStyle
+      }
+      (dirtyStyles, rootNode) match {
+        case (true, Some(node)) =>
+          // set parent recursively to apply changed styles
+          setParent(node, this)
+        case _ => // nothing to update
+      }
+      addStyles(baseStyles)
+
+    case AddResources(resources) =>
+      resources.foreach { resource =>
+        registeredResources = registeredResources.updated(resource.id, resource)
+      }
+      addEmbeddedResources(resources)
+
+    case AddLayoutIds(ids)       =>
+    // TODO store somewhere
+
+    case ActivateTheme(themeId, theme) =>
+      themes :+= (themeId, theme)
+      rebuildThemes(themes)
+
+    case DeactivateTheme(themeId) =>
+      themes = themes.filterNot(_._1 == themeId)
+      rebuildThemes(themes)
+
+    case RegisterWidgetClass(className, classId) =>
+      logger.debug(s"Register widget class $className as $classId")
+      widgetClassMap = widgetClassMap.updated(classId -> className)
+
+    case SetPalette(palette) =>
+      activePalette = palette
+      resetStyles()
+      addStyles(registeredStyles.values)
   }
+
+  override def materializeChildChannel(channelId: Int,
+                                       globalId: Int,
+                                       parent: MessageChannelBase,
+                                       channelReader: ChannelReader): MessageChannelBase = {
+    import boopickle.Default._
+    // read the component creation data
+    val CreateWidget(widgetClass, widgetId) = channelReader.read[CreateWidget]
+    logger.debug(f"Building widget ${widgetClassMap(widgetClass)} on channel [$channelId, $globalId%08x]")
+    try {
+      buildWidget(widgetClass, widgetId, channelId, globalId, channelReader) match {
+        case Some(widget) =>
+          // add a node for the component
+          nodes.update(widgetId, WidgetNode(widget, Vector.empty, channelId))
+          widget.channel
+        case None =>
+          throw new IllegalAccessException(s"Unable to materialize a widget '${widgetClassMap(widgetClass)}'")
+      }
+    } catch {
+      case e: Exception =>
+        logger.error(s"Unhandled exception while building widget ${widgetClassMap(widgetClass)}: $e")
+        throw e
+    }
+  }
+
+  override def channelWillClose(id: Int): Unit = {
+    logger.debug(s"Widget [$id] removed")
+    nodes -= id
+  }
+
+  override def hasParent: Boolean =
+    true
+
+  override def resolveStyleMapping(wClsId: Int, ids: List[Int]): List[Int] =
+    activeTheme.getOrElse(wClsId, Nil) ::: ids
+
+  override def resolveStyleInheritance(ids: List[Int]): List[Int] =
+    ids.flatMap(id => registeredStyles(id).inherited)
+
+  override def resolveLayout(widget: Widget, layoutProperties: List[LayoutProperty]): Unit = {}
+
+  override def getStyleMapping: DenseIntMap[List[Int]] =
+    DenseIntMap.empty
+
+  override def getWidgetStyleMapping: DenseIntMap[List[Int]] =
+    activeTheme
+
+  override def getColor(idx: Int): PaletteEntry =
+    activePalette(idx)
+
+  protected def emptyWidget(widgetId: Int): Widget
+
+  protected def mountRoot(node: WidgetArtifact): Unit
+
+  protected def addStyles(styles: Seq[RegisteredStyle]): Unit = {}
+
+  protected def resetStyles(): Unit = {}
+
+  protected def addEmbeddedResources(resources: Seq[ResourceRegistration]): Unit = {}
 }
 
 object UIManager {
-
-  protected[suzaku] var internalUiChannel = null: MessageChannel[UIProtocol.type]
-
-  sealed abstract class ShadowNode(val parent: Option[ShadowNode]) {
-    type BP <: Blueprint
-    var blueprint: BP
-
-    def getWidget: ShadowWidget
-
-    def getId: Int = getWidget.widgetId
-
-    def key: Iterable[Any] = blueprint.key
-
-    def destroy(): Unit
-  }
-
-  private[suzaku] final object EmptyNode extends ShadowNode(None) {
-    type BP = EmptyBlueprint.type
-
-    override var blueprint               = EmptyBlueprint
-    override def getWidget: ShadowWidget = null
-    override def getId: Int              = -1
-    override def destroy(): Unit         = {}
-  }
-
-  private[suzaku] final class ShadowNodeSeq(blueprints: List[Blueprint], parent: Option[ShadowNode])
-      extends ShadowNode(parent) {
-    type BP = EmptyBlueprint.type
-
-    override var blueprint = EmptyBlueprint
-    var children           = List.empty[ShadowNode]
-
-    def withChildren(c: List[ShadowNode]): ShadowNodeSeq = {
-      children = c
-      this
-    }
-
-    override def getWidget: ShadowWidget = throw new NotImplementedError("ShadowNodeSeq does not have a widget")
-
-    override def getId: Int = throw new NotImplementedError("ShadowNodeSeq does not have an id")
-
-    override def key: Iterable[Any] = blueprints.flatMap(_.key)
-
-    override def destroy(): Unit =
-      children.foreach(_.destroy())
-
-    override def toString: String = s"ShadowNodeSeq($blueprints)"
-  }
-
-  private[suzaku] final class ShadowWidget(var blueprint: WidgetBlueprint,
-                                           val widgetId: Int,
-                                           parent: Option[ShadowNode],
-                                           uiChannel: UIChannel)
-      extends ShadowNode(parent) {
-    type BP = WidgetBlueprint
-
-    val proxy    = blueprint.createProxy(widgetId, uiChannel).asInstanceOf[WidgetProxy[Protocol, WidgetBlueprint]]
-    var children = Seq.empty[ShadowNode]
-
-    override def getWidget: ShadowWidget = this
-
-    override def destroy(): Unit = {
-      children.foreach(_.destroy())
-      proxy.destroyWidget()
-    }
-
-    def withChildren(c: Seq[ShadowNode]): ShadowWidget = {
-      children = c
-      this
-    }
-
-    override def toString: String = s"ShadowWidget($blueprint, $widgetId)"
-  }
-
-  private[suzaku] final class ShadowComponent(var blueprint: ComponentBlueprint,
-                                              innerBuilder: Blueprint => ShadowNode,
-                                              parent: Option[ShadowNode],
-                                              enqueueStateMod: (ShadowComponent, () => Unit) => Unit)
-      extends ShadowNode(parent)
-      with StateProxy {
-    type BP = ComponentBlueprint
-
-    val component   = blueprint.create(this).asInstanceOf[Component[ComponentBlueprint, Any]]
-    var state       = component.initialState
-    var rendered    = component.render(state)
-    var inner       = innerBuilder(rendered)
-    var isDirty     = false
-    var nextState   = state
-    var isDestroyed = false
-
-    component.didMount()
-
-    override def getWidget: ShadowWidget = inner.getWidget
-
-    override def modState[S](f: (S) => S): Unit = {
-      enqueueStateMod(this, () => nextState = f(nextState.asInstanceOf[S]))
-    }
-
-    override def destroy(): Unit = {
-      inner.destroy()
-      component.didUnmount()
-      isDestroyed = true
-    }
-
-    override def toString: String = s"ShadowComponent($blueprint)"
-  }
-
-  private var widgetClasses = Map.empty[String, Int]
-  private var widgetClassId = 0
-
-  def getWidgetClass(blueprint: Class[_ <: WidgetBlueprint]): Int = {
-    this.synchronized {
-      val name = blueprint.getName
-      widgetClasses.get(name) match {
-        case Some(id) => id
-        case None     =>
-          // create integer mapping and register the class
-          val id = widgetClassId
-          widgetClassId += 1
-          widgetClasses += name -> id
-          internalUiChannel.send(RegisterWidgetClass(name, id))
-          id
-      }
-    }
-  }
+  case class WidgetNode(widget: Widget, children: Seq[Int], channelId: Int)
 }

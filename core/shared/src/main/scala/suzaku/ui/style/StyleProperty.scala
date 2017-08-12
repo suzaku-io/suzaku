@@ -1,6 +1,7 @@
 package suzaku.ui.style
 
-import suzaku.ui.{UIManager, WidgetBlueprintProvider}
+import suzaku.ui.resource.ImageResource
+import suzaku.ui.{UIManagerProxy, WidgetBlueprintProvider}
 
 trait StylePropOrClass
 
@@ -22,12 +23,13 @@ object StyleSeq {
 // normal style properties
 case object EmptyStyle extends StyleBaseProperty
 
-case class ForegroundColor(color: Color)           extends StyleBaseProperty
-case class BackgroundColor(color: Color) extends StyleBaseProperty
+case class ForegroundColor(color: Color)         extends StyleBaseProperty
+case class BackgroundColor(color: Color)         extends StyleBaseProperty
+case class BackgroundImage(image: ImageResource) extends StyleBaseProperty
 
 case class OutlineWidth(value: WidthDimension) extends StyleBaseProperty
 case class OutlineStyle(style: LineStyle)      extends StyleBaseProperty
-case class OutlineColor(color: Color)       extends StyleBaseProperty
+case class OutlineColor(color: Color)          extends StyleBaseProperty
 
 case class TableLayout(layout: TableLayoutStyle) extends StyleBaseProperty
 
@@ -143,7 +145,7 @@ case class WidgetStyles(styleMapping: Map[Int, List[StyleClass]]) extends StyleB
 object WidgetStyles {
   def apply(styleMapping: (WidgetBlueprintProvider, List[StyleClass])*): WidgetStyles = {
     val mapping: Map[Int, List[StyleClass]] = styleMapping.map {
-      case (widget, styles) => (UIManager.getWidgetClass(widget.blueprintClass), styles)
+      case (widget, styles) => (UIManagerProxy.getWidgetClass(widget.blueprintClass), styles)
     }(collection.breakOut)
     WidgetStyles(mapping)
   }
@@ -153,8 +155,8 @@ object StyleProperty {
   import boopickle.Default._
 
   // import specific picklers to prevent huge macro overhead
-  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, Color._, LineStyle._,
-  TableLayoutStyle._
+  import LengthDimension._, WidthDimension._, WeightDimension._, FontDimension._, Color._, LineStyle._, TableLayoutStyle._,
+  ImageResource._
 
   implicit val styleClassPickler = new StyleClassPickler
 
@@ -164,6 +166,7 @@ object StyleProperty {
     .addConcreteType[EmptyStyle.type]
     .addConcreteType[ForegroundColor]
     .addConcreteType[BackgroundColor]
+    .addConcreteType[BackgroundImage]
     .addConcreteType[FontFamily]
     .addConcreteType[FontSize]
     .addConcreteType[FontWeight]

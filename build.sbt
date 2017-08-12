@@ -3,12 +3,12 @@ import Keys._
 import com.typesafe.sbt.pgp.PgpKeys._
 import Dependencies._
 
-crossScalaVersions := Seq("2.11.11", "2.12.2")
+crossScalaVersions := Seq("2.11.11", "2.12.3")
 
 val commonSettings = Seq(
   organization := "io.suzaku",
   version := Version.library,
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.3",
   scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8", "-Ypatmat-exhaust-depth", "40"),
   libraryDependencies ++= Seq(
     scalaTest.value,
@@ -91,6 +91,7 @@ lazy val core = crossProject
       scalaJSDOM.value
     ),
     scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     scalaJSStage in Global := FastOptStage
   )
   .jvmSettings()
@@ -128,6 +129,7 @@ lazy val webCore = project
       scalaJSDOM.value
     ),
     scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     scalaJSStage in Global := FastOptStage
   )
   .dependsOn(coreJS % "compile->compile;test->test")
@@ -143,6 +145,7 @@ lazy val webWidgets = project
   .settings(
     name := "suzaku-widgets-web",
     scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     scalaJSStage in Global := FastOptStage,
     libraryDependencies ++= Seq()
   )
@@ -152,13 +155,11 @@ lazy val webWidgets = project
   * Suzaku web example project
   */
 lazy val webDemo = preventPublication(project.in(file("webdemo")))
-  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .settings(commonSettings: _*)
   .settings(
     name := "suzaku-webdemo",
-    libraryDependencies ++= Seq(),
-    workbenchSettings,
-    bootSnippet := "WebDemoUI().main();"
+    libraryDependencies ++= Seq()
   )
   .dependsOn(webWidgets)
 

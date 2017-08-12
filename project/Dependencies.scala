@@ -4,9 +4,9 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 object Dependencies {
   private object versions {
     val scalaTest  = "3.0.1"
-    val scalaMock  = "3.5.0"
+    val scalaMock  = "3.6.0"
     val arteria    = "0.1.1-SNAPSHOT"
-    val scalaJSDOM = "0.9.1"
+    val scalaJSDOM = "0.9.3"
   }
 
   val scalaTest  = Def.setting("org.scalatest" %%% "scalatest"                   % versions.scalaTest % Test)

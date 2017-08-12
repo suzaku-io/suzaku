@@ -7,6 +7,11 @@ class DOMWidgetSpec extends UnitSpec {
 
   "DOMWidget companion" should {
     import suzaku.ui.style._
+
+    implicit val colorProvider: ColorProvider = new ColorProvider {
+      override def getColor(idx: Int): PaletteEntry = PaletteEntry(0x0)
+    }
+
     def test(prop: StyleBaseProperty)(propName: String, propValue: String) = {
       DOMWidget.extractStyle(prop) should be((propName, propValue))
     }

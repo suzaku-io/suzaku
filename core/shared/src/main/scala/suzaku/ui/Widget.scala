@@ -7,9 +7,7 @@ import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.{RemapClasses, StyleBaseProperty, StyleClasses, WidgetStyles}
 import suzaku.util.DenseIntMap
 
-import scala.collection.immutable.IntMap
-
-abstract class Widget(val widgetId: Int, widgetManager: WidgetManager) extends WidgetParent {
+abstract class Widget(val widgetId: Int, widgetManager: UIManager) extends WidgetParent {
   type CP <: Protocol
   type Artifact <: WidgetArtifact
   type W <: Widget
@@ -126,7 +124,7 @@ trait WidgetParent {
 
 abstract class WidgetArtifact
 
-abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: WidgetManager)
+abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: UIManager)
     extends Widget(widgetId, widgetManager)
     with MessageChannelHandler[P] {
   override type CP = P

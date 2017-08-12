@@ -1,10 +1,10 @@
-package perftest
+package todos
 
 import suzaku.app.UIBase
 import suzaku.platform.Transport
 import suzaku.platform.web.{DOMUIManager, WebPlatform}
 
-class PerfUI(transport: Transport) extends UIBase(transport) {
+class TodosUI(transport: Transport) extends UIBase(transport) {
   override val platform = WebPlatform
 
   override protected def main(): Unit = {
