@@ -4,13 +4,14 @@ import arteria.core.Protocol
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
 import suzaku.ui.resource._
-import suzaku.ui.style.StyleBaseProperty
+import suzaku.ui.style.{FromPalette, IndirectStyle, StyleBaseProperty}
 import suzaku.ui.{Widget, WidgetArtifact, WidgetWithProtocol}
+import suzaku.util.DenseIntMap
 
 case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
 
-abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: DOMUIManager)
-    extends WidgetWithProtocol[P](widgetId, widgetManager) {
+abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, uiManager: DOMUIManager)
+    extends WidgetWithProtocol[P](widgetId, uiManager) {
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
 
@@ -46,19 +47,39 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, wi
       super.process(other)
   }
 
+  protected var userStyleClasses = List.empty[String]
+
+  protected var customizeStyleClasses = Map.empty[String, String]
+
+  protected def baseStyleClasses: List[String] = Nil
+
   override def applyStyleClasses(styles: List[Int]): Unit = {
-    styles match {
-      case head :: Nil => artifact.el.className = DOMWidget.getClassName(head)
-      case Nil         => artifact.el.removeAttribute("class")
-      case _           => artifact.el.className = styles.map(DOMWidget.getClassName).mkString(" ")
-    }
+    userStyleClasses = styles.map(DOMWidget.getClassName)
+    rebuildClassName()
+  }
+
+  def rebuildClassName(): Unit = {
+    val allClasses = baseStyleClasses ++ customizeStyleClasses.values ++ userStyleClasses
+    if(allClasses.isEmpty)
+      artifact.el.removeAttribute("class")
+    else
+      artifact.el.className = allClasses.mkString(" ")
   }
 
   override def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit = {
-    DOMWidget.extractStyle(prop)(widgetManager) match {
-      case ("", _) => // ignore
-      case (name, value) =>
-        updateStyleProperty(name, remove, value)
+    prop match {
+      case FromPalette(idx) =>
+        if(remove)
+          customizeStyleClasses = customizeStyleClasses - "fromPalette"
+        else
+          customizeStyleClasses = customizeStyleClasses.updated("fromPalette", DOMWidget.fromPalette(idx)(uiManager))
+        rebuildClassName()
+      case _ =>
+        DOMWidget.extractStyle(prop)(uiManager) match {
+          case ("", _) => // ignore
+          case (name, value) =>
+            updateStyleProperty(name, remove, value)
+        }
     }
   }
 
@@ -68,15 +89,18 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, wi
 
   protected def textNode(text: String): dom.Text = dom.document.createTextNode(text)
 
-  protected def imageNode(res: ImageResource, width: Option[String], height: Option[String], fill: Option[String]): dom.Element = {
+  protected def imageNode(res: ImageResource,
+                          width: Option[String],
+                          height: Option[String],
+                          fill: Option[String]): dom.Element = {
     res match {
       case embedded: EmbeddedResource =>
-        widgetManager.getResource(embedded.resourceId) match {
-          case Some(SVGImageResource(_, (x0,y0,x1,y1))) =>
+        uiManager.getResource(embedded.resourceId) match {
+          case Some(SVGImageResource(_, (x0, y0, x1, y1))) =>
             val svg = dom.document.createElementNS("http://www.w3.org/2000/svg", "svg").asInstanceOf[dom.svg.SVG]
             svg.setAttribute("viewBox", s"$x0 $y0 $x1 $y1")
             val use = dom.document.createElementNS("http://www.w3.org/2000/svg", "use").asInstanceOf[dom.svg.Use]
-            use.setAttributeNS("http://www.w3.org/1999/xlink","href",s"#suzaku-svg-${embedded.resourceId}")
+            use.setAttributeNS("http://www.w3.org/1999/xlink", "href", s"#suzaku-svg-${embedded.resourceId}")
             svg.appendChild(use)
             width.foreach(svg.style.width = _)
             height.foreach(svg.style.height = _)
@@ -127,9 +151,9 @@ object DOMWidget {
   }
 
   def show(c: AbsoluteColor): String = c match {
-    case rgb: RGB                 => s"rgb(${rgb.r},${rgb.g},${rgb.b})"
-    case rgba: RGBAlpha           => s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
-    case HSL(h, s, l, alpha)      => s"hsl(${(h * 360).toInt},${(s * 100).toInt}%,${(l * 100).toInt}%,$alpha)"
+    case rgb: RGB            => s"rgb(${rgb.r},${rgb.g},${rgb.b})"
+    case rgba: RGBAlpha      => s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
+    case HSL(h, s, l, alpha) => s"hsl(${(h * 360).toInt},${(s * 100).toInt}%,${(l * 100).toInt}%,$alpha)"
     case _: AbsoluteColor =>
       val rgba = c.toRGBA
       s"rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.alpha})"
@@ -192,6 +216,10 @@ object DOMWidget {
     case LengthVh(value)  => s"${value}vh"
     case LengthFr(value)  => s"${value}fr"
     case LengthAuto       => "auto"
+    case LengthAdd(a, b)  => s"calc(${show(a)} + ${show(b)})"
+    case LengthSub(a, b)  => s"calc(${show(a)} - ${show(b)})"
+    case LengthMul(a, b)  => s"calc(${show(a)} * $b})"
+    case LengthDiv(a, b)  => s"calc(${show(a)} / $b})"
   }
 
   def show(layout: TableLayoutStyle): String = layout match {
@@ -241,7 +269,23 @@ object DOMWidget {
       case TableLayout(layout) => ("table-layout", show(layout))
 
       case EmptyStyle | RemapClasses(_) | WidgetStyles(_) => ("", "")
+
+      case _: IndirectStyle => ("", "")
     }
+  }
+
+  var paletteStyles = DenseIntMap.empty[String]
+
+  def fromPalette(idx: Int)(implicit uiManager: DOMUIManager): String = {
+    paletteStyles.getOrElse(idx, {
+      val clsName = uiManager.registerPriorityCSSClass(palette =>
+        s"""color: ${show(palette(idx).color.foregroundColor)};
+           |background-color: ${show(palette(idx).color.backgroundColor)};
+         """.stripMargin
+      )
+      paletteStyles = paletteStyles.updated(idx, clsName)
+      clsName
+    })
   }
 }
 

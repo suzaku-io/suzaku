@@ -118,6 +118,11 @@ case class MaxHeight(value: LengthUnit) extends StyleBaseProperty
 case class MinWidth(value: LengthUnit)  extends StyleBaseProperty
 case class MinHeight(value: LengthUnit) extends StyleBaseProperty
 
+// indirect styles
+trait IndirectStyle extends StyleBaseProperty
+
+case class FromPalette(idx: Int) extends IndirectStyle
+
 // pseudo classes
 trait PseudoClass {
   def props: List[StyleBaseProperty]
@@ -210,6 +215,7 @@ object StyleProperty {
     .addConcreteType[Hover]
     .addConcreteType[Active]
     .addConcreteType[NthChild]
+    .addConcreteType[FromPalette]
 
   val stylePickler = compositePickler[StyleProperty]
     .join(styleBasePickler)

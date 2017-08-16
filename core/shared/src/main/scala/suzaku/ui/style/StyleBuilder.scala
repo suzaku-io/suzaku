@@ -40,9 +40,10 @@ trait StyleBuilders {
   val widgetStyles =
     stylesFor[WidgetStyles, (WidgetBlueprintProvider, List[StyleClass])](ct => WidgetStyles(ct: _*))
 
-  // regular style definitions
+  // color style definitions
   val color           = styleFor(ForegroundColor)
   val backgroundColor = styleFor(BackgroundColor)
+  val fromPalette     = styleFor(FromPalette)
 
   // font
   val fontFamily = stylesFor[FontFamily, String](families => FontFamily(families))

@@ -44,7 +44,7 @@ class DOMWidgetSpec extends UnitSpec {
     "create correct dimension styles" in {
       test(Height(100.px))("height", "100px")
       test(Height(10.5.em))("height", "10.5em")
-      test(Height(100.rem))("height", "100rem")
+      test(Height(100.%% - 100.rem))("height", "calc(100% - 100rem)")
       test(Height(100.vw))("height", "100vw")
       test(Height(100.vh))("height", "100vh")
       test(Width(auto))("width", "auto")

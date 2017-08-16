@@ -216,18 +216,18 @@ case class PaletteRef(idx: Int, variant: PaletteVariant = ColorRegular) extends 
   def lightness(value: Int) = PaletteRef(idx, ColorLightness(value min 100 max -100))
 }
 
-case class PaletteColor(color: AbsoluteColor, textColor: AbsoluteColor)
+case class PaletteColor(backgroundColor: AbsoluteColor, foregroundColor: AbsoluteColor)
 
 case class PaletteEntry(color: PaletteColor, light: PaletteColor, dark: PaletteColor) {
   def variant(v: PaletteVariant): AbsoluteColor = v match {
-    case ColorRegular => color.color
-    case ColorLight   => light.color
-    case ColorDark    => dark.color
+    case ColorRegular => color.backgroundColor
+    case ColorLight   => light.backgroundColor
+    case ColorDark    => dark.backgroundColor
     case ColorLightness(value) =>
       if (value >= 0)
-        color.color.interpolate(light.color, value / 50.0)
+        color.backgroundColor.interpolate(light.backgroundColor, value / 50.0)
       else
-        color.color.interpolate(dark.color, -value / 50.0)
+        color.backgroundColor.interpolate(dark.backgroundColor, -value / 50.0)
   }
 }
 
@@ -251,6 +251,7 @@ object PaletteEntry {
     )
   }
 }
+
 case class Palette(entries: Array[PaletteEntry]) {
   def apply(idx: Int): PaletteEntry = {
     if (idx < 0 || idx >= entries.length)
@@ -272,8 +273,11 @@ object Palette {
   final val Secondary  = Primary + 1
   final val Tertiary   = Secondary + 1
   final val Error      = Tertiary + 1
-  final val Warning    = Error + 1
-  final val Success    = Warning + 1
+  final val Success    = Error + 1
+  final val Info       = Success + 1
+  final val Warning    = Info + 1
+  final val Light      = Warning + 1
+  final val Dark       = Light + 1
   final val UserColors = 16
 
   def userColor(idx: Int) = idx + UserColors
@@ -286,8 +290,11 @@ object Palette {
       secondary: PaletteEntry,
       tertiary: PaletteEntry,
       error: PaletteEntry,
-      warning: PaletteEntry,
       success: PaletteEntry,
+      warning: PaletteEntry,
+      info: PaletteEntry,
+      light: PaletteEntry,
+      dark: PaletteEntry,
       userDefined: Seq[PaletteEntry] = Nil
   ): Palette = {
     val entries = Array.ofDim[PaletteEntry](UserColors + userDefined.size)
@@ -296,8 +303,11 @@ object Palette {
     entries(Secondary) = secondary
     entries(Tertiary) = tertiary
     entries(Error) = error
-    entries(Warning) = warning
     entries(Success) = success
+    entries(Info) = info
+    entries(Warning) = warning
+    entries(Light) = light
+    entries(Dark) = dark
     userDefined.zipWithIndex.foreach { case (e, i) => entries(UserColors + i) = e }
     Palette(entries)
   }

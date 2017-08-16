@@ -31,7 +31,7 @@ object TestComp {
 
       LinearLayout(Direction.Vertical)(
         LinearLayout(state.direction, state.justify, state.align)(
-          Checkbox(state.checked, value => modState(s => s.copy(checked = value))) << (
+          Checkbox(state.checked, "Checked", value => modState(s => s.copy(checked = value))) << (
             width := 10.em
           ),
           TextField(state.text, value => modState(s => s.copy(text = value))),
@@ -40,10 +40,7 @@ object TestComp {
             .withKey(1)
             .withLayout(alignSelf := start)
             .withStyle(
-              backgroundColor := rgb(128, 0, state.time.toInt * 16 & 0xFF),
-              color := 0xFF80FF,
-              RedButton,
-              Large
+              fromPalette := Palette.Secondary
             ),
           if (state.count == 0)
             EmptyBlueprint
@@ -64,7 +61,7 @@ object TestComp {
           s"Just some <script>${"text" * state.count} </script>",
           Button(s"${blueprint.label} ${state.time}").withKey(3)
         ) << (
-          backgroundColor := (if (state.checked) rgb(0, 0, 0) else rgb(255, 255, 255))
+          backgroundColor := (if (state.checked) rgb(128, 128, 136) else rgb(255, 255, 255))
         ),
         GridLayout(
           400.px ~ 400.px ~ 200.px ~ 200.px,
@@ -167,8 +164,6 @@ object EmbeddedTest {
 
 object BaseStyle extends StyleClass {
   def styleDefs = List(
-    height := auto,
-    backgroundColor := 0x0060FF,
     hover := (
       outlineWidth := thick
     )
@@ -177,14 +172,7 @@ object BaseStyle extends StyleClass {
 
 object ButtonStyle extends StyleClass {
   def styleDefs = List(
-    extendClass := BaseStyle,
-    backgroundColor := 0x006000,
-    padding := (10.px, 20.px),
-    margin := 10.px,
-    outline := (thin, dotted, 0xFF00FF),
-    hover := (
-      backgroundColor := 0xFF00FF
-    )
+    extendClass := BaseStyle
   )
 }
 
@@ -258,6 +246,9 @@ object MyTheme {
     PaletteEntry(0xFEFEFE),
     PaletteEntry(Colors.blue),
     PaletteEntry(Colors.green),
+    PaletteEntry(Colors.red),
+    PaletteEntry(Colors.red),
+    PaletteEntry(Colors.red),
     PaletteEntry(Colors.red),
     PaletteEntry(Colors.red),
     PaletteEntry(Colors.red),

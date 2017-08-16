@@ -6,21 +6,32 @@ import scala.language.implicitConversions
 
 sealed trait LengthDimension
 
-sealed trait LengthUnit extends LengthDimension
+sealed trait LengthUnit extends LengthDimension {
+  def +(b: LengthUnit) = LengthAdd(this, b)
+  def -(b: LengthUnit) = LengthSub(this, b)
+  def *(b: Double)     = LengthMul(this, b)
+  def /(b: Double)     = LengthDiv(this, b)
+}
 
-case class LengthU(value: Double)   extends LengthDimension
-case class LengthPx(value: Double)  extends LengthUnit
-case class LengthPct(value: Double) extends LengthUnit
-case class LengthEm(value: Double)  extends LengthUnit
-case class LengthRem(value: Double) extends LengthUnit
-case class LengthVw(value: Double)  extends LengthUnit
-case class LengthVh(value: Double)  extends LengthUnit
-case class LengthFr(value: Int)     extends LengthUnit
-case object LengthAuto              extends LengthUnit
+case class LengthU(value: Double)                  extends LengthDimension
+case class LengthPx(value: Double)                 extends LengthUnit
+case class LengthPct(value: Double)                extends LengthUnit
+case class LengthEm(value: Double)                 extends LengthUnit
+case class LengthRem(value: Double)                extends LengthUnit
+case class LengthVw(value: Double)                 extends LengthUnit
+case class LengthVh(value: Double)                 extends LengthUnit
+case class LengthFr(value: Int)                    extends LengthUnit
+case object LengthAuto                             extends LengthUnit
+case class LengthAdd(a: LengthUnit, b: LengthUnit) extends LengthUnit
+case class LengthSub(a: LengthUnit, b: LengthUnit) extends LengthUnit
+case class LengthMul(a: LengthUnit, b: Double)     extends LengthUnit
+case class LengthDiv(a: LengthUnit, b: Double)     extends LengthUnit
 
 object LengthDimension {
   import boopickle.Default._
   implicit val lengthPickler = compositePickler[LengthUnit]
+
+  lengthPickler
     .addTransform[LengthPx, Double](_.value, LengthPx)
     .addTransform[LengthPct, Double](_.value, LengthPct)
     .addTransform[LengthEm, Double](_.value, LengthEm)
@@ -28,6 +39,10 @@ object LengthDimension {
     .addTransform[LengthVw, Double](_.value, LengthVw)
     .addTransform[LengthVh, Double](_.value, LengthVh)
     .addTransform[LengthFr, Int](_.value, LengthFr)
+    .addConcreteType[LengthAdd]
+    .addConcreteType[LengthSub]
+    .addConcreteType[LengthMul]
+    .addConcreteType[LengthDiv]
     .addConcreteType[LengthAuto.type]
 
   implicit val lengthDimensionPickler = compositePickler[LengthDimension]

@@ -85,6 +85,8 @@ abstract class UIManager(logger: Logger, platform: Platform)
   def getResource(resourceId: Int): Option[EmbeddedResource] =
     registeredResources.get(resourceId).map(_.resource)
 
+  def palette(idx: Int) = activePalette(idx)
+
   private def setParent(node: WidgetNode, parent: WidgetParent): Unit = {
     // only set parent if the parent has a parent
     if (parent.hasParent) {

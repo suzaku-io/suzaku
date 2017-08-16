@@ -9,17 +9,20 @@ object CheckboxProtocol extends Protocol {
 
   sealed trait CheckboxMessage extends Message
 
-  case class SetValue(value: Boolean) extends CheckboxMessage
+  case class SetValue(checked: Boolean) extends CheckboxMessage
+
+  case class SetLabel(label: Option[String]) extends CheckboxMessage
 
   case class ValueChanged(value: Boolean) extends CheckboxMessage
 
   val mPickler = compositePickler[CheckboxMessage]
     .addConcreteType[SetValue]
+    .addConcreteType[SetLabel]
     .addConcreteType[ValueChanged]
 
   implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetProtocol.wmPickler)
 
-  case class ChannelContext(value: Boolean)
+  case class ChannelContext(checked: Boolean, label: Option[String])
 
   override val contextPickler = implicitly[Pickler[ChannelContext]]
 }
@@ -36,16 +39,16 @@ object Checkbox extends WidgetBlueprintProvider {
         super.process(message)
     }
 
-    override def initWidget = ChannelContext(bd.value)
+    override def initWidget = ChannelContext(bd.checked, bd.label)
 
     override def update(newBlueprint: WBlueprint) = {
-      if (newBlueprint.value != blueprint.value)
-        send(SetValue(newBlueprint.value))
+      if (newBlueprint.checked != blueprint.checked)
+        send(SetValue(newBlueprint.checked))
       super.update(newBlueprint)
     }
   }
 
-  case class WBlueprint private[Checkbox] (value: Boolean, onChange: Option[Boolean => Unit] = None)
+  case class WBlueprint private[Checkbox] (checked: Boolean, label: Option[String], onChange: Option[Boolean => Unit] = None)
       extends WidgetBlueprint {
     type P     = CheckboxProtocol.type
     type Proxy = WProxy
@@ -56,7 +59,11 @@ object Checkbox extends WidgetBlueprintProvider {
 
   override def blueprintClass = classOf[WBlueprint]
 
-  def apply(value: Boolean) = WBlueprint(value, None)
+  def apply(checked: Boolean) = WBlueprint(checked, None, None)
 
-  def apply(value: Boolean, onChange: Boolean => Unit) = WBlueprint(value, Some(onChange))
+  def apply(checked: Boolean, label: String) = WBlueprint(checked, Some(label), None)
+
+  def apply(checked: Boolean, onChange: Boolean => Unit) = WBlueprint(checked, None, Some(onChange))
+
+  def apply(checked: Boolean, label: String, onChange: Boolean => Unit) = WBlueprint(checked, Some(label), Some(onChange))
 }
