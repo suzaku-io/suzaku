@@ -10,16 +10,16 @@ class DOMButton(widgetId: Int, context: ButtonProtocol.ChannelContext)(implicit 
     extends DOMWidget[ButtonProtocol.type, dom.html.Button](widgetId, uiManager) {
   import ButtonProtocol._
 
+  val labelNode = textNode(context.label)
+  val iconNode  = context.icon.map(image => imageNode(image, Some("1em"), Some("1em"), Some("currentColor")))
+
   val artifact = {
     val el = tag[dom.html.Button]("button")
     uiManager.addListener(ClickEvent)(widgetId, el, onClick)
-    val span = tag[dom.html.Span]("span")
-    span.appendChild(textNode(context.label))
-    context.icon.foreach { image =>
-      val img = imageNode(image, Some("1em"), Some("1em"), Some("currentColor"))
-      span.appendChild(img)
-    }
-    el.appendChild(span)
+
+    el.appendChild(labelNode)
+    iconNode.foreach(el.appendChild)
+
     DOMWidgetArtifact(el)
   }
 
@@ -31,8 +31,8 @@ class DOMButton(widgetId: Int, context: ButtonProtocol.ChannelContext)(implicit 
 
   override def process = {
     case SetLabel(label) =>
-      modifyDOM { node =>
-        node.firstChild.replaceChild(textNode(label), node.firstChild.firstChild)
+      modifyDOM { _ =>
+        labelNode.data = label
       }
     case SetIcon(icon) =>
     case msg =>
@@ -54,13 +54,13 @@ class DOMButtonBuilder(uiManager: DOMUIManager) extends WidgetBuilder(ButtonProt
 object DOMButton extends WidgetStyleProvider {
   class Style(uiManager: DOMUIManager) extends WidgetStyle()(uiManager) {
     import DOMWidget._
-    val base = uiManager.registerCSSClass(palette =>
-      s"""text-align: center;
+    val base = uiManager.registerCSSClass(palette => s"""text-align: center;
          |text-decoration: none;
          |user-select: none;
          |vertical-align: middle;
          |white-space: nowrap;
          |padding: 0 .75em;
+         |margin: 0 .25em 0 0;
          |border: none;
          |cursor: pointer;
          |display: inline-block;
@@ -74,10 +74,8 @@ object DOMButton extends WidgetStyleProvider {
          |font-size: ${show(styleConfig.buttonFontSize)};
          |font-weight: ${show(styleConfig.buttonFontWeight)};
         """.stripMargin)
-    uiManager.addCSS(s".$base:hover",
-      s"""box-shadow: ${styleConfig.buttonBoxShadowHover};""".stripMargin)
-    uiManager.addCSS(s".$base:active",
-      s"""box-shadow: ${styleConfig.buttonBoxShadowActive};""".stripMargin)
+    uiManager.addCSS(s".$base:hover", s"""box-shadow: ${styleConfig.buttonBoxShadowHover};""".stripMargin)
+    uiManager.addCSS(s".$base:active", s"""box-shadow: ${styleConfig.buttonBoxShadowActive};""".stripMargin)
   }
 
   override def buildStyle(implicit uiManager: DOMUIManager) = new Style(uiManager)

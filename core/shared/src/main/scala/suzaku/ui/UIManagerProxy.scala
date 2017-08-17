@@ -222,7 +222,7 @@ class UIManagerProxy(logger: Logger, channelEstablished: UIChannel => Unit, flus
         // there's an empty node here that should be replaced
         blueprint match {
           case EmptyBlueprint =>
-            new EmptyNode(node.parent)
+            node
 
           case _ =>
             updateBranch(None, blueprint, node.parent)
