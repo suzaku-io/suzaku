@@ -2,6 +2,7 @@ package suzaku.platform.web.widget
 
 import suzaku.platform.web.StyleConfig
 import suzaku.ui.style._
+import suzaku.ui.style.Implicits._
 
 class WidgetStyleConfig extends StyleConfig {
   def inputFontFamily: String            = fontFamily

@@ -1,7 +1,7 @@
 package perftest
 
 import suzaku.ui._
-import suzaku.ui.style.StyleClass
+import suzaku.ui.style.StyleClassBase
 import suzaku.widget.Button
 
 import scala.collection.immutable
@@ -48,7 +48,7 @@ object TestSelector {
   def apply(tests: immutable.Seq[TestInstance]): CBP = CBP(tests)
 }
 
-object TestPanelStyle extends StyleClass {
+object TestPanelStyle extends StyleClassBase {
   import suzaku.ui.style._
 
   def styleDefs = List(
@@ -56,7 +56,7 @@ object TestPanelStyle extends StyleClass {
   )
 }
 
-object ButtonStyle extends StyleClass {
+object ButtonStyle extends StyleClassBase {
   import suzaku.ui.style._
 
   def styleDefs = List(
@@ -65,7 +65,7 @@ object ButtonStyle extends StyleClass {
   )
 }
 
-object TestListStyle extends StyleClass {
+object TestListStyle extends StyleClassBase {
   import suzaku.ui.style._
 
   def styleDefs = List(

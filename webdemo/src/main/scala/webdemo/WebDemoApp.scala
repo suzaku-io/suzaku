@@ -4,9 +4,9 @@ import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
-import suzaku.ui.layout.LayoutId
+import suzaku.ui.layout.LayoutIdBase
 import suzaku.ui.resource.{Base64ImageResource, SVGImageResource}
-import suzaku.ui.style.StyleClass
+import suzaku.ui.style.StyleClassBase
 import suzaku.widget._
 
 object TestComp {
@@ -81,7 +81,10 @@ object TestComp {
               Table.Row(Table.Cell("Some Other").colSpan(2))
             )
             .footer("ID", "Name", "Email") << RedTable
-        ).withLayout(weight := 1)
+        ).withLayout(weight := 1) << (
+          gridRowGap := 10.px,
+          gridColGap := 10.px
+        )
       )
     }
 
@@ -144,10 +147,10 @@ object TestComp {
 import suzaku.ui.style._
 import suzaku.ui.KeywordTypes._
 
-object Layout1 extends LayoutId
-object Layout2 extends LayoutId
-object Layout3 extends LayoutId
-object Layout4 extends LayoutId
+object Layout1 extends LayoutIdBase
+object Layout2 extends LayoutIdBase
+object Layout3 extends LayoutIdBase
+object Layout4 extends LayoutIdBase
 
 object EmbeddedTest {
   lazy val icon = SVGImageResource(
@@ -162,7 +165,7 @@ object EmbeddedTest {
   )
 }
 
-object BaseStyle extends StyleClass {
+object BaseStyle extends StyleClassBase {
   def styleDefs = List(
     hover := (
       outlineWidth := thick
@@ -170,31 +173,31 @@ object BaseStyle extends StyleClass {
   )
 }
 
-object ButtonStyle extends StyleClass {
+object ButtonStyle extends StyleClassBase {
   def styleDefs = List(
     extendClass := BaseStyle
   )
 }
 
-object GreenButton extends StyleClass {
+object GreenButton extends StyleClassBase {
   def styleDefs = List(
     color := 0x00FF00
   )
 }
 
-object Large extends StyleClass {
+object Large extends StyleClassBase {
   def styleDefs = List(
     height := 100.px
   )
 }
 
-object Red extends StyleClass {
+object Red extends StyleClassBase {
   def styleDefs = List(
     color := 0xFF0000
   )
 }
 
-object GreenBackground extends StyleClass {
+object GreenBackground extends StyleClassBase {
   def styleDefs = List(
     nthChild(2) := (
       backgroundColor := Colors.secondary
@@ -202,20 +205,20 @@ object GreenBackground extends StyleClass {
   )
 }
 
-object BlueBackground extends StyleClass {
+object BlueBackground extends StyleClassBase {
   def styleDefs = List(
     backgroundColor := Colors.primary
   )
 }
 
-object RedBackground extends StyleClass {
+object RedBackground extends StyleClassBase {
   def styleDefs = List(
     backgroundColor := 0xFF0000,
     widgetStyle := Table.Row -> List(GreenBackground)
   )
 }
 
-object RedButton extends StyleClass {
+object RedButton extends StyleClassBase {
   def styleDefs = List(
     inheritClasses := (Large, Red),
     fontFamily := ("Times New Roman", "Times", "serif"),
@@ -224,13 +227,13 @@ object RedButton extends StyleClass {
   )
 }
 
-object RedTable extends StyleClass {
+object RedTable extends StyleClassBase {
   def styleDefs = List(
     widgetStyle := Table.Body -> List(RedBackground)
   )
 }
 
-object BlueTable extends StyleClass {
+object BlueTable extends StyleClassBase {
   def styleDefs = List(
     widgetStyle := Table.Row -> List(BlueBackground)
   )

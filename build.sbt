@@ -74,14 +74,14 @@ def preventPublication(p: Project) =
   )
 
 /**
-  * Suzaku core module
+  * Suzaku core modules
   */
-lazy val core = crossProject
-  .in(file("core"))
+lazy val coreShared = crossProject
+  .in(file("core-shared"))
   .settings(commonSettings: _*)
   .settings(publishSettings: _*)
   .settings(
-    name := "suzaku-core",
+    name := "suzaku-core-shared",
     libraryDependencies ++= Seq(
       arteria.value
     )
@@ -96,8 +96,56 @@ lazy val core = crossProject
   )
   .jvmSettings()
 
-lazy val coreJS  = core.js
-lazy val coreJVM = core.jvm
+lazy val coreSharedJS  = coreShared.js
+lazy val coreSharedJVM = coreShared.jvm
+
+lazy val coreUI = crossProject
+  .in(file("core-ui"))
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+  .settings(
+    name := "suzaku-core-ui",
+    libraryDependencies ++= Seq(
+      arteria.value
+    )
+  )
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      scalaJSDOM.value
+    ),
+    scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
+    scalaJSStage in Global := FastOptStage
+  )
+  .jvmSettings()
+  .dependsOn(coreShared)
+
+lazy val coreUIJS  = coreUI.js
+lazy val coreUIJVM = coreUI.jvm
+
+lazy val coreApp = crossProject
+  .in(file("core-app"))
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+  .settings(
+    name := "suzaku-core-app",
+    libraryDependencies ++= Seq(
+      arteria.value
+    )
+  )
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      scalaJSDOM.value
+    ),
+    scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
+    scalaJSStage in Global := FastOptStage
+  )
+  .jvmSettings()
+  .dependsOn(coreShared)
+
+lazy val coreAppJS  = coreApp.js
+lazy val coreAppJVM = coreApp.jvm
 
 /**
   * Suzaku base widgets
@@ -110,16 +158,29 @@ lazy val baseWidgets = crossProject
     name := "suzaku-widgets",
     libraryDependencies ++= Seq()
   )
-  .dependsOn(core % "compile->compile;test->test")
+  .dependsOn(coreShared % "compile->compile;test->test")
 
 lazy val baseWidgetsJS  = baseWidgets.js
 lazy val baseWidgetsJVM = baseWidgets.jvm
 
+lazy val baseWidgetsApp = crossProject
+  .in(file("base-widgets-app"))
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+  .settings(
+    name := "suzaku-widgets-app",
+    libraryDependencies ++= Seq()
+  )
+  .dependsOn(baseWidgets % "compile->compile;test->test", coreApp)
+
+lazy val baseWidgetsAppJS  = baseWidgetsApp.js
+lazy val baseWidgetsAppJVM = baseWidgetsApp.jvm
+
 /**
   * Suzaku base web core
   */
-lazy val webCore = project
-  .in(file("platform/web/core"))
+lazy val webCoreShared = project
+  .in(file("platform/web/core-shared"))
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings: _*)
   .settings(publishSettings: _*)
@@ -132,7 +193,39 @@ lazy val webCore = project
     scalacOptions += "-P:scalajs:sjsDefinedByDefault",
     scalaJSStage in Global := FastOptStage
   )
-  .dependsOn(coreJS % "compile->compile;test->test")
+  .dependsOn(coreSharedJS % "compile->compile;test->test")
+
+lazy val webCoreUI = project
+  .in(file("platform/web/core-ui"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+  .settings(
+    name := "suzaku-core-ui-web",
+    libraryDependencies ++= Seq(
+      scalaJSDOM.value
+    ),
+    scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
+    scalaJSStage in Global := FastOptStage
+  )
+  .dependsOn(webCoreShared % "compile->compile;test->test", coreUIJS)
+
+lazy val webCoreApp = project
+  .in(file("platform/web/core-app"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(commonSettings: _*)
+  .settings(publishSettings: _*)
+  .settings(
+    name := "suzaku-core-app-web",
+    libraryDependencies ++= Seq(
+      scalaJSDOM.value
+    ),
+    scalacOptions ++= sourceMapSetting.value,
+    scalacOptions += "-P:scalajs:sjsDefinedByDefault",
+    scalaJSStage in Global := FastOptStage
+  )
+  .dependsOn(webCoreShared % "compile->compile;test->test", coreAppJS)
 
 /**
   * Suzaku base web widgets
@@ -149,7 +242,7 @@ lazy val webWidgets = project
     scalaJSStage in Global := FastOptStage,
     libraryDependencies ++= Seq()
   )
-  .dependsOn(webCore, baseWidgetsJS)
+  .dependsOn(webCoreUI, baseWidgetsJS)
 
 /**
   * Suzaku web example project
@@ -161,8 +254,24 @@ lazy val webDemo = preventPublication(project.in(file("webdemo")))
     name := "suzaku-webdemo",
     libraryDependencies ++= Seq()
   )
-  .dependsOn(webWidgets)
+  .dependsOn(webWidgets, baseWidgetsAppJS, webCoreApp)
 
-lazy val root = preventPublication(project.in(file(".")))
+lazy val suzaku = preventPublication(project.in(file(".")))
   .settings()
-  .aggregate(coreJVM, coreJS, webCore, baseWidgetsJVM, baseWidgetsJS, webWidgets, webDemo)
+  .aggregate(
+    coreSharedJVM,
+    coreSharedJS,
+    coreUIJVM,
+    coreUIJS,
+    coreAppJVM,
+    coreAppJS,
+    baseWidgetsJVM,
+    baseWidgetsJS,
+    baseWidgetsAppJVM,
+    baseWidgetsAppJS,
+    webCoreShared,
+    webCoreUI,
+    webCoreApp,
+    webWidgets,
+    webDemo
+  )

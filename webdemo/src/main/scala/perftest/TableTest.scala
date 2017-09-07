@@ -4,7 +4,7 @@ import java.util.UUID
 
 import suzaku.ui._
 import suzaku.ui.layout.{Direction, LinearLayout}
-import suzaku.ui.style.StyleClass
+import suzaku.ui.style.StyleClassBase
 import suzaku.widget.{Table, Text, TextField}
 
 import scala.util.Random
@@ -98,7 +98,7 @@ object TableTest {
   def apply(initialRows: Int, operation: TableOp): CBP = CBP(initialRows, operation)
 }
 
-object FixedWidthCell extends StyleClass {
+object FixedWidthCell extends StyleClassBase {
   import suzaku.ui.style._
   def styleDefs = List(
     width := 100.px
