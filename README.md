@@ -15,6 +15,13 @@ building applications but contributors are most welcome!
 
 Please read through the [Contributor documentation](doc/contributor/README.md) !
 
+## Presentations
+
+You can find a few presentations on Suzaku, focusing mostly on the why, not that much on what or how :)
+
+- [Scalable Web Frontend Development in Scala](https://www.youtube.com/watch?v=E_ykcwHpqlA) at Small FP Conf 9/2017
+- [How I learned to stop worrying and love the frontend](https://www.youtube.com/watch?v=nfCGdbfiJGU&t=155s) at ScalaDays Chicago 4/2017
+
 ## Designed features
 
 - Native support for mobile platforms: web, Android and iOS
