@@ -31,9 +31,7 @@ class DOMButton(widgetId: Int, context: ButtonProtocol.ChannelContext)(implicit 
 
   override def process = {
     case SetLabel(label) =>
-      modifyDOM { _ =>
-        labelNode.data = label
-      }
+      modifyDOM(_ => labelNode.data = label)
     case SetIcon(icon) =>
     case msg =>
       super.process(msg)
