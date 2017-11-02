@@ -16,9 +16,29 @@ object WidgetExtProtocol extends Protocol {
 
   case class UpdateLayout(params: List[LayoutProperty]) extends WidgetMessage
 
+  sealed trait EventMessage
+
+  case class OnClick(x: Int, y: Int, button: Int) extends WidgetMessage with EventMessage
+
+  case class OnLongClick(x: Int, y: Int, button: Int) extends WidgetMessage with EventMessage
+
+  case class OnFocusChange(focused: Boolean) extends WidgetMessage with EventMessage
+
+  case class ListenTo(eventType: Int, active: Boolean = true) extends WidgetMessage
+
   val wmPickler = compositePickler[WidgetMessage]
     .addConcreteType[UpdateStyle]
     .addConcreteType[UpdateLayout]
+    .addConcreteType[OnClick]
+    .addConcreteType[OnLongClick]
+    .addConcreteType[OnFocusChange]
+    .addConcreteType[ListenTo]
+
+  object EventType {
+    final val OnClickEvent       = 1
+    final val OnLongClickEvent   = 2
+    final val OnFocusChangeEvent = 3
+  }
 
   override type ChannelContext = Unit
 
@@ -26,4 +46,3 @@ object WidgetExtProtocol extends Protocol {
 
   implicit val contextPickler = implicitly[Pickler[Unit]]
 }
-

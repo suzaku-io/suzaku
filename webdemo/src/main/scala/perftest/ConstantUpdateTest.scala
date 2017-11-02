@@ -8,7 +8,7 @@ object ConstantUpdateTest {
   final case class State private (counter: Int, value: Int)
 
   final case class CBP private (slowDown: Boolean, counter: Int) extends ComponentBlueprint {
-    override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
+    override def create = new ComponentImpl(this)(_)
   }
 
   final class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy)

@@ -20,14 +20,14 @@ object TestComp {
                    align: Alignment = AlignStretch)
 
   case class CBP private (label: String) extends ComponentBlueprint {
-    override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
+    override def create = new ComponentImpl(this)(_)
   }
 
   class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy) extends Component[CBP, State](initialBlueprint, proxy) {
     def render(state: State) = {
-      import suzaku.ui.style._
-      import suzaku.ui.layout._
       import suzaku.ui.KeywordTypes._
+      import suzaku.ui.layout._
+      import suzaku.ui.style._
 
       LinearLayout(Direction.Vertical)(
         LinearLayout(state.direction, state.justify, state.align)(
@@ -144,8 +144,8 @@ object TestComp {
   def apply(label: String = ""): CBP = CBP(label)
 }
 
-import suzaku.ui.style._
 import suzaku.ui.KeywordTypes._
+import suzaku.ui.style._
 
 object Layout1 extends LayoutIdBase
 object Layout2 extends LayoutIdBase

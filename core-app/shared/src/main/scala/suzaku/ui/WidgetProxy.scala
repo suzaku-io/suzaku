@@ -3,7 +3,7 @@ package suzaku.ui
 import arteria.core._
 import boopickle.Default._
 import suzaku.ui.UIProtocol.{CreateWidget, UIChannel}
-import suzaku.ui.WidgetExtProtocol.{UpdateLayout, UpdateStyle, WidgetMessage}
+import suzaku.ui.WidgetExtProtocol.{ListenTo, OnClick, OnFocusChange, OnLongClick, UpdateLayout, UpdateStyle, WidgetMessage}
 import suzaku.ui.style.StyleProperty
 
 abstract class WidgetProxy[P <: WidgetProtocol, BP <: WidgetBlueprint](protected val protocol: P,
@@ -24,14 +24,28 @@ abstract class WidgetProxy[P <: WidgetProtocol, BP <: WidgetBlueprint](protected
       )
     )
 
-  // send initial style and layout, if any
+  // send initial style, layout and event listener registration, if any
   if (blueprint._style.nonEmpty)
     send(UpdateStyle(blueprint._style.map(p => (p._2, false)).toList))
   if (blueprint._layout.nonEmpty)
     send(UpdateLayout(blueprint._layout))
+  if (blueprint._activeEvents.nonEmpty)
+    blueprint._activeEvents.foreach(event => send(ListenTo(event)))
 
   @inline def send[A <: Message](message: A)(implicit ev: MessageWitness[A, P]): Unit = {
     channel.send(message)
+  }
+
+  /**
+    * Process common widget messages
+    */
+  override def process = {
+    case OnClick(x, y, button) =>
+      blueprint._onClickHandler.foreach(_(x, y, button))
+    case OnLongClick(x, y, button) =>
+      blueprint._onLongClickHandler.foreach(_(x, y, button))
+    case OnFocusChange(focused) =>
+      blueprint._onFocusChangeHandler.foreach(_(focused))
   }
 
   protected def initWidget: ChannelProtocol#ChannelContext
@@ -61,6 +75,11 @@ abstract class WidgetProxy[P <: WidgetProtocol, BP <: WidgetBlueprint](protected
     // update layout properties
     if (newBlueprint._layout != blueprint._layout) {
       send(UpdateLayout(newBlueprint._layout))
+    }
+    // update event listener registrations
+    if (newBlueprint._activeEvents != blueprint._activeEvents) {
+      newBlueprint._activeEvents.diff(blueprint._activeEvents).foreach(event => send(ListenTo(event)))
+      blueprint._activeEvents.diff(newBlueprint._activeEvents).foreach(event => send(ListenTo(event, active = false)))
     }
 
     blueprint = newBlueprint

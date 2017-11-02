@@ -17,7 +17,7 @@ object TestSelector {
   }
 
   final case class CBP private (tests: immutable.Seq[TestInstance]) extends ComponentBlueprint {
-    override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
+    override def create = new ComponentImpl(this)(_)
   }
 
   final class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy)

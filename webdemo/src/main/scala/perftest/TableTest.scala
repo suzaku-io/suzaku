@@ -24,7 +24,7 @@ object TableTest {
   final case class State private (data: Vector[DataRow])
 
   final case class CBP private (initialRows: Int, operation: TableOp) extends ComponentBlueprint {
-    override def create(proxy: StateProxy) = new ComponentImpl(this)(proxy)
+    override def create = new ComponentImpl(this)(_)
   }
 
   def genData(count: Int): Vector[DataRow] = {

@@ -10,17 +10,19 @@ sealed abstract class EventType(val id: Int, val name: String) {
   type Event <: dom.Event
 }
 
-case object BlurEvent      extends EventType(id = 0, name = "blur")       { type Event = dom.FocusEvent    }
-case object FocusEvent     extends EventType(id = 1, name = "focus")      { type Event = dom.FocusEvent    }
-case object ClickEvent     extends EventType(id = 2, name = "click")      { type Event = dom.MouseEvent    }
-case object InputEvent     extends EventType(id = 3, name = "input")      { type Event = dom.Event         }
-case object KeyDownEvent   extends EventType(id = 4, name = "keydown")    { type Event = dom.KeyboardEvent }
-case object KeyUpEvent     extends EventType(id = 5, name = "keyup")      { type Event = dom.KeyboardEvent }
-case object MouseDownEvent extends EventType(id = 6, name = "mousedown")  { type Event = dom.MouseEvent    }
-case object MouseUpEvent   extends EventType(id = 7, name = "mouseup")    { type Event = dom.MouseEvent    }
-case object MouseMoveEvent extends EventType(id = 8, name = "mousemove")  { type Event = dom.MouseEvent    }
-case object MouseOutEvent  extends EventType(id = 9, name = "mouseout")   { type Event = dom.MouseEvent    }
-case object MouseOverEvent extends EventType(id = 10, name = "mouseover") { type Event = dom.MouseEvent    }
+case object BlurEvent        extends EventType(id = 0, name = "blur")       { type Event = dom.FocusEvent    }
+case object FocusEvent       extends EventType(id = 1, name = "focus")      { type Event = dom.FocusEvent    }
+case object ClickEvent       extends EventType(id = 2, name = "click")      { type Event = dom.MouseEvent    }
+case object InputEvent       extends EventType(id = 3, name = "input")      { type Event = dom.Event         }
+case object KeyDownEvent     extends EventType(id = 4, name = "keydown")    { type Event = dom.KeyboardEvent }
+case object KeyUpEvent       extends EventType(id = 5, name = "keyup")      { type Event = dom.KeyboardEvent }
+case object MouseDownEvent   extends EventType(id = 6, name = "mousedown")  { type Event = dom.MouseEvent    }
+case object MouseUpEvent     extends EventType(id = 7, name = "mouseup")    { type Event = dom.MouseEvent    }
+case object MouseMoveEvent   extends EventType(id = 8, name = "mousemove")  { type Event = dom.MouseEvent    }
+case object MouseOutEvent    extends EventType(id = 9, name = "mouseout")   { type Event = dom.MouseEvent    }
+case object MouseOverEvent   extends EventType(id = 10, name = "mouseover") { type Event = dom.MouseEvent    }
+case object ChangeEvent      extends EventType(id = 11, name = "change")    { type Event = dom.Event         }
+case object DoubleClickEvent extends EventType(id = 12, name = "dblclick")  { type Event = dom.MouseEvent    }
 
 @js.native
 trait UnsafeJSDict[A] extends js.Any {

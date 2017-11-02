@@ -1,11 +1,11 @@
 package suzaku.platform.web
 
-import arteria.core.Protocol
+import arteria.core.{MessageWitness, Protocol}
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
 import suzaku.ui.resource._
 import suzaku.ui.style.{FromPalette, StyleBaseProperty}
-import suzaku.ui.{Widget, WidgetArtifact, WidgetWithProtocol}
+import suzaku.ui.{Widget, WidgetArtifact, WidgetExtProtocol, WidgetWithProtocol}
 import suzaku.util.DenseIntMap
 
 case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
@@ -14,6 +14,8 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, ui
     extends WidgetWithProtocol[P](widgetId, uiManager) {
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
+
+  implicit val widgetExtMessage = new MessageWitness[WidgetExtProtocol.WidgetMessage, P] {}
 
   @inline protected[web] def modifyDOM(f: E => Unit): Unit = f(artifact.el)
 
@@ -80,6 +82,52 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, ui
           case (name, value) =>
             updateStyleProperty(name, remove, value)
         }
+    }
+  }
+
+  import suzaku.ui.WidgetExtProtocol._
+
+  override protected def startEventListener(eventType: Int): Unit = {
+    eventType match {
+      case EventType.OnClickEvent =>
+        uiManager.addListener(ClickEvent)(widgetId, artifact.el, { e =>
+          channel.send(
+            OnClick(
+              e.nativeEvent.clientX.toInt,
+              e.nativeEvent.clientY.toInt,
+              e.nativeEvent.buttons
+            )
+          )
+        })
+      case EventType.OnLongClickEvent =>
+        uiManager.addListener(DoubleClickEvent)(widgetId, artifact.el, { e =>
+          channel.send(
+            OnLongClick(
+              e.nativeEvent.clientX.toInt,
+              e.nativeEvent.clientY.toInt,
+              e.nativeEvent.buttons
+            )
+          )
+        })
+      case EventType.OnFocusChangeEvent =>
+        uiManager.addListener(FocusEvent)(widgetId, artifact.el, { _ =>
+          channel.send(OnFocusChange(true))
+        })
+        uiManager.addListener(BlurEvent)(widgetId, artifact.el, { _ =>
+          channel.send(OnFocusChange(false))
+        })
+    }
+  }
+
+  override protected def stopEventListener(eventType: Int): Unit = {
+    eventType match {
+      case EventType.OnClickEvent =>
+        uiManager.removeListener(ClickEvent, widgetId, artifact.el)
+      case EventType.OnLongClickEvent =>
+        uiManager.removeListener(DoubleClickEvent, widgetId, artifact.el)
+      case EventType.OnFocusChangeEvent =>
+        uiManager.removeListener(FocusEvent, widgetId, artifact.el)
+        uiManager.removeListener(BlurEvent, widgetId, artifact.el)
     }
   }
 

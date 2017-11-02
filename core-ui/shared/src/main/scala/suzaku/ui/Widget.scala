@@ -2,7 +2,7 @@ package suzaku.ui
 
 import arteria.core._
 import suzaku.ui.UIProtocol.ChildOp
-import suzaku.ui.WidgetExtProtocol.{UpdateLayout, UpdateStyle}
+import suzaku.ui.WidgetExtProtocol.{ListenTo, UpdateLayout, UpdateStyle}
 import suzaku.ui.layout.LayoutProperty
 import suzaku.ui.style.{RemapClasses, StyleBaseProperty, StyleClasses, WidgetStyles}
 import suzaku.util.DenseIntMap
@@ -43,11 +43,15 @@ abstract class Widget(val widgetId: Int, widgetManager: UIManager) extends Widge
 
   def updateChildren(ops: Seq[ChildOp], widget: Int => W): Unit
 
-  def applyStyleClasses(styles: List[Int]): Unit
+  protected def applyStyleClasses(styles: List[Int]): Unit
 
-  def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit
+  protected def applyStyleProperty(prop: StyleBaseProperty, remove: Boolean): Unit
 
-  def widgetClass: Int = widgetClassId
+  protected def startEventListener(eventType: Int): Unit
+
+  protected def stopEventListener(eventType: Int): Unit
+
+  protected def widgetClass: Int = widgetClassId
 
   def layoutProperties = layoutProps
 
@@ -173,6 +177,13 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: U
       println(s"Update layout with $props")
       layoutProps = props
       parent.foreach(_.resolveLayout(this, layoutProps))
+
+    case ListenTo(eventType, true) =>
+      startEventListener(eventType)
+
+    case ListenTo(eventType, false) =>
+      stopEventListener(eventType)
+
   }
 }
 
