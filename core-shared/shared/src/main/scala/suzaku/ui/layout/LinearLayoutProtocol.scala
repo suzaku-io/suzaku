@@ -21,7 +21,7 @@ object LinearLayoutProtocol extends WidgetProtocol {
     .addConcreteType[SetJustify]
     .addConcreteType[SetAlignment]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   final case class ChannelContext(direction: Direction, justify: Justify, align: Alignment)
 

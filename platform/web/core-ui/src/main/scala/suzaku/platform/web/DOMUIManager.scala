@@ -1,9 +1,9 @@
 package suzaku.platform.web
 
-import boopickle.Default._
 import org.scalajs.dom
 import org.scalajs.dom.raw.DOMParser
 import suzaku.platform.{Logger, Platform}
+import suzaku.ui.UIManager.WidgetNode
 import suzaku.ui._
 import suzaku.ui.resource.{Base64ImageResource, ResourceRegistration, SVGImageResource}
 import suzaku.ui.style._
@@ -155,6 +155,10 @@ class DOMUIManager(logger: Logger, platform: Platform) extends UIManager(logger,
   }
 
   override def emptyWidget(widgetId: Int) = new DOMEmptyWidget(widgetId, this)
+
+  override def destroyWidget(node: WidgetNode): Unit = {
+    eventHandler.removeWidget(node.widget.widgetId, node.widget.artifact.asInstanceOf[DOMWidgetArtifact[_ <: dom.html.Element]].el)
+  }
 
   override def mountRoot(node: WidgetArtifact) = {
     import org.scalajs.dom.ext._

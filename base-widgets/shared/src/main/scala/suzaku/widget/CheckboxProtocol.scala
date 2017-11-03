@@ -19,7 +19,7 @@ object CheckboxProtocol extends WidgetProtocol {
     .addConcreteType[SetLabel]
     .addConcreteType[ValueChanged]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext(checked: Boolean, label: Option[String])
 

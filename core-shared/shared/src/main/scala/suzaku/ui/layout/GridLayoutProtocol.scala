@@ -1,15 +1,12 @@
 package suzaku.ui.layout
 
-import arteria.core.{Message, Protocol}
-import suzaku.ui.UIProtocol.UIChannel
+import arteria.core.Message
 import suzaku.ui._
 import suzaku.ui.style.LengthDimension
 
-import scala.language.implicitConversions
-
 object GridLayoutProtocol extends WidgetProtocol {
-  import boopickle.Default._
   import LengthDimension._
+  import boopickle.Default._
 
   implicit val layoutIdPickler = LayoutId.LayoutIdPickler
 
@@ -39,7 +36,7 @@ object GridLayoutProtocol extends WidgetProtocol {
   private val mPickler = compositePickler[LayoutMessage]
     .addConcreteType[SetGrid]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   final case class ChannelContext(grid: GridDef)
 

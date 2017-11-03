@@ -22,7 +22,7 @@ object ButtonProtocol extends WidgetProtocol {
     .addConcreteType[SetIcon]
     .addConcreteType[Click.type]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext(label: String, icon: Option[ImageResource])
 

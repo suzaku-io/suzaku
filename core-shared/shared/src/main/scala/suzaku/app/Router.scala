@@ -1,9 +1,6 @@
 package suzaku.app
 
-import arteria.core._
 import boopickle.Default._
-import suzaku.ui.UIProtocol
-import suzaku.util.LoggerProtocol
 
 trait RouterMessage
 

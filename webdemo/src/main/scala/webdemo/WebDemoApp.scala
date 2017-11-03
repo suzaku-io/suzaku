@@ -1,6 +1,5 @@
 package webdemo
 
-import boopickle.Default.{Pickler, compositePickler}
 import suzaku.app.AppBase
 import suzaku.platform.Transport
 import suzaku.ui._
@@ -20,10 +19,10 @@ object TestComp {
                    align: Alignment = AlignStretch)
 
   case class CBP private (label: String) extends ComponentBlueprint {
-    override def create = new ComponentImpl(this)(_)
+    override def create = new ComponentImpl(this)
   }
 
-  class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy) extends Component[CBP, State](initialBlueprint, proxy) {
+  class ComponentImpl(initialBlueprint: CBP) extends Component[CBP, State](initialBlueprint) {
     def render(state: State) = {
       import suzaku.ui.KeywordTypes._
       import suzaku.ui.layout._
@@ -34,7 +33,7 @@ object TestComp {
           Checkbox(state.checked, "Checked", value => modState(s => s.copy(checked = value))) << (
             width := 10.em
           ),
-          TextField(state.text, value => modState(s => s.copy(text = value))),
+          TextField(state.text, value => modState(s => s.copy(text = value))).withOnFocusChange(focused => println(s"Textfield focused = $focused")),
           Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
           Button(s"Remove button ${state.count}", EmbeddedTest.icon2, () => dec())
             .withKey(1)

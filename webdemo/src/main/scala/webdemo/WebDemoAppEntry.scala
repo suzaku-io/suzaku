@@ -1,11 +1,11 @@
 package webdemo
 
-import suzaku.platform.web.{WebWorkerTransport, WorkerTransport}
 import org.scalajs.dom
 import org.scalajs.dom.raw.DedicatedWorkerGlobalScope
+import suzaku.platform.web.{WebWorkerTransport, WorkerTransport}
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.ArrayBuffer
 
 @JSExportTopLevel("WebDemoAppEntry")
 object WebDemoAppEntry {
@@ -41,6 +41,7 @@ object WebDemoAppEntry {
     msg.data match {
       case buffer: ArrayBuffer =>
         /*
+        import scala.scalajs.js.typedarray.TypedArrayBuffer
         val debugData = TypedArrayBuffer.wrap(buffer.slice(0))
         val debugArray = Array.ofDim[Byte](debugData.limit())
         debugData.get(debugArray)

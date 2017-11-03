@@ -17,11 +17,10 @@ object TestSelector {
   }
 
   final case class CBP private (tests: immutable.Seq[TestInstance]) extends ComponentBlueprint {
-    override def create = new ComponentImpl(this)(_)
+    override def create = new ComponentImpl(this)
   }
 
-  final class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy)
-      extends Component[CBP, State](initialBlueprint, proxy) {
+  final class ComponentImpl(initialBlueprint: CBP) extends Component[CBP, State](initialBlueprint) {
     override def render(state: State): Blueprint = {
       import suzaku.ui.layout._
       import suzaku.ui.style._

@@ -1,8 +1,8 @@
 package suzaku.platform.web.widget
 
-import suzaku.platform.web.{DOMWidget, DOMUIManager, DOMWidgetArtifact}
-import suzaku.ui.{WidgetBuilder, UIManager}
 import org.scalajs.dom
+import suzaku.platform.web.{DOMUIManager, DOMWidget, DOMWidgetArtifact}
+import suzaku.ui.WidgetBuilder
 import suzaku.widget.TextProtocol
 
 class DOMText(widgetId: Int, context: TextProtocol.ChannelContext, widgetManager: DOMUIManager)

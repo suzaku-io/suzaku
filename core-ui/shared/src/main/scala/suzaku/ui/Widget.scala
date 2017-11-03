@@ -128,7 +128,7 @@ trait WidgetParent {
 
 abstract class WidgetArtifact
 
-abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: UIManager)
+abstract class WidgetWithProtocol[P <: WidgetProtocol](widgetId: Int, widgetManager: UIManager)
     extends Widget(widgetId, widgetManager)
     with MessageChannelHandler[P] {
   override type CP = P
@@ -187,7 +187,7 @@ abstract class WidgetWithProtocol[P <: Protocol](widgetId: Int, widgetManager: U
   }
 }
 
-abstract class WidgetBuilder[P <: Protocol](protocol: P) {
+abstract class WidgetBuilder[P <: WidgetProtocol](protocol: P) {
   protected def create(widgetId: Int, context: P#ChannelContext): WidgetWithProtocol[P]
 
   def materialize(widgetId: Int,

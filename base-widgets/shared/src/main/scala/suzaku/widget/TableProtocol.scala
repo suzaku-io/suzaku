@@ -10,7 +10,7 @@ object TableProtocol extends WidgetProtocol {
 
   val mPickler = compositePickler[TableMessage]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext()
 
@@ -23,7 +23,7 @@ abstract class TableBaseProtocol extends WidgetProtocol {
 
   val mPickler = compositePickler[TableMessage]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext()
 
@@ -44,7 +44,7 @@ abstract class TableBaseCellProtocol extends WidgetProtocol {
   val mPickler = compositePickler[TableMessage]
     .addConcreteType[SetSpans]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext(colSpan: Int, rowSpan: Int)
 

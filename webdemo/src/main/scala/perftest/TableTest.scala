@@ -5,7 +5,7 @@ import java.util.UUID
 import suzaku.ui._
 import suzaku.ui.layout.{Direction, LinearLayout}
 import suzaku.ui.style.StyleClassBase
-import suzaku.widget.{Table, Text, TextField}
+import suzaku.widget.{Table, TextField}
 
 import scala.util.Random
 
@@ -24,10 +24,10 @@ object TableTest {
   final case class State private (data: Vector[DataRow])
 
   final case class CBP private (initialRows: Int, operation: TableOp) extends ComponentBlueprint {
-    override def create = new ComponentImpl(this)(_)
+    override def create = new ComponentImpl(this)
   }
 
-  def genData(count: Int): Vector[DataRow] = {
+  private def genData(count: Int): Vector[DataRow] = {
     ((0 until count) map { _ =>
       val price = Random.nextDouble() * 100
       val count = Random.nextInt(100)
@@ -41,9 +41,7 @@ object TableTest {
     }).toVector
   }
 
-  final class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy)
-      extends Component[CBP, State](initialBlueprint, proxy) {
-
+  final class ComponentImpl(initialBlueprint: CBP) extends Component[CBP, State](initialBlueprint) {
     override def render(state: State): Blueprint = {
       import suzaku.ui.style._
       import suzaku.ui.Keywords.fixed

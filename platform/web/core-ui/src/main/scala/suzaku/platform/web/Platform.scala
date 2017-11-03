@@ -8,5 +8,5 @@ object WebPlatform extends Platform {
 
   def scheduler: Scheduler = new DOMScheduler
 
-  def widgetManager(logger: Logger): UIManager = new DOMUIManager(logger, this)
+  def uiManager(logger: Logger): UIManager = new DOMUIManager(logger, this)
 }

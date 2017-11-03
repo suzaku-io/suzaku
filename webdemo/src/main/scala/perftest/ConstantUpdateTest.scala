@@ -1,18 +1,18 @@
 package perftest
 
 import suzaku.ui.layout.{Direction, LinearLayout}
-import suzaku.ui.{Blueprint, Component, ComponentBlueprint, StateProxy}
+import suzaku.ui.{Blueprint, Component, ComponentBlueprint}
 import suzaku.widget.{Text, TextField}
 
 object ConstantUpdateTest {
   final case class State private (counter: Int, value: Int)
 
   final case class CBP private (slowDown: Boolean, counter: Int) extends ComponentBlueprint {
-    override def create = new ComponentImpl(this)(_)
+    override def create = new ComponentImpl(this)
   }
 
-  final class ComponentImpl(initialBlueprint: CBP)(proxy: StateProxy)
-      extends Component[CBP, State](initialBlueprint, proxy) {
+  final class ComponentImpl(initialBlueprint: CBP)
+      extends Component[CBP, State](initialBlueprint) {
 
     override def render(state: State): Blueprint = {
       import suzaku.ui.style._

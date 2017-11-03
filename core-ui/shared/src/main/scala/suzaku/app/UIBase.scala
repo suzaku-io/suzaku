@@ -31,7 +31,7 @@ abstract class UIBase(transport: Transport,
   // subscribe to messages from transport
   transport.subscribe(receive)
   // create the UI channel
-  val widgetManager = platform.widgetManager(logger)
+  val widgetManager = platform.uiManager(logger)
   val uiManagerChannel =
     router.createChannel(UIProtocol)(widgetManager, UIProtocol.UIProtocolContext(), CreateUIChannel)
   // send out first messages to establish router channel

@@ -487,7 +487,8 @@ object UIManagerProxy {
       with StateProxy {
     type BP = ComponentBlueprint
 
-    val component = blueprint.create(this).asInstanceOf[Component[ComponentBlueprint, Any]]
+    val component = blueprint.create.asInstanceOf[Component[ComponentBlueprint, Any]]
+    component.setProxy(this)
     val componentId: List[Int] = {
       lastComponentId += 1
       lastComponentId :: findParentComponentId(parent)

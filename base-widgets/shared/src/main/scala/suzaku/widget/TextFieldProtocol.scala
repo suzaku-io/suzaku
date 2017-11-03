@@ -16,7 +16,7 @@ object TextFieldProtocol extends WidgetProtocol {
     .addConcreteType[SetValue]
     .addConcreteType[ValueChanged]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(mPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext(initialValue: String)
 

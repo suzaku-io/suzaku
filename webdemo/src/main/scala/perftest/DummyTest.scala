@@ -5,7 +5,7 @@ import suzaku.widget.Text
 
 object DummyTest {
   final case class CBP private () extends ComponentBlueprint {
-    override def create = _ => new ComponentImpl(this)
+    override def create = new ComponentImpl(this)
   }
 
   final class ComponentImpl(initialBlueprint: CBP) extends StatelessComponent(initialBlueprint) {

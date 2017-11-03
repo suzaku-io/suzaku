@@ -14,12 +14,16 @@ object StatelessProxy extends StateProxy {
     throw new IllegalStateException("Cannot modify state of a stateless component")
 }
 
-abstract class Component[BP <: ComponentBlueprint, State](initialBlueprint: BP, proxy: StateProxy) {
+abstract class Component[BP <: ComponentBlueprint, State](initialBlueprint: BP) {
   private[suzaku] var _blueprint: BP = initialBlueprint
+
+  private[suzaku] var _proxy: StateProxy = _
+
+  private[suzaku] def setProxy(proxy: StateProxy): Unit = _proxy = proxy
 
   final def blueprint: BP = _blueprint
 
-  protected final def modState(f: State => State): Unit = proxy.modState(f)
+  protected def modState(f: State => State): Unit = _proxy.modState(f)
 
   def render(state: State): Blueprint
 
@@ -40,7 +44,10 @@ abstract class Component[BP <: ComponentBlueprint, State](initialBlueprint: BP, 
   implicit def stringToText(str: String): TextBlueprint = TextBlueprint(str)
 }
 
-abstract class StatelessComponent[BP <: ComponentBlueprint](bp: BP) extends Component[BP, AnyRef](bp, StatelessProxy) {
+abstract class StatelessComponent[BP <: ComponentBlueprint](bp: BP) extends Component[BP, AnyRef](bp) {
+  override protected def modState(f: AnyRef => AnyRef): Unit =
+    throw new IllegalStateException("Cannot modify state of a stateless component")
+
   def initialState: AnyRef = null
 
   def render: Blueprint

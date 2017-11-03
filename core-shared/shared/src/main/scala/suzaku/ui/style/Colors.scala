@@ -311,6 +311,19 @@ object Palette {
     userDefined.zipWithIndex.foreach { case (e, i) => entries(UserColors + i) = e }
     Palette(entries)
   }
+
+  val default = Palette(
+    PaletteEntry(DefaultColors.white),
+    PaletteEntry(DefaultColors.blue),
+    PaletteEntry(DefaultColors.gray),
+    PaletteEntry(DefaultColors.gray),
+    PaletteEntry(DefaultColors.red),
+    PaletteEntry(DefaultColors.green),
+    PaletteEntry(DefaultColors.orange),
+    PaletteEntry(DefaultColors.teal),
+    PaletteEntry(DefaultColors.white),
+    PaletteEntry(DefaultColors.black)
+  )
 }
 
 object Color {
@@ -511,4 +524,27 @@ object Colors extends Colors {
   val whitesmoke           = RGB(0xF5F5F5)
   val yellow               = RGB(0xFFFF00)
   val yellowgreen          = RGB(0x9ACD32)
+}
+
+/**
+  * Nice looking default colors (from https://github.com/mrmrs/colors)
+  */
+object DefaultColors {
+  val navy    = RGB(0x001F3F)
+  val blue    = RGB(0x0074D9)
+  val aqua    = RGB(0x7FDBFF)
+  val teal    = RGB(0x39CCCC)
+  val olive   = RGB(0x3D9970)
+  val green   = RGB(0x2ECC40)
+  val lime    = RGB(0x01FF70)
+  val yellow  = RGB(0xFFDC00)
+  val orange  = RGB(0xFF851B)
+  val red     = RGB(0xFF4136)
+  val fuchsia = RGB(0xF012BE)
+  val purple  = RGB(0xB10DC9)
+  val maroon  = RGB(0x85144B)
+  val white   = RGB(0xFFFFFF)
+  val silver  = RGB(0xDDDDDD)
+  val gray    = RGB(0xAAAAAA)
+  val black   = RGB(0x111111)
 }

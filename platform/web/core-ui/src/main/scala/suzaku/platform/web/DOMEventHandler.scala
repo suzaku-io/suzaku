@@ -8,10 +8,11 @@ import scala.scalajs.js.annotation.JSBracketAccess
 
 sealed abstract class EventType(val id: Int, val name: String) {
   type Event <: dom.Event
+  def idBit = 1 << id
 }
 
-case object BlurEvent        extends EventType(id = 0, name = "blur")       { type Event = dom.FocusEvent    }
-case object FocusEvent       extends EventType(id = 1, name = "focus")      { type Event = dom.FocusEvent    }
+case object FocusOutEvent    extends EventType(id = 0, name = "focusout")   { type Event = dom.FocusEvent    }
+case object FocusInEvent     extends EventType(id = 1, name = "focusin")    { type Event = dom.FocusEvent    }
 case object ClickEvent       extends EventType(id = 2, name = "click")      { type Event = dom.MouseEvent    }
 case object InputEvent       extends EventType(id = 3, name = "input")      { type Event = dom.Event         }
 case object KeyDownEvent     extends EventType(id = 4, name = "keydown")    { type Event = dom.KeyboardEvent }
@@ -54,8 +55,8 @@ class DOMEventHandler(root: dom.EventTarget) {
   final val suzakuInternal = "__suzakuInternal"
 
   private val eventTypes = List[EventType](
-    BlurEvent,
-    FocusEvent,
+    FocusOutEvent,
+    FocusInEvent,
     ClickEvent,
     InputEvent,
     KeyDownEvent,
@@ -64,7 +65,9 @@ class DOMEventHandler(root: dom.EventTarget) {
     MouseUpEvent,
     MouseMoveEvent,
     MouseOutEvent,
-    MouseOverEvent
+    MouseOverEvent,
+    ChangeEvent,
+    DoubleClickEvent
   )
 
   private val listenerFunctions = eventTypes.map { et =>
@@ -76,6 +79,7 @@ class DOMEventHandler(root: dom.EventTarget) {
   private val registeredCaptureListeners =
     Array.fill[mutable.HashSet[Int]](eventTypes.map(_.id).max + 1)(mutable.HashSet.empty)
 
+  private val registeredWidgets = mutable.HashMap.empty[Int, (Int, Int)]
   private val handlerSeq        = Array.ofDim[EventCallback[dom.Event]](256)
   private val captureHandlerSeq = Array.ofDim[EventCallback[dom.Event]](256)
 
@@ -99,6 +103,8 @@ class DOMEventHandler(root: dom.EventTarget) {
     val internal = elementInternal(target.asInstanceOf[js.Dynamic])
     internal.widgetId = widgetId
     internal.listeners(eventType.id.toString) = callback.asInstanceOf[DOMEvent[_ <: dom.Event] => Unit]
+    val (normal, capture) = registeredWidgets.getOrElse(widgetId, (0, 0))
+    registeredWidgets.update(widgetId, (normal | eventType.idBit, capture))
   }
 
   def removeListener(eventType: EventType, widgetId: Int, target: dom.Element): Unit = {
@@ -108,6 +114,8 @@ class DOMEventHandler(root: dom.EventTarget) {
     js.special.delete(internal.listeners, eventType.id.toString)
     if (listeners.isEmpty)
       root.removeEventListener(eventType.name, listenerFunctions(eventType.id))
+    val (normal, capture) = registeredWidgets.getOrElse(widgetId, (0, 0))
+    registeredWidgets.update(widgetId, (normal & ~eventType.idBit, capture))
   }
 
   def addCaptureListener(
@@ -119,6 +127,8 @@ class DOMEventHandler(root: dom.EventTarget) {
     val internal = elementInternal(target.asInstanceOf[js.Dynamic])
     internal.widgetId = widgetId
     internal.captureListeners(eventType.id.toString) = callback.asInstanceOf[DOMEvent[_ <: dom.Event] => Unit]
+    val (normal, capture) = registeredWidgets.getOrElse(widgetId, (0, 0))
+    registeredWidgets.update(widgetId, (normal, capture | eventType.idBit))
   }
 
   def removeCaptureListener(eventType: EventType, widgetId: Int, target: dom.Element): Unit = {
@@ -128,6 +138,22 @@ class DOMEventHandler(root: dom.EventTarget) {
     js.special.delete(internal.captureListeners, eventType.id.toString)
     if (listeners.isEmpty)
       root.removeEventListener(eventType.name, listenerFunctions(eventType.id))
+    val (normal, capture) = registeredWidgets.getOrElse(widgetId, (0, 0))
+    registeredWidgets.update(widgetId, (normal, capture & ~eventType.idBit))
+  }
+
+  def removeWidget(widgetId: Int, element: dom.Element): Unit = {
+    // remove all registered listeners
+    registeredWidgets.get(widgetId).foreach {
+      case (normal, capture) =>
+        eventTypes.foreach { e =>
+          if ((normal & e.idBit) != 0)
+            removeListener(e, widgetId, element)
+          if ((capture & e.idBit) != 0)
+            removeCaptureListener(e, widgetId, element)
+        }
+        registeredWidgets.remove(widgetId)
+    }
   }
 
   private def collectParents(eventType: String, target: js.Dynamic): (Int, Int) = {

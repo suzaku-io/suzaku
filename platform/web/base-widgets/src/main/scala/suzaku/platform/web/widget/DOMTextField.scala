@@ -1,7 +1,7 @@
 package suzaku.platform.web.widget
 
 import org.scalajs.dom
-import suzaku.platform.web.{DOMUIManager, DOMWidget, DOMWidgetArtifact, StyleConfig}
+import suzaku.platform.web._
 import suzaku.ui.WidgetBuilder
 import suzaku.ui.style.Palette
 import suzaku.widget.TextFieldProtocol
@@ -12,7 +12,7 @@ class DOMTextField(widgetId: Int, context: TextFieldProtocol.ChannelContext)(imp
 
   val artifact = {
     val el = tag[dom.html.Input]("input")
-    el.addEventListener("input", onChange _)
+    uiManager.addListener(ChangeEvent)(widgetId, el, onChange)
     el.setAttribute("type", "text")
     el.value = context.initialValue
     DOMWidgetArtifact(el)
@@ -20,7 +20,7 @@ class DOMTextField(widgetId: Int, context: TextFieldProtocol.ChannelContext)(imp
 
   override protected def baseStyleClasses = List(DOMTextField.style.base)
 
-  private def onChange(e: dom.Event): Unit = {
+  private def onChange(e: DOMEvent[ChangeEvent.Event]): Unit = {
     channel.send(ValueChanged(artifact.el.value))
   }
 

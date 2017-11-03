@@ -24,8 +24,8 @@ abstract class UIManager(logger: Logger, platform: Platform)
                              widgetClasses: DenseIntMap[List[Int]])
 
   private var widgetClassMap        = DenseIntMap.empty[String]
-  private var registeredWidgets     = Map.empty[String, WidgetBuilder[_ <: Protocol]]
-  private var builders              = DenseIntMap.empty[WidgetBuilder[_ <: Protocol]]
+  private var registeredWidgets     = Map.empty[String, WidgetBuilder[_ <: WidgetProtocol]]
+  private var builders              = DenseIntMap.empty[WidgetBuilder[_ <: WidgetProtocol]]
   private var uiChannel: UIChannel  = _
   protected val nodes               = mutable.LongMap[WidgetNode](-1L -> WidgetNode(emptyWidget(-1), Nil, -1))
   protected var rootNode            = Option.empty[WidgetNode]
@@ -33,17 +33,17 @@ abstract class UIManager(logger: Logger, platform: Platform)
   protected var registeredResources = DenseIntMap.empty[ResourceRegistration]
   protected var themes              = Vector.empty[(Int, Map[Int, List[Int]])]
   protected var activeTheme         = DenseIntMap.empty[List[Int]]
-  protected var activePalette       = Palette.empty
+  protected var activePalette       = Palette.default
   protected var frameRequested      = false
   protected var frameComplete       = true
 
   override def establishing(channel: MessageChannel[ChannelProtocol]) =
     uiChannel = channel
 
-  def registerWidget(id: String, builder: WidgetBuilder[_ <: Protocol]): Unit =
+  def registerWidget(id: String, builder: WidgetBuilder[_ <: WidgetProtocol]): Unit =
     registeredWidgets += id -> builder
 
-  def registerWidget(clazz: Class[_], builder: WidgetBuilder[_ <: Protocol]): Unit =
+  def registerWidget(clazz: Class[_], builder: WidgetBuilder[_ <: WidgetProtocol]): Unit =
     registeredWidgets += clazz.getName -> builder
 
   def buildWidget(widgetClass: Int,
@@ -272,7 +272,7 @@ abstract class UIManager(logger: Logger, platform: Platform)
 
   override def channelWillClose(id: Int): Unit = {
     logger.debug(s"Widget [$id] removed")
-    nodes -= id
+    nodes.remove(id).foreach(node => destroyWidget(node))
   }
 
   override def hasParent: Boolean =
@@ -296,6 +296,8 @@ abstract class UIManager(logger: Logger, platform: Platform)
     activePalette(idx)
 
   protected def emptyWidget(widgetId: Int): Widget
+
+  protected def destroyWidget(node: WidgetNode): Unit
 
   protected def mountRoot(node: WidgetArtifact): Unit
 

@@ -12,7 +12,7 @@ object TextProtocol extends WidgetProtocol {
   val tmPickler = compositePickler[TextMessage]
     .addConcreteType[SetText]
 
-  implicit val (messagePickler, witnessMsg1, witnessMsg2) = defineProtocol(tmPickler, WidgetExtProtocol.wmPickler)
+  implicit val (messagePickler, witnessMsg1, widgetExtWitness) = defineProtocol(tmPickler, WidgetExtProtocol.wmPickler)
 
   case class ChannelContext(text: String)
 

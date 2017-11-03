@@ -1,6 +1,5 @@
 package suzaku.widget
 
-import boopickle.Default._
 import suzaku.ui.UIProtocol.UIChannel
 import suzaku.ui.{WidgetBlueprint, WidgetProtocolProvider, WidgetProxy}
 

@@ -3,13 +3,22 @@ import Keys._
 import com.typesafe.sbt.pgp.PgpKeys._
 import Dependencies._
 
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+crossScalaVersions := Seq("2.11.11", "2.12.4")
 
 val commonSettings = Seq(
   organization := "io.suzaku",
   version := Version.library,
-  scalaVersion := "2.12.3",
-  scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation", "-encoding", "utf8", "-Ypatmat-exhaust-depth", "40"),
+  scalaVersion := "2.12.4",
+  scalacOptions ++= Seq("-unchecked",
+                        "-feature",
+                        "-deprecation",
+                        "-encoding",
+                        "utf8",
+                        "-Ypatmat-exhaust-depth",
+                        "40",
+                        "-Xfuture",
+                        "-Ywarn-unused:imports",
+                        "-Ywarn-unused:implicits"),
   libraryDependencies ++= Seq(
     scalaTest.value,
     scalaMock.value

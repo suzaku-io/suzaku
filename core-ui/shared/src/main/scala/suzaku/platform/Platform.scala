@@ -7,5 +7,5 @@ trait Platform {
 
   def scheduler: Scheduler
 
-  def widgetManager(logger: Logger): UIManager
+  def uiManager(logger: Logger): UIManager
 }

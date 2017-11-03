@@ -1,25 +1,25 @@
 package suzaku.platform.web
 
-import arteria.core.{MessageWitness, Protocol}
+import arteria.core.MessageWitness
 import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
+import suzaku.ui._
 import suzaku.ui.resource._
 import suzaku.ui.style.{FromPalette, StyleBaseProperty}
-import suzaku.ui.{Widget, WidgetArtifact, WidgetExtProtocol, WidgetWithProtocol}
 import suzaku.util.DenseIntMap
 
 case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
 
-abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, uiManager: DOMUIManager)
+abstract class DOMWidget[P <: WidgetProtocol, E <: dom.html.Element](widgetId: Int, uiManager: DOMUIManager)
     extends WidgetWithProtocol[P](widgetId, uiManager) {
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
 
-  implicit val widgetExtMessage = new MessageWitness[WidgetExtProtocol.WidgetMessage, P] {}
+  protected implicit def widgetExtMessage = channel.protocol.widgetExtWitness.asInstanceOf[MessageWitness[WidgetExtProtocol.WidgetMessage, P]]
 
   @inline protected[web] def modifyDOM(f: E => Unit): Unit = f(artifact.el)
 
-  def updateChildren(ops: Seq[ChildOp], mapWidget: Int => W): Unit = {
+  override def updateChildren(ops: Seq[ChildOp], mapWidget: Int => W): Unit = {
     val el    = artifact.el
     var child = el.firstChild
     ops.foreach {
@@ -60,7 +60,7 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, ui
     rebuildClassName()
   }
 
-  def rebuildClassName(): Unit = {
+  private def rebuildClassName(): Unit = {
     val allClasses = baseStyleClasses ++ customizeStyleClasses.values ++ userStyleClasses
     if (allClasses.isEmpty)
       artifact.el.removeAttribute("class")
@@ -110,10 +110,10 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, ui
           )
         })
       case EventType.OnFocusChangeEvent =>
-        uiManager.addListener(FocusEvent)(widgetId, artifact.el, { _ =>
+        uiManager.addListener(FocusInEvent)(widgetId, artifact.el, { _ =>
           channel.send(OnFocusChange(true))
         })
-        uiManager.addListener(BlurEvent)(widgetId, artifact.el, { _ =>
+        uiManager.addListener(FocusOutEvent)(widgetId, artifact.el, { _ =>
           channel.send(OnFocusChange(false))
         })
     }
@@ -126,8 +126,8 @@ abstract class DOMWidget[P <: Protocol, E <: dom.html.Element](widgetId: Int, ui
       case EventType.OnLongClickEvent =>
         uiManager.removeListener(DoubleClickEvent, widgetId, artifact.el)
       case EventType.OnFocusChangeEvent =>
-        uiManager.removeListener(FocusEvent, widgetId, artifact.el)
-        uiManager.removeListener(BlurEvent, widgetId, artifact.el)
+        uiManager.removeListener(FocusInEvent, widgetId, artifact.el)
+        uiManager.removeListener(FocusOutEvent, widgetId, artifact.el)
     }
   }
 
@@ -339,7 +339,7 @@ object DOMWidget {
   }
 }
 
-abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widgetId: Int, widgetManager: DOMUIManager)
+abstract class DOMWidgetWithChildren[P <: WidgetProtocol, E <: dom.html.Element](widgetId: Int, widgetManager: DOMUIManager)
     extends DOMWidget[P, E](widgetId, widgetManager) {
   override def setChildren(children: Seq[Widget]) = {
     modifyDOM { el =>
@@ -361,7 +361,7 @@ abstract class DOMWidgetWithChildren[P <: Protocol, E <: dom.html.Element](widge
 }
 
 class DOMEmptyWidget(widgetId: Int, widgetManager: DOMUIManager)
-    extends DOMWidget[Protocol, dom.html.Element](widgetId, widgetManager) {
+    extends DOMWidget[WidgetProtocol, dom.html.Element](widgetId, widgetManager) {
 
   // a Comment is not really an HTMLElement, but we will mark it as such to make it compile :)
   override val artifact = DOMWidgetArtifact(dom.document.createComment("EMPTY").asInstanceOf[dom.html.Element])
