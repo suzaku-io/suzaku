@@ -127,7 +127,7 @@ lazy val coreUI = crossProject
     scalaJSStage in Global := FastOptStage
   )
   .jvmSettings()
-  .dependsOn(coreShared)
+  .dependsOn(coreShared % "compile->compile;test->test")
 
 lazy val coreUIJS  = coreUI.js
 lazy val coreUIJVM = coreUI.jvm
@@ -151,7 +151,7 @@ lazy val coreApp = crossProject
     scalaJSStage in Global := FastOptStage
   )
   .jvmSettings()
-  .dependsOn(coreShared)
+  .dependsOn(coreShared % "compile->compile;test->test")
 
 lazy val coreAppJS  = coreApp.js
 lazy val coreAppJVM = coreApp.jvm

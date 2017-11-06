@@ -9,7 +9,7 @@ import suzaku.ui.UIManagerProxy._
 import suzaku.ui.UIProtocol._
 import suzaku.{TestLogger, UnitSpec}
 
-object TestProtocol extends Protocol {
+object TestProtocol extends WidgetProtocol {
   override type ChannelContext = Unit
 
   sealed trait TestMessage extends Message
@@ -19,7 +19,7 @@ object TestProtocol extends Protocol {
   private val tmPickler = compositePickler[TestMessage]
     .addConcreteType[Msg1]
 
-  implicit val (messagePickler, witnessMsg) = defineProtocol(tmPickler)
+  implicit val (messagePickler, witnessMsg, widgetExtWitness) = defineProtocol(tmPickler, WidgetExtProtocol.wmPickler)
 
   override val contextPickler = implicitly[Pickler[Unit]]
 }
@@ -101,7 +101,7 @@ class UIManagerProxySpec extends UnitSpec with MockFactory {
       .anyNumberOfTimes()
   }
 
-  "View manager child update" should {
+  "UI manager child update" should {
     "update nothing" in new MockFixture {
       val vm = new TestUIManagerProxy(uiChannel)
       (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
@@ -241,7 +241,7 @@ class UIManagerProxySpec extends UnitSpec with MockFactory {
 
     "replace with another widget" in new MockFixture {
       val vm = new TestUIManagerProxy(uiChannel)
-      (uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
+      //(uiChannel.send(_: UIProtocol.UIMessage)(_: MessageWitness[UIProtocol.UIMessage, UIProtocol.type])).expects(*, *)
 
       val current = List(
         new ShadowWidget(TestBlueprint(0), 1, None, uiChannel)

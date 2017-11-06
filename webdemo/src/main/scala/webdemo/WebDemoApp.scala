@@ -31,7 +31,9 @@ object TestComp {
       LinearLayout(Direction.Vertical)(
         LinearLayout(state.direction, state.justify, state.align)(
           Checkbox(state.checked, "Checked", value => modState(s => s.copy(checked = value))) << (
-            width := 10.em
+            width := 10.em,
+            cssClasses := ("extClass", "checkbox"),
+            cssStyle := ("transform" -> "rotate(7deg)")
           ),
           TextField(state.text, value => modState(s => s.copy(text = value))).withOnFocusChange(focused => println(s"Textfield focused = $focused")),
           Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,

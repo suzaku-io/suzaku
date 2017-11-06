@@ -47,6 +47,10 @@ trait StyleBuilders {
   val widgetStyles =
     stylesFor[WidgetStyles, (WidgetProtocolProvider, List[StyleClass])](ct => buildWidgetStyles(ct: _*))
 
+  // raw CSS
+  val cssClasses = stylesFor(RawCSSClasses)
+  val cssStyle   = stylesFor(RawCSSStyles)
+
   // color style definitions
   val color           = styleFor(ForegroundColor)
   val backgroundColor = styleFor(BackgroundColor)

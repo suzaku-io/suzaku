@@ -14,7 +14,7 @@ class DOMWidgetSpec extends UnitSpec {
     }
 
     def test(prop: StyleBaseProperty)(propName: String, propValue: String) = {
-      DOMWidget.extractStyle(prop) should be((propName, propValue))
+      DOMWidget.extractStyle(prop) should be(List((propName, propValue)))
     }
 
     "create correct CSS from basic styles" in {

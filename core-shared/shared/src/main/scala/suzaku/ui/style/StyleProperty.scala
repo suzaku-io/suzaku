@@ -22,6 +22,8 @@ object StyleSeq {
 // normal style properties
 case object EmptyStyle extends StyleBaseProperty
 
+case class RawCSSStyles(style: List[(String, String)]) extends StyleBaseProperty
+
 case class ForegroundColor(color: Color)         extends StyleBaseProperty
 case class BackgroundColor(color: Color)         extends StyleBaseProperty
 case class BackgroundImage(image: ImageResource) extends StyleBaseProperty
@@ -125,6 +127,8 @@ trait IndirectStyle extends StyleBaseProperty
 
 case class FromPalette(idx: Int) extends IndirectStyle
 
+case class RawCSSClasses(classes: List[String]) extends IndirectStyle
+
 // pseudo classes
 trait PseudoClass {
   def props: List[StyleBaseProperty]
@@ -211,6 +215,8 @@ object StyleProperty {
     .addConcreteType[Active]
     .addConcreteType[NthChild]
     .addConcreteType[FromPalette]
+    .addConcreteType[RawCSSClasses]
+    .addConcreteType[RawCSSStyles]
 
   val stylePickler = compositePickler[StyleProperty]
     .join(styleBasePickler)

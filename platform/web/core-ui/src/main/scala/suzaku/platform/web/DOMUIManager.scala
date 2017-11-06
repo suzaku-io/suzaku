@@ -179,9 +179,8 @@ class DOMUIManager(logger: Logger, platform: Platform) extends UIManager(logger,
           val className = DOMWidget.getClassName(styleId)
           val (regularStyles, pseudoStyles) = styleProps.foldLeft((List.empty[String], Map.empty[String, List[String]])) {
             case ((regular, pseudo), pc: PseudoClass) =>
-              val ps = pc.props.map { prop =>
-                val (name, value) = DOMWidget.extractStyle(prop)(this)
-                if (name.nonEmpty) s"$name:$value;" else ""
+              val ps = pc.props.flatMap { prop =>
+                DOMWidget.extractStyle(prop)(this).map { case (name, value) => s"$name:$value;" }
               }
               val name = pc match {
                 case _: Hover          => "hover"
@@ -191,8 +190,8 @@ class DOMUIManager(logger: Logger, platform: Platform) extends UIManager(logger,
               }
               (regular, pseudo.updated(name, ps ::: pseudo.getOrElse(name, Nil)))
             case ((regular, pseudo), prop) =>
-              val (name, value) = DOMWidget.extractStyle(prop)(this)
-              if (name.nonEmpty) (s"$name:$value;" :: regular, pseudo) else (regular, pseudo)
+              val styles = DOMWidget.extractStyle(prop)(this).map { case (name, value) => s"$name:$value;" }
+              (styles ::: regular, pseudo)
           }
 
           val css = s".$className { ${regularStyles.mkString("")} }"

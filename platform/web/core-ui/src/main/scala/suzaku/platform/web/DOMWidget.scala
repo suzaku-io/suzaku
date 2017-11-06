@@ -5,7 +5,7 @@ import org.scalajs.dom
 import suzaku.ui.UIProtocol.{ChildOp, InsertOp, MoveOp, NoOp, RemoveOp, ReplaceOp}
 import suzaku.ui._
 import suzaku.ui.resource._
-import suzaku.ui.style.{FromPalette, StyleBaseProperty}
+import suzaku.ui.style.{FromPalette, RawCSSClasses, StyleBaseProperty}
 import suzaku.util.DenseIntMap
 
 case class DOMWidgetArtifact[E <: dom.html.Element](el: E) extends WidgetArtifact {}
@@ -15,7 +15,8 @@ abstract class DOMWidget[P <: WidgetProtocol, E <: dom.html.Element](widgetId: I
   override type Artifact = DOMWidgetArtifact[E]
   override type W        = DOMWidget[P, E]
 
-  protected implicit def widgetExtMessage = channel.protocol.widgetExtWitness.asInstanceOf[MessageWitness[WidgetExtProtocol.WidgetMessage, P]]
+  protected implicit def widgetExtMessage =
+    channel.protocol.widgetExtWitness.asInstanceOf[MessageWitness[WidgetExtProtocol.WidgetMessage, P]]
 
   @inline protected[web] def modifyDOM(f: E => Unit): Unit = f(artifact.el)
 
@@ -51,6 +52,8 @@ abstract class DOMWidget[P <: WidgetProtocol, E <: dom.html.Element](widgetId: I
 
   protected var userStyleClasses = List.empty[String]
 
+  protected var rawCSSClasses = List.empty[String]
+
   protected var customizeStyleClasses = Map.empty[String, String]
 
   protected def baseStyleClasses: List[String] = Nil
@@ -61,7 +64,11 @@ abstract class DOMWidget[P <: WidgetProtocol, E <: dom.html.Element](widgetId: I
   }
 
   private def rebuildClassName(): Unit = {
-    val allClasses = baseStyleClasses ++ customizeStyleClasses.values ++ userStyleClasses
+    val allClasses = baseStyleClasses ++
+        customizeStyleClasses.values ++
+        userStyleClasses ++
+        rawCSSClasses
+
     if (allClasses.isEmpty)
       artifact.el.removeAttribute("class")
     else
@@ -76,9 +83,11 @@ abstract class DOMWidget[P <: WidgetProtocol, E <: dom.html.Element](widgetId: I
         else
           customizeStyleClasses = customizeStyleClasses.updated("fromPalette", DOMWidget.fromPalette(idx)(uiManager))
         rebuildClassName()
+      case RawCSSClasses(classes) =>
+        rawCSSClasses = if (remove) Nil else classes
+        rebuildClassName()
       case _ =>
-        DOMWidget.extractStyle(prop)(uiManager) match {
-          case ("", _) => // ignore
+        DOMWidget.extractStyle(prop)(uiManager) foreach {
           case (name, value) =>
             updateStyleProperty(name, remove, value)
         }
@@ -285,42 +294,46 @@ object DOMWidget {
     }
   }
 
-  def extractStyle(prop: StyleBaseProperty)(implicit colorProvider: ColorProvider): (String, String) = {
+  def extractStyle(prop: StyleBaseProperty)(implicit colorProvider: ColorProvider): List[(String, String)] = {
     prop match {
-      case ForegroundColor(c) => ("color", show(c))
-      case BackgroundColor(c) => ("background-color", show(c))
+      case RawCSSStyles(styles) =>
+        styles
+      case EmptyStyle | RawCSSStyles(_) | RemapClasses(_) | WidgetStyles(_) => Nil
 
-      case FontFamily(family) => ("font-family", family.mkString("\"", "\",\"", "\""))
-      case FontSize(size)     => ("font-size", show(size))
-      case FontWeight(weight) => ("font-weight", show(weight))
-      case FontItalics        => ("font-style", "italics")
+      case _: IndirectStyle => Nil
 
-      case Width(l)          => ("width", show(l))
-      case Height(l)         => ("height", show(l))
-      case MaxWidth(value)   => ("max-width", show(value))
-      case MaxHeight(value)  => ("max-height", show(value))
-      case MinWidth(value)   => ("min-width", show(value))
-      case MinHeight(value)  => ("min-height", show(value))
-      case GridRowGap(value) => ("grid-row-gap", show(value))
-      case GridColGap(value) => ("grid-column-gap", show(value))
+      case other => List(other match {
+        case ForegroundColor(c) => ("color", show(c))
+        case BackgroundColor(c) => ("background-color", show(c))
 
-      case p: Margin  => expand(p)(l => show(l.value), "margin")
-      case p: Padding => expand(p)(l => show(l.value), "padding")
-      case p: Offset  => expand(p)(l => show(l.value), "offset")
+        case FontFamily(family) => ("font-family", family.mkString("\"", "\",\"", "\""))
+        case FontSize(size) => ("font-size", show(size))
+        case FontWeight(weight) => ("font-weight", show(weight))
+        case FontItalics => ("font-style", "italics")
 
-      case p: BorderWidth => expand(p)(w => show(w.value), "border", "width")
-      case p: BorderStyle => expand(p)(s => show(s.style), "border", "style")
-      case p: BorderColor => expand(p)(c => show(c.color), "border", "color")
+        case Width(l) => ("width", show(l))
+        case Height(l) => ("height", show(l))
+        case MaxWidth(value) => ("max-width", show(value))
+        case MaxHeight(value) => ("max-height", show(value))
+        case MinWidth(value) => ("min-width", show(value))
+        case MinHeight(value) => ("min-height", show(value))
+        case GridRowGap(value) => ("grid-row-gap", show(value))
+        case GridColGap(value) => ("grid-column-gap", show(value))
 
-      case OutlineWidth(w) => ("outline-width", show(w))
-      case OutlineStyle(s) => ("outline-style", show(s))
-      case OutlineColor(c) => ("outline-color", show(c))
+        case p: Margin => expand(p)(l => show(l.value), "margin")
+        case p: Padding => expand(p)(l => show(l.value), "padding")
+        case p: Offset => expand(p)(l => show(l.value), "offset")
 
-      case TableLayout(layout) => ("table-layout", show(layout))
+        case p: BorderWidth => expand(p)(w => show(w.value), "border", "width")
+        case p: BorderStyle => expand(p)(s => show(s.style), "border", "style")
+        case p: BorderColor => expand(p)(c => show(c.color), "border", "color")
 
-      case EmptyStyle | RemapClasses(_) | WidgetStyles(_) => ("", "")
+        case OutlineWidth(w) => ("outline-width", show(w))
+        case OutlineStyle(s) => ("outline-style", show(s))
+        case OutlineColor(c) => ("outline-color", show(c))
 
-      case _: IndirectStyle => ("", "")
+        case TableLayout(layout) => ("table-layout", show(layout))
+      })
     }
   }
 
