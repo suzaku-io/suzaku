@@ -1,11 +1,11 @@
 language: scala
 scala:
-- 2.12.1
+- 2.12.4
 sudo: false
 jdk:
 - oraclejdk8
 script:
-- sbt ++$TRAVIS_SCALA_VERSION coreJVM/test coreJS/test
+- sbt ++$TRAVIS_SCALA_VERSION test
 # Tricks to avoid unnecessary cache updates, from
 # http://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
 - find $HOME/.sbt -name "*.lock" | xargs rm
