@@ -17,8 +17,7 @@ case class Grow(amount: Int, maxSize: Int) extends TableOp
 
 case class Shrink(amount: Int, minSize: Int) extends TableOp
 
-case class DataRow(id: String, name: String, itemPrice: String, itemCount: String, totalPrice: String) {
-}
+case class DataRow(id: String, name: String, itemPrice: String, itemCount: String, totalPrice: String) {}
 
 object TableTest {
   final case class State private (data: Vector[DataRow])
@@ -36,7 +35,7 @@ object TableTest {
         String.valueOf(Array.tabulate[Char](8)(_ => Random.nextPrintableChar())),
         f"$price%.2f",
         count.toString,
-        f"${price*count}%.2f"
+        f"${price * count}%.2f"
       )
     }).toVector
   }
@@ -53,7 +52,7 @@ object TableTest {
           .header("ID", "Name", "Item price", "Count", "Total")
           .body(state.data.map { data =>
             Row(data.id, data.name, data.itemPrice, data.itemCount.toString, data.totalPrice)
-          .withKey(data.id)
+              .withKey(data.id)
           }) << (
           width := 600.px,
           tableLayout := fixed,
@@ -76,18 +75,18 @@ object TableTest {
         //)
         case Grow(amount, maxSize) =>
           //scala.scalajs.js.timers.setTimeout(1000)(
-            modState { s =>
-              val data = (s.data ++ genData(amount)).take(maxSize)
-              s.copy(data = data)
-            }
-          //)
+          modState { s =>
+            val data = (s.data ++ genData(amount)).take(maxSize)
+            s.copy(data = data)
+          }
+        //)
         case Shrink(amount, minSize) =>
           //scala.scalajs.js.timers.setTimeout(1000)(
-            modState { s =>
-              val data = s.data.drop((s.data.size - minSize) min amount)
-              s.copy(data = data)
-            }
-          //)
+          modState { s =>
+            val data = s.data.drop((s.data.size - minSize) min amount)
+            s.copy(data = data)
+          }
+        //)
         case _ =>
       }
     }

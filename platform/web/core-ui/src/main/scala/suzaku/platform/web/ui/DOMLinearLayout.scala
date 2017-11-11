@@ -6,7 +6,8 @@ import suzaku.ui.layout._
 import suzaku.ui.{Widget, WidgetBuilder}
 
 class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContext, widgetManager: DOMUIManager)
-    extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager) with DOMLayout {
+    extends DOMWidget[LinearLayoutProtocol.type, dom.html.Div](widgetId, widgetManager)
+    with DOMLayout {
   import Direction._
   import Justify._
   import LinearLayoutProtocol._
@@ -77,7 +78,8 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
     "flex-grow"
   )
 
-  override protected def resolveLayout(modWidget : (dom.html.Element => Unit) => Unit, layoutProperty: LayoutProperty): Unit = {
+  override protected def resolveLayout(modWidget: (dom.html.Element => Unit) => Unit,
+                                       layoutProperty: LayoutProperty): Unit = {
     layoutProperty match {
       case Order(n) =>
         modWidget { el =>
@@ -90,12 +92,12 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
             el.style.setProperty(
               "align-self",
               alignment match {
-                case AlignStart => "flex-start"
-                case AlignEnd => "flex-end"
-                case AlignCenter => "center"
+                case AlignStart    => "flex-start"
+                case AlignEnd      => "flex-end"
+                case AlignCenter   => "center"
                 case AlignBaseline => "baseline"
-                case AlignStretch => "stretch"
-                case AlignAuto => "auto"
+                case AlignStretch  => "stretch"
+                case AlignAuto     => "auto"
               }
             )
           }
@@ -107,7 +109,7 @@ class DOMLinearLayout(widgetId: Int, context: LinearLayoutProtocol.ChannelContex
           }
         }
       case LayoutSlotId(layoutId) =>
-        // allow but ignore
+      // allow but ignore
 
       case other =>
         throw new IllegalArgumentException(s"Layout property $other is not supported for LinearLayout")

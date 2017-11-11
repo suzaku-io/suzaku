@@ -9,7 +9,7 @@ class DOMCheckbox(widgetId: Int, context: CheckboxProtocol.ChannelContext)(impli
     extends DOMWidget[CheckboxProtocol.type, dom.html.Label](widgetId, uiManager) {
   import CheckboxProtocol._
 
-  val input = tag[dom.html.Input]("input")
+  val input     = tag[dom.html.Input]("input")
   val labelText = textNode(context.label.getOrElse(""))
 
   val artifact = {
@@ -47,8 +47,7 @@ class DOMCheckboxBuilder(widgetManager: DOMUIManager) extends WidgetBuilder(Chec
 
 object DOMCheckbox extends WidgetStyleProvider {
   class Style(uiManager: DOMUIManager) extends WidgetStyle()(uiManager) {
-    val base = uiManager.registerCSSClass(palette =>
-      s"""
+    val base = uiManager.registerCSSClass(palette => s"""
          |display: inline-block;
          |margin-bottom: .25rem;
         """.stripMargin)

@@ -35,7 +35,8 @@ object TestComp {
             cssClasses := ("extClass", "checkbox"),
             cssStyle := ("transform" -> "rotate(7deg)")
           ),
-          TextField(state.text, value => modState(s => s.copy(text = value))).withOnFocusChange(focused => println(s"Textfield focused = $focused")),
+          TextField(state.text, value => modState(s => s.copy(text = value))).withOnFocusChange(focused =>
+            println(s"Textfield focused = $focused")),
           Button(s"Add button ${state.count}", () => add()).withKey(0).withLayout(order := 2) << GreenButton,
           Button(s"Remove button ${state.count}", EmbeddedTest.icon2, () => dec())
             .withKey(1)

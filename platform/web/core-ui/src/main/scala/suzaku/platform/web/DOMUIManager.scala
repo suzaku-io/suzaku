@@ -157,7 +157,8 @@ class DOMUIManager(logger: Logger, platform: Platform) extends UIManager(logger,
   override def emptyWidget(widgetId: Int) = new DOMEmptyWidget(widgetId, this)
 
   override def destroyWidget(node: WidgetNode): Unit = {
-    eventHandler.removeWidget(node.widget.widgetId, node.widget.artifact.asInstanceOf[DOMWidgetArtifact[_ <: dom.html.Element]].el)
+    eventHandler.removeWidget(node.widget.widgetId,
+                              node.widget.artifact.asInstanceOf[DOMWidgetArtifact[_ <: dom.html.Element]].el)
   }
 
   override def mountRoot(node: WidgetArtifact) = {

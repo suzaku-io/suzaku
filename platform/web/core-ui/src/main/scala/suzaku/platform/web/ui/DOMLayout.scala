@@ -12,7 +12,7 @@ trait DOMLayout extends WidgetParent { self: DOMWidget[_, _] =>
 
   protected val layoutPropNames: List[String]
 
-  protected def resolveLayout(modWidget : (dom.html.Element => Unit) => Unit, layoutProperty: LayoutProperty): Unit
+  protected def resolveLayout(modWidget: (dom.html.Element => Unit) => Unit, layoutProperty: LayoutProperty): Unit
 
   override def resolveLayout(w: Widget, layoutProperties: List[LayoutProperty]): Unit = {
     val widget    = w.asInstanceOf[DOMWidget[_, _ <: dom.html.Element]]

@@ -5,6 +5,9 @@ import Dependencies._
 
 crossScalaVersions := Seq("2.11.11", "2.12.4")
 
+scalafmtOnCompile in ThisBuild := true
+scalafmtVersion in ThisBuild := "1.3.0"
+
 val commonSettings = Seq(
   organization := "io.suzaku",
   version := Version.library,
@@ -73,10 +76,10 @@ val sourceMapSetting =
 
 def preventPublication(p: Project) =
   p.settings(
-    publish := (),
-    publishLocal := (),
-    publishSigned := (),
-    publishLocalSigned := (),
+    publish := ((): Unit),
+    publishLocal := ((): Unit),
+    publishSigned := ((): Unit),
+    publishLocalSigned := ((): Unit),
     publishArtifact := false,
     publishTo := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
     packagedArtifacts := Map.empty
@@ -257,7 +260,7 @@ lazy val webWidgets = project
   * Suzaku web example project
   */
 lazy val webDemo = preventPublication(project.in(file("webdemo")))
-  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
+  .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings: _*)
   .settings(
     name := "suzaku-webdemo",

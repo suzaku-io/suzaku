@@ -11,8 +11,7 @@ object ConstantUpdateTest {
     override def create = new ComponentImpl(this)
   }
 
-  final class ComponentImpl(initialBlueprint: CBP)
-      extends Component[CBP, State](initialBlueprint) {
+  final class ComponentImpl(initialBlueprint: CBP) extends Component[CBP, State](initialBlueprint) {
 
     override def render(state: State): Blueprint = {
       import suzaku.ui.style._

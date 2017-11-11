@@ -2,7 +2,7 @@ package suzaku.platform.web.widget
 
 import org.scalajs.dom
 import org.scalajs.dom.html.TableCell
-import suzaku.platform.web.{DOMWidgetArtifact, DOMUIManager, DOMWidgetWithChildren}
+import suzaku.platform.web.{DOMUIManager, DOMWidgetArtifact, DOMWidgetWithChildren}
 import suzaku.ui.WidgetBuilder
 import suzaku.widget._
 
@@ -17,7 +17,7 @@ object DOMTable {
   private var initialized = false
 
   def init(uiManager: DOMUIManager) = {
-    if(!initialized) {
+    if (!initialized) {
       initialized = true
       // initialize CSS required by our tables
       uiManager.addCSS("table", "border-collapse: collapse;")
