@@ -5,7 +5,7 @@ addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-RC13")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
 
-// addSbtPlugin("com.lihaoyi" % "workbench" % "0.3.0")
+addSbtPlugin("com.lihaoyi" % "workbench" % "0.4.0")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.0")
 

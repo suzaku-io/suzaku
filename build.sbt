@@ -260,11 +260,12 @@ lazy val webWidgets = project
   * Suzaku web example project
   */
 lazy val webDemo = preventPublication(project.in(file("webdemo")))
-  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .settings(commonSettings: _*)
   .settings(
     name := "suzaku-webdemo",
-    libraryDependencies ++= Seq()
+    libraryDependencies ++= Seq(),
+    workbenchDefaultRootObject := Some(("webdemo/index.html", "webdemo/"))
   )
   .dependsOn(webWidgets, baseWidgetsAppJS, webCoreApp)
 
